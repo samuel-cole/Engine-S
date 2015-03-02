@@ -5,11 +5,11 @@ ParticleEmitter::ParticleEmitter() : m_particles(nullptr), m_firstDead(0), m_max
 {
 }
 
-ParticleEmitter::ParticleEmitter(unsigned int a_maxParticles, unsigned int a_emitRate, float a_lifespanMin, float a_lifespanMax, float a_velocityMin,
-								float a_velocityMax, float a_startSize, float a_endSize, const vec4& a_startColour, const vec4& a_endColour) :
-								m_emitTimer(0), m_emitRate(1.0f / a_emitRate), m_startColour(a_startColour), m_endColour(a_endColour),
-								m_startSize(a_startSize), m_endSize(a_endSize), m_velocityMin(a_velocityMin), m_velocityMax(a_velocityMax),
-								m_lifespanMin(a_lifespanMin), m_lifespanMax(a_lifespanMax), m_maxParticles(a_maxParticles), m_firstDead(0)
+ParticleEmitter::ParticleEmitter(const unsigned int a_maxParticles, const unsigned int a_emitRate, const float a_lifeSpanMin, const float a_lifeSpanMax, const float a_velocityMin,
+								 const float a_velocityMax, const float a_startSize, const float a_endSize, const vec4& a_startColour, const vec4& a_endColour) :
+								 m_emitTimer(0), m_emitRate(1.0f / a_emitRate), m_startColour(a_startColour), m_endColour(a_endColour),
+								 m_startSize(a_startSize), m_endSize(a_endSize), m_velocityMin(a_velocityMin), m_velocityMax(a_velocityMax),
+								 m_lifeSpanMin(a_lifeSpanMin), m_lifeSpanMax(a_lifeSpanMax), m_maxParticles(a_maxParticles), m_firstDead(0)
 {
 	m_particles = new Particle[m_maxParticles];
 	
@@ -79,8 +79,8 @@ void ParticleEmitter::Emit()
 
 	particle.position = m_position;
 
-	particle.lifetime = 0;
-	particle.lifespan = (rand() / (float)RAND_MAX) * (m_lifespanMax - m_lifespanMin) + m_lifespanMin;
+	particle.lifeTime = 0;
+	particle.lifeSpan = (rand() / (float)RAND_MAX) * (m_lifeSpanMax - m_lifeSpanMin) + m_lifeSpanMin;
 
 	particle.colour = m_startColour;
 	particle.size = m_startSize;
@@ -92,7 +92,7 @@ void ParticleEmitter::Emit()
 	particle.velocity = glm::normalize(particle.velocity) * velocity;
 }
 
-void ParticleEmitter::Update(float a_deltaTime, const glm::mat4& a_cameraTransform)
+void ParticleEmitter::Update(const float a_deltaTime, const glm::mat4& a_cameraTransform)
 {
 	//Spawn particles
 	m_emitTimer += a_deltaTime;
@@ -109,8 +109,8 @@ void ParticleEmitter::Update(float a_deltaTime, const glm::mat4& a_cameraTransfo
 	{
 		Particle* particle = &m_particles[i];
 
-		particle->lifetime += a_deltaTime;
-		if (particle->lifetime > particle->lifespan)
+		particle->lifeTime += a_deltaTime;
+		if (particle->lifeTime > particle->lifeSpan)
 		{
 			//Swap last alive with this one
 			*particle = m_particles[m_firstDead - 1];
@@ -120,8 +120,8 @@ void ParticleEmitter::Update(float a_deltaTime, const glm::mat4& a_cameraTransfo
 		{
 			//Update particle
 			particle->position += particle->velocity * a_deltaTime;
-			particle->size = glm::mix(m_startSize, m_endSize, particle->lifetime / particle->lifespan);
-			particle->colour = glm::mix(m_startColour, m_endColour, particle->lifetime / particle->lifespan);
+			particle->size = glm::mix(m_startSize, m_endSize, particle->lifeTime / particle->lifeSpan);
+			particle->colour = glm::mix(m_startColour, m_endColour, particle->lifeTime / particle->lifeSpan);
 
 			//Make quad
 			float halfSize = particle->size * 0.5f;

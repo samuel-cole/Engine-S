@@ -1,0 +1,49 @@
+#version 410
+
+layout( location = 0 ) in vec3 Position;
+layout( location = 1 ) in vec3 Velocity;
+layout( location = 2 ) in float LifeTime;
+layout( location = 3 ) in float LifeSpan;
+
+out vec3  vPosition;
+out vec3  vVelocity;
+out float vLifeTime;
+out float vLifeSpan;
+
+uniform float Time;
+uniform float DeltaTime;
+uniform float LifeMin;
+uniform float LifeMax;
+uniform vec3 EmitterPosition;
+
+const float INVERSE_MAX_UINT = 1.0f / 4294967295.0f;
+
+//Random number code by Robert Bridson, co-author of "Fluid Simulation for Computer Graphics"
+float rand(uint seed, float range) 
+{
+	uint i = (seed ^ 12345391u) * 2654435769u;
+	i ^= (i << 6u) ^ (i >> 26u);
+	i *= 2654435769u;
+	i += (i << 5u) ^ (i >> 12u);
+	return float(range * i) * INVERSE_MAX_UINT;
+} 
+
+void main()
+{
+	vPosition = Position + Velocity * DeltaTime;
+	vVelocity = Velocity;
+	vLifeTime = LifeTime;
+	vLifeSpan = LifeSpan;
+	
+	if (LifeTime > LifeSpan)
+	{
+		uint seed = uint(Time * 1000) + uint(gl_VertexID);
+		vVelocity.x = rand(seed++, 2) - 1;
+		vVelocity.y = rand(seed++, 2) - 1;
+		vVelocity.z = rand(seed++, 2) - 1;
+		vVelocity = normalize(vVelocity);
+		vPosition = EmitterPosition;
+		vLifeTime = 0;
+		vLifeSpan = rand(seed++, LifeMax - LifeMin) + LifeMin;
+	}
+}

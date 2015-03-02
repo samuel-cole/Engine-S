@@ -42,8 +42,9 @@ int Tutorial7::Init()
 
 	m_renderer->LoadFBX("../data/Enemyelite/EnemyElite.fbx", &textures, &normalMaps, &texchannels, &normchannels);
 
-	m_emitter = m_renderer->CreateEmitter(1000, 500, 0.1f, 1.0f, 1, 5, 1, 0.1f, vec4(1, 0, 0, 1), vec4(1, 1, 0, 1));
-	m_emitter2 = m_renderer->CreateEmitter(1000, 500, 0.1f, 2.0f, 1, 5, 1, 0.1f, vec4(0, 0, 1, 1), vec4(1, 1, 1, 1));
+	m_emitter = m_renderer->CreateEmitter(1000, 500, 0.1f, 1.0f, 1, 5, 1, 0.1f, vec4(1, 0, 0, 1), vec4(1, 1, 0, 1), false);
+	m_emitter2 = m_renderer->CreateEmitter(1000, 500, 0.1f, 2.0f, 1, 5, 1, 0.1f, vec4(0, 0, 1, 1), vec4(1, 1, 1, 1), false);
+	
 
 	m_timer = 0;
 
@@ -74,8 +75,8 @@ int Tutorial7::Deinit()
 
 	m_renderer->CleanupBuffers();
 
-	m_renderer->DestroyEmitter(m_emitter);
-	m_renderer->DestroyEmitter(m_emitter2);
+	m_renderer->DestroyEmitter(m_emitter, false);
+	m_renderer->DestroyEmitter(m_emitter2, false);
 
 	return Application::Deinit();
 }

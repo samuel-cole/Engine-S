@@ -11,16 +11,9 @@ bool InputManager::GetMouseDown(int a_mouseButton)
 	return glfwGetMouseButton(m_window, a_mouseButton) > 0;
 }
 
-void InputManager::SetMousePos(glm::vec2 a_pos)
+void InputManager::SetMousePos(const glm::vec2& a_pos)
 {
 	glfwSetCursorPos(m_window, (double)a_pos.x, (double)a_pos.y);
-}
-
-void InputManager::SetMouseToCenter()
-{
-	int width, height;
-	glfwGetFramebufferSize(m_window, &width, &height);
-	glfwSetCursorPos(m_window, (double)(width/2), (double)(height/2));
 }
 
 glm::vec2 InputManager::GetMousePos()
@@ -28,6 +21,13 @@ glm::vec2 InputManager::GetMousePos()
 	double xPos, yPos;
 	glfwGetCursorPos(m_window, &xPos, &yPos);
 	return glm::vec2(xPos, yPos);
+}
+
+void InputManager::SetMouseToCenter()
+{
+	int width, height;
+	glfwGetFramebufferSize(m_window, &width, &height);
+	glfwSetCursorPos(m_window, (double)(width/2), (double)(height/2));
 }
 
 void InputManager::SetupAntBarCallbacks()

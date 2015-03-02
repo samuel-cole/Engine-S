@@ -12,27 +12,29 @@ struct Particle
 	vec3 velocity;
 	vec4 colour;
 	float size;
-	float lifetime;
-	float lifespan;
+	float lifeTime;
+	float lifeSpan;
 };
 
-struct ParticleVertex {
+struct ParticleVertex 
+{
 	vec4 position;
 	vec4 colour;
 };
 
-class ParticleEmitter {
+class ParticleEmitter 
+{
 public:
 	ParticleEmitter();
-	ParticleEmitter(unsigned int a_maxParticles, unsigned int a_emitRate, float a_lifespanMin, float a_lifespanMax, float a_velocityMin, 
-					float a_velocityMax, float a_startSize, float a_endSize, const vec4& a_startColour, const vec4& a_endColour);
-	virtual ~ParticleEmitter();
+	ParticleEmitter(const unsigned int a_maxParticles, const unsigned int a_emitRate, const float a_lifespanMin, const float a_lifespanMax, const float a_velocityMin,
+					const float a_velocityMax, const float a_startSize, const float a_endSize, const vec4& a_startColour, const vec4& a_endColour);
+	~ParticleEmitter();
 
 
-	void Update(float a_deltaTime, const glm::mat4& a_cameraTransform);
+	void Update(const float a_deltaTime, const glm::mat4& a_cameraTransform);
 	void Draw();
 
-protected:
+private:
 	void Emit();
 
 	Particle* m_particles;
@@ -45,7 +47,7 @@ protected:
 	vec3 m_position;
 
 	float m_emitTimer, m_emitRate;
-	float m_lifespanMin, m_lifespanMax;
+	float m_lifeSpanMin, m_lifeSpanMax;
 	float m_velocityMin, m_velocityMax;
 	float m_startSize, m_endSize;
 	vec4 m_startColour, m_endColour;

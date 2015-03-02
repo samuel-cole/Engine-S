@@ -5,9 +5,9 @@
 #include "Camera.h"
 #include "FBXFile.h"
 #include "Particle.h"
+#include "GPUParticle.h"
 
 #include <stb_image.h>
-
 
 #include <fstream>
 #include <string>
@@ -25,64 +25,26 @@ Renderer::Renderer(Camera* a_camera, TwBar* a_bar) : m_camera(a_camera), m_bar(a
 
 	m_lightColour = vec3(1, 1, 1);
 	m_lightDir = vec3(1, 1, 1);
-	m_specPow = 128.0f;
+	m_specPow = 2.0f;
 
 	TwAddVarRW(m_bar, "Light Colour", TW_TYPE_COLOR3F, &m_lightColour[0], "");
 	TwAddVarRW(m_bar, "Light Direction", TW_TYPE_DIR3F, &m_lightDir[0], "");
 	TwAddVarRW(m_bar, "Specular Power", TW_TYPE_FLOAT, &m_specPow, "");
+
+
+	//glEnable(GL_BLEND);
+	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
-unsigned int Renderer::CreateProgram(string a_vertPath, string a_fragPath)
+unsigned int Renderer::CreateProgram(const string& a_vertPath, const string& a_fragPath)
 {
 	//Vertex Shader
-	char* vsSource;
-	std::ifstream vertShader(a_vertPath);
-	string shaderLine;
-	string buffer;
-
-	while (std::getline(vertShader, shaderLine))
-	{
-		buffer.append(shaderLine);
-		buffer.append("\n");
-	}
-
-	vsSource = new char[buffer.length() + 1];
-	for (unsigned int i = 0; i < buffer.length(); ++i)
-	{
-		vsSource[i] = buffer[i];
-	}
-	vertShader.close();
-	vsSource[buffer.length()] = '\0';
+	unsigned int vertexShader = LoadShader(a_vertPath, GL_VERTEX_SHADER);
 
 	//Fragment Shader
-	char* fsSource;
-	std::ifstream fragShader(a_fragPath);
-	shaderLine = "";
-	buffer = "";
-
-	while (std::getline(fragShader, shaderLine))
-	{
-		buffer.append(shaderLine);
-		buffer.append("\n ");
-	}
-
-	fsSource = new char[buffer.length() + 1];
-	for (unsigned int i = 0; i < buffer.length(); ++i)
-	{
-		fsSource[i] = buffer[i];
-	}
-	fragShader.close();
-	fsSource[buffer.length()] = '\0';
+	unsigned int fragmentShader = LoadShader(a_fragPath, GL_FRAGMENT_SHADER);
 
 	int success = GL_FALSE;
-
-	unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-	glShaderSource(vertexShader, 1, (const char**)&vsSource, 0);
-	glCompileShader(vertexShader);
-
-	unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-	glShaderSource(fragmentShader, 1, (const char**)&fsSource, 0);
-	glCompileShader(fragmentShader);
 
 	unsigned int programID = glCreateProgram();
 	glAttachShader(programID, vertexShader);
@@ -105,6 +67,7 @@ unsigned int Renderer::CreateProgram(string a_vertPath, string a_fragPath)
 	glDeleteShader(fragmentShader);
 	glDeleteShader(vertexShader);
 
+	//The below bit could potentially be improved by adding another parameter to CreateProgram which is used to pass in an array/vector of UniformTypes, and only finding the locations of those types.
 	m_uniformLocations[programID].push_back(glGetUniformLocation(programID, "ProjectionView"));
 	m_uniformLocations[programID].push_back(glGetUniformLocation(programID, "Bones"));
 	m_uniformLocations[programID].push_back(glGetUniformLocation(programID, "Global"));
@@ -118,8 +81,38 @@ unsigned int Renderer::CreateProgram(string a_vertPath, string a_fragPath)
 	return programID;
 }
 
+unsigned int Renderer::LoadShader(const string& a_path, const unsigned int a_type)
+{
+	char* source;
+	std::ifstream file(a_path);
+	string shaderLine;
+	string buffer;
+
+	while (std::getline(file, shaderLine))
+	{
+		buffer.append(shaderLine);
+		buffer.append("\n");
+	}
+
+	source = new char[buffer.length() + 1];
+	for (unsigned int i = 0; i < buffer.length(); ++i)
+	{
+		source[i] = buffer[i];
+	}
+	file.close();
+	source[buffer.length()] = '\0';
+
+	unsigned int shader = glCreateShader(a_type);
+	glShaderSource(shader, 1, (const char**)&source, 0);
+	glCompileShader(shader);
+
+	delete[] source;
+
+	return shader;
+}
+
 //Stuff for loading in a texture. Pass false into a_channels for RGB, or true for RGBA.
-void Renderer::LoadTexture(string a_filePath, bool a_channels)
+void Renderer::LoadTexture(const string& a_filePath, const bool a_channels)
 {
 	if (m_noNormalsProgram == -1)
 	{
@@ -139,7 +132,7 @@ void Renderer::LoadTexture(string a_filePath, bool a_channels)
 }
 
 //Stuff for loading in a normal map. Pass false into a_channels for RGB, or true for RGBA.
-void Renderer::LoadNormalMap(string a_filePath, bool a_channels)
+void Renderer::LoadNormalMap(const string& a_filePath, const bool a_channels)
 {
 	//Check to see if a program that can handle normal maps has been created, and make one if it hasn't.
 	if (m_standardProgram == -1)
@@ -159,7 +152,7 @@ void Renderer::LoadNormalMap(string a_filePath, bool a_channels)
 	stbi_image_free(data);
 }
 
-void Renderer::GenerateGrid(unsigned int a_rows, unsigned int a_columns)
+void Renderer::GenerateGrid(const unsigned int a_rows, const unsigned int a_columns)
 {
 	if (m_noTexturesProgram == -1)
 	{
@@ -209,41 +202,73 @@ void Renderer::GenerateGrid(unsigned int a_rows, unsigned int a_columns)
 	delete[] auiIndices;
 }
 
-unsigned int Renderer::CreateEmitter(unsigned int a_maxParticles, unsigned int a_emitRate, float a_lifespanMin, float a_lifespanMax,
-									 float a_velocityMin, float a_velocityMax, float a_startSize, float a_endSize, const vec4& a_startColour, const vec4& a_endColour)
+unsigned int Renderer::CreateEmitter(const unsigned int a_maxParticles, const unsigned int a_emitRate, const float a_lifespanMin, const float a_lifespanMax,
+									 const float a_velocityMin, const float a_velocityMax, const float a_startSize, const float a_endSize, const vec4& a_startColour, const vec4& a_endColour, bool a_gpuBased)
 {
-	if (m_particleProgram == -1)
+	if (a_gpuBased)
 	{
-		m_particleProgram = CreateProgram("../data/shaders/vertParticles.txt", "../data/shaders/fragParticles.txt");
-	}
+		GPUParticleEmitter* emitter = new GPUParticleEmitter(a_maxParticles, a_lifespanMin, a_lifespanMax, a_velocityMin, a_velocityMax, a_startSize, a_endSize, a_startColour, a_endColour);
 
-	ParticleEmitter *emitter = new ParticleEmitter(a_maxParticles, a_emitRate, a_lifespanMin, a_lifespanMax, a_velocityMin, a_velocityMax, a_startSize, a_endSize, a_startColour, a_endColour);
-	
-	std::vector<ParticleEmitter*>::iterator i = m_emitters.begin();
-	while (i != m_emitters.end())
-	{
-		if (*i == nullptr)
+		std::vector<GPUParticleEmitter*>::iterator i = m_gpuEmitters.begin();
+		while (i != m_gpuEmitters.end())
 		{
-			*i = emitter;
-			return i - m_emitters.begin();
+			if (*i == nullptr)
+			{
+				*i = emitter;
+				return i - m_gpuEmitters.begin();
+			}
+			++i;
 		}
-		++i;
-	}
 
-	m_emitters.push_back(emitter);
-	return m_emitters.size() - 1;
+		m_gpuEmitters.push_back(emitter);
+		return m_gpuEmitters.size() - 1;
+	}
+	else
+	{ 
+		if (m_particleProgram == -1)
+		{
+			m_particleProgram = CreateProgram("../data/shaders/vertParticles.txt", "../data/shaders/fragParticles.txt");
+		}
+
+		ParticleEmitter* emitter = new ParticleEmitter(a_maxParticles, a_emitRate, a_lifespanMin, a_lifespanMax, a_velocityMin, a_velocityMax, a_startSize, a_endSize, a_startColour, a_endColour);
+
+		std::vector<ParticleEmitter*>::iterator i = m_emitters.begin();
+		while (i != m_emitters.end())
+		{
+			if (*i == nullptr)
+			{
+				*i = emitter;
+				return i - m_emitters.begin();
+			}
+			++i;
+		}
+
+		m_emitters.push_back(emitter);
+		return m_emitters.size() - 1;
+	}
 }
 
-void Renderer::DestroyEmitter(unsigned int a_emitterIndex)
+void Renderer::DestroyEmitter(const unsigned int a_emitterIndex, const bool a_gpuBased)
 {
-	if (m_emitters[a_emitterIndex] != nullptr)
+	if (a_gpuBased)
 	{
-		delete m_emitters[a_emitterIndex];
-		m_emitters[a_emitterIndex] = nullptr;
+		if (m_gpuEmitters[a_emitterIndex] != nullptr)
+		{
+			delete m_gpuEmitters[a_emitterIndex];
+			m_emitters[a_emitterIndex] = nullptr;
+		}
+	}
+	else
+	{
+		if (m_emitters[a_emitterIndex] != nullptr)
+		{
+			delete m_emitters[a_emitterIndex];
+			m_emitters[a_emitterIndex] = nullptr;
+		}
 	}
 }
 
-void Renderer::LoadFBX(string a_filePath)
+void Renderer::LoadFBX(const string& a_filePath)
 {
 	if (m_noTexturesProgram == -1)
 	{
@@ -300,8 +325,8 @@ void Renderer::LoadFBX(string a_filePath)
 	}
 }
 
-void Renderer::LoadFBX(string a_filePath, std::vector<string>* a_texturePaths, std::vector<string>* a_normalMapPaths, 
-					   std::vector<bool>* a_texChannels, std::vector<bool>* a_normChannels)
+void Renderer::LoadFBX(const string& a_filePath, const std::vector<string>* a_texturePaths, const std::vector<string>* a_normalMapPaths,
+					   const std::vector<bool>* a_texChannels, const std::vector<bool>* a_normChannels)
 {
 	if (m_noTexturesProgram == -1)
 	{
@@ -367,7 +392,7 @@ void Renderer::LoadFBX(string a_filePath, std::vector<string>* a_texturePaths, s
 	}
 }
 
-void Renderer::LoadOBJ(string a_filePath)
+void Renderer::LoadOBJ(const string& a_filePath)
 {
 	if (m_noTexturesProgram == -1)
 	{
@@ -477,6 +502,8 @@ void Renderer::LoadOBJ(string a_filePath)
 
 void Renderer::Draw()
 {
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
 	if (m_noTexturesProgram != -1)
 	{
 		//I use noTexturesCheck to see if there are any models with no texture. 
@@ -657,73 +684,19 @@ void Renderer::Draw()
 
 		for (unsigned int i = 0; i < m_emitters.size(); ++i)
 		{
-			m_emitters[i]->Draw();
+			if (m_emitters[i] != nullptr)
+				m_emitters[i]->Draw();
 		}
 	}
 
-
-	/*//Old code below here, delete later.
-	glUseProgram(m_programID);
-
-	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
-	// Bind the Camera
-	glUniformMatrix4fv((m_uniformLocations[m_programID])[PROJECTION_VIEW], 1, GL_FALSE, &(m_camera->GetProjectionView()[0][0]));
-	//Skeleton
-	if (m_file != nullptr && m_file->getSkeletonCount() > 0)
+	for (unsigned int i = 0; i < m_gpuEmitters.size(); ++i)
 	{
-		FBXSkeleton* skeleton = m_file->getSkeletonByIndex(0);
-		glUniformMatrix4fv((m_uniformLocations[m_programID])[BONES], skeleton->m_boneCount, GL_FALSE, (float*)skeleton->m_bones);
-
-		glUniformMatrix4fv((m_uniformLocations[m_programID])[GLOBAL], 1, GL_FALSE, &(m_file->getMeshByIndex(0)->m_globalTransform[0][0]));
+		if (m_gpuEmitters[i] != nullptr)
+			m_gpuEmitters[i]->Draw(glfwGetTime(), m_camera->GetWorldTransform(), m_camera->GetProjectionView());
 	}
-	// Light Direction
-	glUniform3f((m_uniformLocations[m_programID])[LIGHT_DIR], m_lightDir.x, m_lightDir.y, m_lightDir.z);
-	// Light Colour
-	glUniform3f((m_uniformLocations[m_programID])[LIGHT_COLOUR], m_lightColour.x, m_lightColour.y, m_lightColour.z);
-	// Camera Position
-	glUniform3f((m_uniformLocations[m_programID])[CAMERA_POS], m_camera->GetWorldTransform()[3].x, m_camera->GetWorldTransform()[3].y, m_camera->GetWorldTransform()[3].z);
-	// Specular Power
-	glUniform1f((m_uniformLocations[m_programID])[SPEC_POW], m_specPow);
-
-	for (unsigned int i = 0; i < m_numOfIndices.size(); ++i)
-	{
-		// Texture/Diffuse Stuff
-		if (i < m_textures.size())
-		{
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, m_textures[i]);
-
-			glUniform1i((m_uniformLocations[m_programID])[DIFFUSE], 0);
-		}
-		// Set Normal Slot
-		if (i < m_normals.size())
-		{
-			glActiveTexture(GL_TEXTURE1);
-			glBindTexture(GL_TEXTURE_2D, m_normals[i]);
-
-			glUniform1i((m_uniformLocations[m_programID])[NORMAL], 1);
-		}
-
-		//Draw stuff
-		glBindVertexArray(m_VAO[i]);
-		glDrawElements(GL_TRIANGLES, m_numOfIndices[i], GL_UNSIGNED_INT, nullptr);
-	}
-
-	if (m_particleProgram != -1)
-	{
-		glUseProgram(m_particleProgram);
-
-		glUniformMatrix4fv((m_uniformLocations[m_particleProgram])[PROJECTION_VIEW], 1, GL_FALSE, &(m_camera->GetProjectionView()[0][0]));
-
-		for (unsigned int i = 0; i < m_emitters.size(); ++i)
-		{
-			m_emitters[i]->Draw();
-		}
-	}*/
 }
 
-void Renderer::UpdateAnimation(float a_time)
+void Renderer::UpdateAnimation(const float a_time)
 {
 	if (m_file != nullptr && m_file->getSkeletonCount() > 0)
 	{
@@ -739,15 +712,16 @@ void Renderer::UpdateAnimation(float a_time)
 	}
 }
 
-void Renderer::UpdateEmitters(float a_deltaTime)
+void Renderer::UpdateEmitters(const float a_deltaTime)
 {
 	for (unsigned int i = 0; i < m_emitters.size(); ++i)
 	{
-		m_emitters[i]->Update(a_deltaTime, m_camera->GetWorldTransform());
+		if (m_emitters[i] != nullptr)
+			m_emitters[i]->Update(a_deltaTime, m_camera->GetWorldTransform());
 	}
 }
 
-void Renderer::SplitIndex(string a_string, std::vector<Vertex>* a_vertices, std::vector<unsigned int>* a_indices, std::vector<vec3>* a_position, std::vector<vec3>* a_normal, std::vector<glm::vec2>* a_uv)
+void Renderer::SplitIndex(const string& a_string, std::vector<Vertex>* a_vertices, std::vector<unsigned int>* a_indices, std::vector<vec3>* a_position, std::vector<vec3>* a_normal, std::vector<glm::vec2>* a_uv)
 {
 	unsigned int firstSpace = a_string.find(' ', 2);
 	unsigned int secondSpace = a_string.find(' ', firstSpace + 1);
@@ -828,7 +802,7 @@ void Renderer::SplitIndex(string a_string, std::vector<Vertex>* a_vertices, std:
 	}
 }
 
-unsigned int Renderer::PositivifyIndex(int index, std::vector<vec3>* a_position)
+unsigned int Renderer::PositivifyIndex(const int index, const std::vector<vec3>* a_position)
 {
 	if (index >= 0)
 		return index;
@@ -836,7 +810,7 @@ unsigned int Renderer::PositivifyIndex(int index, std::vector<vec3>* a_position)
 		return a_position->size() + index + 1;
 }
 
-unsigned int Renderer::PositivifyIndex(int index, std::vector<glm::vec2>* a_uv)
+unsigned int Renderer::PositivifyIndex(const int index, const std::vector<glm::vec2>* a_uv)
 {
 	if (index >= 0)
 		return index;
@@ -844,9 +818,9 @@ unsigned int Renderer::PositivifyIndex(int index, std::vector<glm::vec2>* a_uv)
 		return a_uv->size() + index + 1;
 }
 
-void Renderer::GenerateVertFromIndices(std::string a_index, std::string a_normal, std::string a_uv,
-										 std::vector<vec3>* a_positionVec, std::vector<vec3>* a_normalVec, std::vector<glm::vec2>* a_uvVec,
-										 std::vector<Vertex>* a_vertices, std::vector<unsigned int>* a_indices)
+void Renderer::GenerateVertFromIndices(const std::string& a_index, const std::string& a_normal, const std::string& a_uv,
+									   const std::vector<vec3>* a_positionVec, const std::vector<vec3>* a_normalVec, const std::vector<glm::vec2>* a_uvVec,
+									   std::vector<Vertex>* a_vertices,  std::vector<unsigned int>* a_indices)
 {
 	Vertex vertex;
 	if (a_index != "")
@@ -864,7 +838,7 @@ void Renderer::GenerateVertFromIndices(std::string a_index, std::string a_normal
 	vertex.colour	= vec4(1, 1, 1, 1);
 	vertex.tangent	= vec4(1, 0, 0, 1);
 
-	std::vector<Vertex>::iterator index = std::find(a_vertices->begin(), a_vertices->end(), vertex);
+	std::vector<Vertex>::const_iterator index = std::find(a_vertices->begin(), a_vertices->end(), vertex);
 	if (index == a_vertices->end())
 	{
 		a_vertices->push_back(vertex);
@@ -876,7 +850,7 @@ void Renderer::GenerateVertFromIndices(std::string a_index, std::string a_normal
 	}
 }
 
-void Renderer::LoadIntoOpenGL(Vertex *a_verticesArray, unsigned int a_numOfVertices, unsigned int *a_indicesArray, unsigned int a_numOfIndices, bool a_animated)
+void Renderer::LoadIntoOpenGL(const Vertex *a_verticesArray, const unsigned int a_numOfVertices, const unsigned int *a_indicesArray, const unsigned int a_numOfIndices, const bool a_animated)
 {
 	//Add the newest number of indices to the vector.
 	m_numOfIndices.push_back(a_numOfIndices);

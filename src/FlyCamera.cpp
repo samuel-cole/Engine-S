@@ -60,7 +60,7 @@ void FlyCamera::Update(float a_deltaTime)
 	
 }
 
-void FlyCamera::SetRotationFromMouseOffset(glm::vec2 a_offset, float a_deltaTime)
+void FlyCamera::SetRotationFromMouseOffset(const glm::vec2& a_offset, float a_deltaTime)
 {
 	vec3 rightVec = glm::vec3(1, 0, 0); 
 	vec3 upVec = glm::vec3(0, 1, 0);

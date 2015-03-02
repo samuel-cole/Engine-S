@@ -9,9 +9,9 @@ class FlyCamera: public Camera
 public:
 	FlyCamera(TwBar* a_debugBar);
 
-	void Update (float a_deltaTime);
+	void Update(const float a_deltaTime);
 
-	inline void SetSpeed(float a_speed)
+	inline void SetSpeed(const float a_speed)
 	{
 		m_speed = a_speed;
 	}
@@ -21,7 +21,7 @@ private:
 	bool m_viewButtonClicked;
 	glm::vec2 m_mouseStartPos;
 
-	void SetRotationFromMouseOffset(glm::vec2 a_offset, float a_deltaTime);
+	void SetRotationFromMouseOffset(const glm::vec2& a_offset, float a_deltaTime);
 };
 
 #endif

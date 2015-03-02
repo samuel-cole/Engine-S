@@ -20,11 +20,11 @@ enum Keys { UP = 265,
 class InputManager
 {
 public:
-	static bool GetKey(Keys a_key);
+	static bool GetKey(const Keys a_key);
 
-	static bool GetMouseDown(int a_mouseButton);
+	static bool GetMouseDown(const int a_mouseButton);
 
-	static void SetMousePos(glm::vec2 a_pos);
+	static void SetMousePos(const glm::vec2& a_pos);
 
 	static void SetMouseToCenter();
 

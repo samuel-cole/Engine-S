@@ -21,45 +21,45 @@ private:
 	void UpdateProjectionViewTransform();
 
 public:
-	virtual void Update( float a_deltaTime ) = 0;
+	virtual void Update( const float a_deltaTime ) = 0;
 
 	//Mutator functions
 	//Sets the perspective matrix to have the field of view, aspect ration, and near and far planes passed in as arguments.
-	void SetPerspective( float a_fieldOfView, float a_aspectRatio, float a_near, float a_far );
+	void SetPerspective(const float a_fieldOfView, const float a_aspectRatio, const float a_near, const float a_far);
 	//Sets the camera to look at a position- takes as arguments the position the camera should be at, the position the camera should be facing and a vector in the up direction.
-	void SetLookAt( vec3 a_from, vec3 a_to, vec3 a_up );
+	void SetLookAt( const vec3& a_from, const vec3& a_to, const vec3& a_up );
 	//Sets the position of the camera.
-	void SetPosition( vec3 a_position );
+	void SetPosition( const vec3& a_position );
 	//Sets the world transform.
-	void SetWorldTransform(mat4 a_worldTransform);
+	void SetWorldTransform( const mat4& a_worldTransform );
 
 
 	//Rotation setting functions.
 	//Sets the X rotation.
-	void SetXRotation( vec3 a_rotation );
+	void SetXRotation( const vec3& a_rotation );
 	//Sets the Y rotation.
-	void SetYRotation( vec3 a_rotation );
+	void SetYRotation( const vec3& a_rotation );
 	//Sets the Z rotation.
-	void SetZRotation( vec3 a_rotation );
+	void SetZRotation( const vec3& a_rotation );
 
 	//Accessor functions
 	//Returns the world transform matrix.
-	inline mat4 GetWorldTransform()
+	inline const mat4& GetWorldTransform()
 	{
 		return m_worldTransform;
 	}
 	//Returns the view transform matrix.
-	inline mat4 GetView()
+	inline const mat4& GetView()
 	{
 		return m_viewTransform;
 	}
 	//Returns the projection matrix.
-	inline mat4 GetProjection()
+	inline const mat4& GetProjection()
 	{
 		return m_projectionTransform;
 	}
 	//Returns the projection-view maxtrix.
-	inline mat4 GetProjectionView()
+	inline const mat4& GetProjectionView()
 	{
 		return m_projectionViewTransform;
 	}
