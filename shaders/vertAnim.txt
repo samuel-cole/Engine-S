@@ -1,0 +1,41 @@
+#version 410
+
+layout(location=0) in vec4 Position;
+layout(location=1) in vec4 Colour;
+layout(location=2) in vec4 Normal;
+layout(location=3) in vec4 Tangent;
+layout(location=4) in vec2 TexCoord;
+layout(location=5) in vec4 Weights;
+layout(location=6) in vec4 Indices;
+
+out vec3 vPosition;
+out vec3 vColour;
+out vec3 vNormal;
+out vec3 vTangent;
+out vec3 vBiTangent;
+out vec2 vTexCoord;
+
+uniform mat4 ProjectionView;
+uniform mat4 Global;
+
+const int MAX_BONES = 128;
+uniform mat4 Bones[MAX_BONES];
+
+void main() {
+	
+	vColour = Colour.xyz;
+	vNormal = Normal.xyz;
+	vPosition = (Global * Position).xyz;
+	vTangent = Tangent.xyz;
+	vBiTangent = cross(vNormal, vTangent);
+	vTexCoord = TexCoord;
+	
+	ivec4 index = ivec4(Indices);
+	
+	vec4 P = Bones[index.x] * Position * Weights.x;
+	P += Bones[index.y] * Position * Weights.y;
+	P += Bones[index.z] * Position * Weights.z;
+	P += Bones[index.w] * Position * Weights.w;
+	
+	gl_Position = ProjectionView * Global * P;
+};

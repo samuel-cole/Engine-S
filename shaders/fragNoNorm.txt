@@ -1,0 +1,28 @@
+#version 410
+
+in vec3 vPosition;
+in vec3 vColour;
+in vec3 vNormal;
+
+in vec2 vTexCoord;
+
+out vec4 FragColor;
+
+uniform sampler2D Diffuse;
+
+uniform vec3 LightDir;
+uniform vec3 LightColour;
+uniform vec3 CameraPos;
+uniform float SpecPow;
+
+void main() { 
+	float d = max(0, dot( normalize(vNormal), normalize(LightDir) ) );
+	vec3 E = normalize( CameraPos - vPosition );
+	vec3 R = reflect( -LightDir, vNormal );
+	float s = max( 0, dot ( E, R ) );
+	s = pow( s, SpecPow );
+	
+	FragColor = texture( Diffuse, vTexCoord ) * vec4(vColour, 1) * vec4( LightColour * d + LightColour * s, 1);
+}
+
+	
