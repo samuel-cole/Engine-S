@@ -111,7 +111,6 @@ unsigned int Renderer::LoadShader(const string& a_path, const unsigned int a_typ
 	return shader;
 }
 
-//Stuff for loading in a texture. Pass false into a_channels for RGB, or true for RGBA.
 void Renderer::LoadTexture(const string& a_filePath, const bool a_channels)
 {
 	if (m_noNormalsProgram == -1)
@@ -131,7 +130,6 @@ void Renderer::LoadTexture(const string& a_filePath, const bool a_channels)
 	stbi_image_free(data);
 }
 
-//Stuff for loading in a normal map. Pass false into a_channels for RGB, or true for RGBA.
 void Renderer::LoadNormalMap(const string& a_filePath, const bool a_channels)
 {
 	//Check to see if a program that can handle normal maps has been created, and make one if it hasn't.
@@ -203,7 +201,7 @@ void Renderer::GenerateGrid(const unsigned int a_rows, const unsigned int a_colu
 }
 
 unsigned int Renderer::CreateEmitter(const unsigned int a_maxParticles, const unsigned int a_emitRate, const float a_lifespanMin, const float a_lifespanMax,
-									 const float a_velocityMin, const float a_velocityMax, const float a_startSize, const float a_endSize, const vec4& a_startColour, const vec4& a_endColour, bool a_gpuBased)
+									 const float a_velocityMin, const float a_velocityMax, const float a_startSize, const float a_endSize, const vec4& a_startColour, const vec4& a_endColour, const bool a_gpuBased)
 {
 	if (a_gpuBased)
 	{
@@ -248,6 +246,78 @@ unsigned int Renderer::CreateEmitter(const unsigned int a_maxParticles, const un
 	}
 }
 
+unsigned int Renderer::CreateEmitter(const unsigned int a_maxParticles, const float a_lifespanMin, const float a_lifespanMax,
+	const float a_velocityMin, const float a_velocityMax, const float a_startSize, const float a_endSize, const vec4& a_startColour, const vec4& a_endColour, const bool a_gpuBased)
+{
+	if (a_gpuBased)
+	{
+		GPUParticleEmitter* emitter = new GPUParticleEmitter(a_maxParticles, a_lifespanMin, a_lifespanMax, a_velocityMin, a_velocityMax, a_startSize, a_endSize, a_startColour, a_endColour);
+
+		std::vector<GPUParticleEmitter*>::iterator i = m_gpuEmitters.begin();
+		while (i != m_gpuEmitters.end())
+		{
+			if (*i == nullptr)
+			{
+				*i = emitter;
+				return i - m_gpuEmitters.begin();
+			}
+			++i;
+		}
+
+		m_gpuEmitters.push_back(emitter);
+		return m_gpuEmitters.size() - 1;
+	}
+	else
+	{
+		std::cout << "Error: incorrect CreateEmitter overload called. For CPU-based particles, use the CreateEmitter function which specifies emit rate.";
+		return -1;
+	}
+}
+
+void Renderer::SetEmitterPosition(const unsigned int a_index, const bool a_gpuBased, const vec3& a_position)
+{
+	if (a_gpuBased)
+	{
+		if (m_gpuEmitters[a_index] != nullptr)
+			m_gpuEmitters[a_index]->SetPosition(a_position);
+		
+		else
+			std::cout << "Error: invalid emitter index!" << std::endl;
+	}
+	else
+	{
+		if (m_emitters[a_index] != nullptr)
+			m_emitters[a_index]->SetPosition(a_position);
+
+		else
+			std::cout << "Error: invalid emitter index!" << std::endl;
+	}
+}
+
+const vec3& Renderer::GetEmitterPosition(const unsigned int a_index, const bool a_gpuBased)
+{
+	if (a_gpuBased)
+	{
+		if (m_gpuEmitters[a_index] != nullptr)
+			return m_gpuEmitters[a_index]->GetPosition();
+		else
+		{
+			std::cout << "Error: invalid emitter index!" << std::endl;
+			return *(vec3*)nullptr;
+		}
+	}
+	else
+	{
+		if (m_emitters[a_index] != nullptr)
+			return m_emitters[a_index]->GetPosition();
+		else
+		{
+			std::cout << "Error: invalid emitter index!" << std::endl;
+			return *(vec3*)nullptr;
+		}
+	}
+}
+
 void Renderer::DestroyEmitter(const unsigned int a_emitterIndex, const bool a_gpuBased)
 {
 	if (a_gpuBased)
@@ -255,7 +325,7 @@ void Renderer::DestroyEmitter(const unsigned int a_emitterIndex, const bool a_gp
 		if (m_gpuEmitters[a_emitterIndex] != nullptr)
 		{
 			delete m_gpuEmitters[a_emitterIndex];
-			m_emitters[a_emitterIndex] = nullptr;
+			m_gpuEmitters[a_emitterIndex] = nullptr;
 		}
 	}
 	else
@@ -315,6 +385,8 @@ void Renderer::LoadFBX(const string& a_filePath)
 
 		FBXSkeleton* skeleton = m_file->getSkeletonByIndex(0);
 		FBXAnimation* animation = m_file->getAnimationByIndex(0);
+
+		skeleton->updateBones();
 
 		skeleton->evaluate(animation, 0);
 
@@ -380,14 +452,19 @@ void Renderer::LoadFBX(const string& a_filePath, const std::vector<string>* a_te
 		if (m_animatedProgram == -1)
 			m_animatedProgram = CreateProgram("../data/shaders/vertAnim.txt", "../data/shaders/frag.txt");
 
-		FBXSkeleton* skeleton = m_file->getSkeletonByIndex(0);
-		FBXAnimation* animation = m_file->getAnimationByIndex(0);
-
-		skeleton->evaluate(animation, 0);
-
-		for (unsigned int i = 0; i < skeleton->m_boneCount; ++i)
+		for (unsigned int i = 0; i < m_file->getSkeletonCount(); ++i)
 		{
-			skeleton->m_nodes[i]->updateGlobalTransform();
+			FBXSkeleton* skeleton = m_file->getSkeletonByIndex(i);
+			FBXAnimation* animation = m_file->getAnimationByIndex(i);
+			
+			skeleton->updateBones();
+
+			skeleton->evaluate(animation, 0);
+
+			for (unsigned int j = 0; j < skeleton->m_boneCount; ++j)
+			{
+				skeleton->m_nodes[j]->updateGlobalTransform();
+			}
 		}
 	}
 }
@@ -692,7 +769,9 @@ void Renderer::Draw()
 	for (unsigned int i = 0; i < m_gpuEmitters.size(); ++i)
 	{
 		if (m_gpuEmitters[i] != nullptr)
-			m_gpuEmitters[i]->Draw(glfwGetTime(), m_camera->GetWorldTransform(), m_camera->GetProjectionView());
+		{
+			m_gpuEmitters[i]->Draw((float)glfwGetTime(), m_camera->GetWorldTransform(), m_camera->GetProjectionView());
+		}
 	}
 }
 

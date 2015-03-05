@@ -12,12 +12,12 @@ GPUParticleEmitter::GPUParticleEmitter() : m_particles(nullptr), m_maxParticles(
 
 GPUParticleEmitter::GPUParticleEmitter(const unsigned int a_maxParticles, const float a_lifeSpanMin, const float a_lifeSpanMax,
 									   const float a_velocityMin, const float a_velocityMax, const float a_startSize, const float a_endSize,
-									   const const vec4& a_startColour, const const vec4& a_endColour) : m_deltaTimeUniformLocation(-1), m_emitterPositionUniformLocation(-1), m_timeUniformLocation(-1)
+									   const  vec4& a_startColour, const vec4& a_endColour) : m_deltaTimeUniformLocation(-1), m_emitterPositionUniformLocation(-1), m_timeUniformLocation(-1)
 
 {
 	m_startColour = a_startColour;
 	m_endColour = a_endColour;
-	m_startSize = a_endSize;
+	m_startSize = a_startSize;
 	m_endSize = a_endSize;
 	m_velocityMin = a_velocityMin;
 	m_velocityMax = a_velocityMax;
@@ -87,21 +87,42 @@ void GPUParticleEmitter::CreateUpdateProgram()
 	glAttachShader(m_updateProgram, vs);
 
 	//Specify the data that will be streamed back.
-	const char *varyings[] = { "Position", "Velocity", "LifeTime", "LifeSpan" };
+	const char *varyings[] = { "vPosition", "vVelocity", "vLifeTime", "vLifeSpan" };
 	glTransformFeedbackVaryings(m_updateProgram, 4, varyings, GL_INTERLEAVED_ATTRIBS);
 
 	glLinkProgram(m_updateProgram);
 
+	int success = GL_FALSE;
+
+	glGetProgramiv(m_updateProgram, GL_LINK_STATUS, &success);
+	if (success == GL_FALSE)
+	{
+		int infoLogLength = 0;
+		glGetShaderiv(m_drawProgram, GL_INFO_LOG_LENGTH, &infoLogLength);
+		char* infoLog = new char[infoLogLength];
+
+		glGetShaderInfoLog(m_drawProgram, infoLogLength, 0, infoLog);
+		printf("Error: Failed to link shader program!\n");
+		printf("%s\n", infoLog);
+		delete[] infoLog;
+	}
+
 	glDeleteShader(vs);
+
+	glUseProgram(m_updateProgram);
 
 	//Add information that won't change.
 	int location = glGetUniformLocation(m_updateProgram, "LifeMin");
 	glUniform1f(location, m_lifeSpanMin);
 	location = glGetUniformLocation(m_updateProgram, "LifeMax");
 	glUniform1f(location, m_lifeSpanMax);
+	location = glGetUniformLocation(m_updateProgram, "VelocityMin");
+	glUniform1f(location, m_velocityMin);
+	location = glGetUniformLocation(m_updateProgram, "VelocityMax");
+	glUniform1f(location, m_velocityMax);
 
 	//Set the location of uniforms that will change.
-	m_timeUniformLocation = glGetUniformLocation(m_updateProgram, "EmitterPosition");
+	m_timeUniformLocation = glGetUniformLocation(m_updateProgram, "Time");
 	m_deltaTimeUniformLocation = glGetUniformLocation(m_updateProgram, "DeltaTime");
 	m_emitterPositionUniformLocation = glGetUniformLocation(m_updateProgram, "EmitterPosition");
 }
@@ -136,6 +157,8 @@ void GPUParticleEmitter::CreateDrawProgram()
 		printf("%s\n", infoLog);
 		delete[] infoLog;
 	}
+
+	glUseProgram(m_drawProgram);
 	
 	//Add information that won't change.
 	int location = glGetUniformLocation(m_drawProgram, "SizeStart");
@@ -144,10 +167,12 @@ void GPUParticleEmitter::CreateDrawProgram()
 	glUniform1f(location, m_endSize);
 	location = glGetUniformLocation(m_drawProgram, "ColourStart");
 	glUniform4fv(location, 1, &m_startColour[0]);
+	location = glGetUniformLocation(m_drawProgram, "ColourEnd");
+	glUniform4fv(location, 1, &m_endColour[0]);
 
 	//Set the location of uniforms that will change.
-	m_cameraTransformUniformLocation = glGetUniformLocation(m_updateProgram, "CameraTransform");
-	m_projectionViewUniformLocation = glGetUniformLocation(m_updateProgram, "ProjectionView");
+	m_cameraTransformUniformLocation = glGetUniformLocation(m_drawProgram, "CameraTransform");
+	m_projectionViewUniformLocation = glGetUniformLocation(m_drawProgram, "ProjectionView");
 }
 
 unsigned int GPUParticleEmitter::LoadShader(const std::string& a_path, const unsigned int a_type)
@@ -191,7 +216,7 @@ void GPUParticleEmitter::Draw(const float a_time, const glm::mat4& a_cameraTrans
 	m_lastDrawTime = a_time;
 
 	glUniform1f(m_timeUniformLocation, a_time);
-	glUniform1f(m_deltaTimeUniformLocation, a_time);
+	glUniform1f(m_deltaTimeUniformLocation, deltaTime);
 	glUniform3fv(m_emitterPositionUniformLocation, 1, &m_position[0]);
 
 	//Don't use the rasterizer, go to the buffer instead.

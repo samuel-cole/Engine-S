@@ -14,6 +14,8 @@ uniform float Time;
 uniform float DeltaTime;
 uniform float LifeMin;
 uniform float LifeMax;
+uniform float VelocityMin;
+uniform float VelocityMax;
 uniform vec3 EmitterPosition;
 
 const float INVERSE_MAX_UINT = 1.0f / 4294967295.0f;
@@ -32,16 +34,16 @@ void main()
 {
 	vPosition = Position + Velocity * DeltaTime;
 	vVelocity = Velocity;
-	vLifeTime = LifeTime;
+	vLifeTime = LifeTime + DeltaTime;
 	vLifeSpan = LifeSpan;
 	
-	if (LifeTime > LifeSpan)
+	if (vLifeTime > vLifeSpan)
 	{
 		uint seed = uint(Time * 1000) + uint(gl_VertexID);
 		vVelocity.x = rand(seed++, 2) - 1;
 		vVelocity.y = rand(seed++, 2) - 1;
 		vVelocity.z = rand(seed++, 2) - 1;
-		vVelocity = normalize(vVelocity);
+		vVelocity = (rand(seed++, VelocityMax - VelocityMin) + VelocityMin) * normalize(vVelocity);
 		vPosition = EmitterPosition;
 		vLifeTime = 0;
 		vLifeSpan = rand(seed++, LifeMax - LifeMin) + LifeMin;

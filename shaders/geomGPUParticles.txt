@@ -43,4 +43,5 @@ void main()
 	gl_Position = ProjectionView * vec4( billboard * corners[2] + vPosition[0], 1 );
 	EmitVertex();
 	gl_Position = ProjectionView * vec4( billboard * corners[3] + vPosition[0], 1 );
+	EmitVertex();
 }

@@ -34,6 +34,15 @@ public:
 	void Update(const float a_deltaTime, const glm::mat4& a_cameraTransform);
 	void Draw();
 
+	inline const vec3& GetPosition()
+	{
+		return m_position;
+	}
+	inline void SetPosition(const vec3& a_position)
+	{
+		m_position = a_position;
+	}
+
 private:
 	void Emit();
 

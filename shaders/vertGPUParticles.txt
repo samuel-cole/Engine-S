@@ -9,8 +9,6 @@ out vec3  vPosition;
 out float vLifeTime;
 out float vLifeSpan;
 
-uniform mat4 ProjectionView;
-
 void main()
 {
 	vPosition = Position;

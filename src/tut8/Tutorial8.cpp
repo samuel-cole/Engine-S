@@ -25,6 +25,9 @@ int Tutorial8::Init()
 
 	m_renderer = new Renderer(m_camera, m_debugBar);
 
+	srand(time(0));
+
+	particleDirection = true;
 
 	//std::vector<std::string> textures;
 	//std::vector<std::string> normalMaps;
@@ -42,8 +45,49 @@ int Tutorial8::Init()
 	//
 	//m_renderer->LoadFBX("../data/Enemyelite/EnemyElite.fbx", &textures, &normalMaps, &texchannels, &normchannels);
 
-	m_emitter = m_renderer->CreateEmitter(1000, 500, 0.1f, 2.0f, 1, 5, 1, 0.1f, vec4(0, 0, 1, 1), vec4(1, 1, 1, 1), true);
+	//m_emitter = m_renderer->CreateEmitter(100000,			//Max particles
+	//									  0.1f,				//Lifespan minimum 
+	//									  100.0f,			//Lifespan maximum
+	//									  5.0f,				//Velocity minimum
+	//									  5.0f,				//Velocity maximum
+	//									  1.0f,				//Start size
+	//									  0.1f,				//End size
+	//									  vec4(1, 0, 0, 1), //Start colour
+	//									  vec4(1, 1, 0, 1), //End colour
+	//									  true);			//GPU based
+   
+	//m_emitter = m_renderer->CreateEmitter(10000000,			//Max particles
+	//									  0.1f,				//Lifespan minimum 
+	//									  10.0f,			//Lifespan maximum
+	//									  0.0f,				//Velocity minimum
+	//									  0.1f,				//Velocity maximum
+	//									  0.01f,			//Start size
+	//									  0.01f,			//End size
+	//									  vec4(0.3f, 0.3f, 0.3f, 1), //Start colour
+	//									  vec4(0.2f, 0.2f, 0.2f, 1), //End colour
+	//									  true);			//GPU based
 
+	m_emitter = m_renderer->CreateEmitter(100000,			//Max particles
+										  0.1f,				//Lifespan minimum 
+										  10.0f,			//Lifespan maximum
+										  0.0f,				//Velocity minimum
+										  1.0f,				//Velocity maximum
+										  1.0f,				//Start size
+										  0.1f,				//End size
+										  vec4(1, 0, 0, 1), //Start colour
+										  vec4(1, 1, 0, 1), //End colour
+										  true);			//GPU based
+
+	m_emitter2 = m_renderer->CreateEmitter(100000,			 //Max particles
+										   0.1f,			 //Lifespan minimum 
+										   10.0f,			 //Lifespan maximum
+										   0.0f,			 //Velocity minimum
+										   1.0f,			 //Velocity maximum
+										   1.0f,			 //Start size
+										   0.1f,			 //End size
+										   vec4(0, 0, 1, 1), //Start colour
+										   vec4(0, 1, 1, 1), //End colour
+										   true);			 //GPU based
 
 	m_timer = 0;
 
@@ -52,12 +96,22 @@ int Tutorial8::Init()
 
 void Tutorial8::Update(float a_deltaTime)
 {
-	//m_timer += a_deltaTime;
+	m_timer += a_deltaTime;
 
 	m_camera->Update(a_deltaTime);
 
-	//m_renderer->UpdateAnimation(m_timer);
+	m_renderer->UpdateAnimation(m_timer);
 
+	//m_renderer->SetEmitterPosition(m_emitter, true, m_renderer->GetEmitterPosition(m_emitter, true) + vec3((float)rand() / (float)RAND_MAX, (float)rand() / (float)RAND_MAX, (float)rand() / (float)RAND_MAX) * 2 - vec3(1, 1, 1));
+	//m_renderer->SetEmitterPosition(m_emitter, true, m_renderer->GetEmitterPosition(m_emitter, true) + vec3(1, 0, 0));
+
+	if (m_renderer->GetEmitterPosition(m_emitter, true).y > 40.0f)
+		particleDirection = false;
+	else if (m_renderer->GetEmitterPosition(m_emitter, true).y < -40.0f)
+		particleDirection = true;
+
+	m_renderer->SetEmitterPosition(m_emitter,  true, vec3(cosf(m_timer),				 m_renderer->GetEmitterPosition(m_emitter,  true).y + ((particleDirection) ? 0.1f : -0.1f), sinf(m_timer)));
+	m_renderer->SetEmitterPosition(m_emitter2, true, vec3(cosf(m_timer + 3.1415926535f), m_renderer->GetEmitterPosition(m_emitter2, true).y + ((particleDirection) ? 0.1f : -0.1f), sinf(m_timer + 3.1415926535f)));
 }
 
 void Tutorial8::Draw()
@@ -73,7 +127,7 @@ int Tutorial8::Deinit()
 	m_renderer->CleanupBuffers();
 
 	m_renderer->DestroyEmitter(m_emitter, true);
-	//m_renderer->DestroyEmitter(m_emitter2);
+
 
 	return Application::Deinit();
 }

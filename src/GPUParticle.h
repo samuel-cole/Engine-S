@@ -24,10 +24,19 @@ public:
 	GPUParticleEmitter();
 	GPUParticleEmitter(const unsigned int a_maxParticles, const float a_lifeSpanMin, const float a_lifeSpanMax,
 					   const float a_velocityMin, const float a_velocityMax, const float a_startSize, const float a_endSize,
-					   const const vec4& a_startColour, const vec4& a_endColour);
+					   const vec4& a_startColour, const vec4& a_endColour);
 	~GPUParticleEmitter();
 
 	void Draw(const float a_time, const glm::mat4& a_cameraTransform, const glm::mat4& a_projectionView);
+
+	inline const vec3& GetPosition()
+	{
+		return m_position;
+	}
+	inline void SetPosition(const vec3& a_position)
+	{
+		m_position = a_position;
+	}
 
 private:
 	void SetupBuffer(const unsigned int a_index);

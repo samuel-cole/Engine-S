@@ -22,6 +22,8 @@ private:
 	unsigned int m_emitter2;
 
 	float m_timer;
+
+	bool particleDirection;
 };
 
 #endif
