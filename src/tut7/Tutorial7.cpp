@@ -28,19 +28,25 @@ int Tutorial7::Init()
 
 	std::vector<std::string> textures;
 	std::vector<std::string> normalMaps;
-	std::vector<bool> texchannels;
-	std::vector<bool> normchannels;
+	std::vector<std::string> specularMaps;
+	std::vector<bool> texChannels;
+	std::vector<bool> normChannels;
+	std::vector<bool> specularChannels;
 
 	textures.push_back("../data/Enemyelite/EnemyElite3_D.tga");
 	textures.push_back("../data/Enemyelite/Alienrifle_D.png");
 	normalMaps.push_back("../data/Enemyelite/EnemyElite_N.tga");
 	normalMaps.push_back("../data/Enemyelite/Alienrifle_N.png");
-	texchannels.push_back(false);
-	texchannels.push_back(false);
-	normchannels.push_back(false);
-	normchannels.push_back(false);
+	specularMaps.push_back("../data/Enemyelite/EnemyElite_S.tga");
+	specularMaps.push_back("../data/Enemyelite/Alienrifle_S.tga");
+	texChannels.push_back(false);
+	texChannels.push_back(false);
+	normChannels.push_back(false);
+	normChannels.push_back(false);
+	specularChannels.push_back(false);
+	specularChannels.push_back(false);
 
-	m_renderer->LoadFBX("../data/Enemyelite/EnemyElite.fbx", &textures, &normalMaps, &texchannels, &normchannels);
+	m_renderer->LoadFBX("../data/Enemyelite/EnemyElite.fbx", &textures, &normalMaps, &specularMaps, &texChannels, &normChannels, &specularChannels);
 
 	m_emitter = m_renderer->CreateEmitter(1000, 500, 0.1f, 1.0f, 1, 5, 1, 0.1f, vec4(1, 0, 0, 1), vec4(1, 1, 0, 1), false);
 	m_emitter2 = m_renderer->CreateEmitter(1000, 500, 0.1f, 2.0f, 1, 5, 1, 0.1f, vec4(0, 0, 1, 1), vec4(1, 1, 1, 1), false);

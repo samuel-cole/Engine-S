@@ -24,7 +24,8 @@ enum UniformTypes
 	CAMERA_POS,
 	SPEC_POW,
 	DIFFUSE,
-	NORMAL
+	NORMAL,
+	SPECULAR
 };
 
 struct Vertex
@@ -66,6 +67,8 @@ private:
 	unsigned int m_animatedProgram;
 	//Program used for standard models.
 	unsigned int m_standardProgram;
+	//Program used when a texture and normal map is included with the model, but no specular map.
+	unsigned int m_noSpecularsProgram;
 	//Program used when a texture is included with the model, but no normal map.
 	unsigned int m_noNormalsProgram;
 	//Program used when no normal map or texture is included with the model.
@@ -73,7 +76,7 @@ private:
 	//Program used for particles.
 	unsigned int m_particleProgram;
 	/*Please note that programs for many situations are missing.
-	Some missing ones include a program for animated models without textures and/or normal maps, and a program for models with a normal map but no texture*/
+	Some missing ones include a program for animated models without textures, specular and/or normal maps, and a program for models with a normal map but no texture*/
 
 	//Uniform Locations. Indexed with program id, then uniform type.
 	std::vector<std::vector<unsigned int>> m_uniformLocations;
@@ -91,6 +94,8 @@ private:
 	std::vector<unsigned int> m_textures;
 	//Vector containing all of the normal maps associated with this renderer.
 	std::vector<unsigned int> m_normals;
+	//Vector containing all of the specular maps associated with this renderer.
+	std::vector<unsigned int> m_speculars;
 
 	//Vector containing all of the CPU based particle emitters associated with this renderer.
 	std::vector<ParticleEmitter*> m_emitters;
@@ -132,13 +137,15 @@ public:
 	//Constructor for creating a new renderer.
 	Renderer(Camera* a_camera, TwBar* a_bar);
 
-	//Method for loading in a texture. Pass false into a_channels for RGB, or true for RGBA. This has to be used AFTER loading the thing you want to texture.
-	void LoadTexture(const std::string& a_filePath, const bool a_channels);
-	//Method for loading in a normal map. Pass false into a_channels for RGB, or true for RGBA. This has to be used AFTER loading the thing you want to add a normal map to.
-	void LoadNormalMap(const std::string& a_filePath, const bool a_channels);
+	//Method for loading in a texture. Pass false into a_channels for RGB, or true for RGBA. Pass the index of the model to be textured into a_index.
+	void LoadTexture(const std::string& a_filePath, const bool a_channels, unsigned int a_index);
+	//Method for loading in a normal map. Pass false into a_channels for RGB, or true for RGBA.  Pass the index of the model to have the normal map applied to it into a_index.
+	void LoadNormalMap(const std::string& a_filePath, const bool a_channels, unsigned int a_index);
+	//Method for loading in a specular map. Pass false into a_channels for RGB, or true for RGBA. Pass the index of the model to have the specular map applied to it into a_index.
+	void LoadSpecularMap(const std::string& a_filePath, const bool a_channels, unsigned int a_index);
 	
-	//Generates a grid of vertices on the x-z plane with the specified number of rows and columns.
-	void GenerateGrid(const unsigned int a_rows, const unsigned int a_columns);
+	//Generates a grid of vertices on the x-z plane with the specified number of rows and columns. Returns the index of the grid, for use in texturing.
+	unsigned int GenerateGrid(const unsigned int a_rows, const unsigned int a_columns);
 
 	//Method for creating a particle emitter. Note that the emit rate variable will not be used if gpu-based particles are created.
 	unsigned int CreateEmitter(const unsigned int a_maxParticles, const unsigned int a_emitRate, const float a_lifespanMin, const float a_lifespanMax,
@@ -155,14 +162,15 @@ public:
 	//Method for destroying an emitter- takes in the index of the emitter, and whether it was GPU based or not.
 	void DestroyEmitter(const unsigned int a_emitterIndex, const bool a_gpuBased);
 	
-	//Method for loading an FBX model without textures/normalmaps, or with only one mesh (if it has textures/normalmaps and only one mesh, LoadTexture/LoadNormalMap can be loaded seperately).
-	void LoadFBX(const std::string& a_filePath);
+	//Method for loading an FBX model without textures/normalmaps, or with only one mesh (if it has textures/normalmaps and only one mesh, LoadTexture/LoadNormalMap can be loaded seperately). Returns the index of the model, for use in texturing.
+	unsigned int LoadFBX(const std::string& a_filePath);
 	//Method for loading an FBX model with textures. Use this method instead of calling LoadTexture() seperately for FBX models with multiple meshes. Pass false into the channels for RGB, or true for RGBA.
-	void LoadFBX(const std::string& a_filePath, const std::vector<std::string>* a_texturePaths, const std::vector<std::string>* a_normalMapPaths,
-				 const std::vector<bool>* a_texChannels, const std::vector<bool>* a_normChannels);
+	//Note that this method may not work well if used in conjunction with with the LoadTexture and LoadNormalMap functions- this already loads textures and normal maps, so you don't need to call those functions as well.
+	void LoadFBX(const std::string& a_filePath, const std::vector<std::string>* a_texturePaths, const std::vector<std::string>* a_normalMapPaths, const std::vector<std::string>* a_specularMapPaths,
+				 const std::vector<bool>* a_texChannels, const std::vector<bool>* a_normChannels, const std::vector<bool>* a_specularChannels);
 	
-	//Method for loading an OBJ model.
-	void LoadOBJ(const std::string& a_filePath);
+	//Method for loading an OBJ model. Returns the index of the model, for use in texturing.
+	unsigned int LoadOBJ(const std::string& a_filePath);
 	
 	//Draw method- does all drawing for all models and particles.
 	void Draw();

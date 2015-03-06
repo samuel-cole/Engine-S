@@ -26,9 +26,9 @@ int Tutorial3::Init()
 
 	m_renderer = new Renderer(m_camera, m_debugBar);
 
-	m_renderer->LoadTexture("../data/rock_diffuse.tga", true);
+	unsigned int location = m_renderer->GenerateGrid(10, 10);
 
-	m_renderer->GenerateGrid(10, 10);
+	m_renderer->LoadTexture("../data/rock_diffuse.tga", false, location);
 
 	return 0;
 }

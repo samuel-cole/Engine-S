@@ -20,6 +20,7 @@ private:
 
 	unsigned int m_emitter;
 	unsigned int m_emitter2;
+	unsigned int m_emitter3;
 
 	float m_timer;
 

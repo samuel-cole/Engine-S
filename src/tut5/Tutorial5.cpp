@@ -24,11 +24,11 @@ int Tutorial5::Init()
 
 	m_renderer = new Renderer(m_camera, m_debugBar);
 	
-	m_renderer->GenerateGrid(10, 10);
+	unsigned int grid = m_renderer->GenerateGrid(10, 10);
 
-	m_renderer->LoadTexture("../data/rock_diffuse.tga", false);
+	m_renderer->LoadTexture("../data/rock_diffuse.tga", false, grid);
 
-	m_renderer->LoadNormalMap("../data/rock_normal.tga", false);
+	m_renderer->LoadNormalMap("../data/rock_normal.tga", false, grid);
 
 
 
