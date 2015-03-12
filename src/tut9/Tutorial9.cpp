@@ -33,7 +33,7 @@ int Tutorial9::Init()
 	std::vector<bool> texChannels;
 	std::vector<bool> normChannels;
 	std::vector<bool> specularChannels;
-
+	
 	textures.push_back("../data/Enemyelite/EnemyElite3_D.tga");
 	textures.push_back("../data/Enemyelite/Alienrifle_D.png");
 	normalMaps.push_back("../data/Enemyelite/EnemyElite_N.tga");
@@ -46,11 +46,14 @@ int Tutorial9::Init()
 	normChannels.push_back(false);
 	specularChannels.push_back(false);
 	specularChannels.push_back(false);
-
+	
 	m_renderer->LoadFBX("../data/Enemyelite/EnemyElite.fbx", &textures, &normalMaps, &specularMaps, &texChannels, &normChannels, &specularChannels);
 
 	unsigned int grid = m_renderer->GenerateGrid(1000, 1000);
 	m_renderer->LoadTexture(texture, grid);
+	m_renderer->LoadNormalMap("../data/rock_normal.tga", false, grid);
+
+	m_emitter = m_renderer->CreateEmitter(100000, 0.0f, 500.0f, 5.0f, 5.0f, 1.0f, 1.0f, vec4(1, 0, 0, 1), vec4(1, 1, 0, 1), true);
 
 	m_timer = 0;
 
@@ -62,14 +65,12 @@ void Tutorial9::Update(float a_deltaTime)
 	m_timer += a_deltaTime;
 	m_camera->Update(a_deltaTime);
 	m_renderer->UpdateAnimation(m_timer);
+	m_renderer->UpdateEmitters(a_deltaTime);
 }
 
 void Tutorial9::Draw()
 {
-
-	
 	m_renderer->Draw();
-
 }
 
 int Tutorial9::Deinit()
@@ -77,6 +78,8 @@ int Tutorial9::Deinit()
 	delete m_camera;
 
 	m_renderer->CleanupBuffers();
+
+	m_renderer->DestroyEmitter(m_emitter, true);
 
 	return Application::Deinit();
 }

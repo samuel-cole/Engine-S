@@ -4,6 +4,8 @@
 #include "Application.h"
 
 
+
+class ParticleEmitter;
 class FlyCamera;
 class Renderer;
 
@@ -21,6 +23,8 @@ private:
 
 	FlyCamera* m_camera;
 	Renderer* m_renderer;
+	unsigned int m_emitter;
+
 };
 
 #endif
