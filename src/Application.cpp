@@ -54,8 +54,7 @@ int Application::Init()
 
 	m_previousTime = 0.01f;
 
-	glClearColor( 0.25f, 0.25f, 0.75f, 1);
-	//glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+//	glClearColor( 0.25f, 0.25f, 0.75f, 1);
 
 //	glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 

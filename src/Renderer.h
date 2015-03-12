@@ -81,6 +81,25 @@ private:
 	//Uniform Locations. Indexed with program id, then uniform type.
 	std::vector<std::vector<unsigned int>> m_uniformLocations;
 
+	//Vector containing all of the textures associated with this renderer.
+	std::vector<unsigned int> m_textures;
+	//Vector containing all of the normal maps associated with this renderer.
+	std::vector<unsigned int> m_normals;
+	//Vector containing all of the specular maps associated with this renderer.
+	std::vector<unsigned int> m_speculars;
+
+	//Vector containing all of the framebuffers associated with this renderer.
+	std::vector<unsigned int> m_frameBuffers;
+	//Vector containing the positions and sizes of all of the frame buffers associated with this renderer.
+	std::vector<vec4> m_frameBufferDimensions;
+	//Vector containing the background colours of each frame buffer. 
+	std::vector<vec3> m_frameBufferColours;
+
+	//Vector containing all of the CPU based particle emitters associated with this renderer.
+	std::vector<ParticleEmitter*> m_emitters;
+	//Vector containing all of the GPU based particle emitters associated with this renderer.
+	std::vector<GPUParticleEmitter*> m_gpuEmitters;
+
 	//Camera.
 	Camera* m_camera;
 
@@ -89,18 +108,6 @@ private:
 
 	//Pointer to the FBX file being used. TODO: Change this to work with multiple FBXFiles.
 	FBXFile* m_file;
-	
-	//Vector containing all of the textures associated with this renderer.
-	std::vector<unsigned int> m_textures;
-	//Vector containing all of the normal maps associated with this renderer.
-	std::vector<unsigned int> m_normals;
-	//Vector containing all of the specular maps associated with this renderer.
-	std::vector<unsigned int> m_speculars;
-
-	//Vector containing all of the CPU based particle emitters associated with this renderer.
-	std::vector<ParticleEmitter*> m_emitters;
-	//Vector containing all of the GPU based particle emitters associated with this renderer.
-	std::vector<GPUParticleEmitter*> m_gpuEmitters;
 
 	//The direction that light is coming from.
 	vec3 m_lightDir;
@@ -116,7 +123,7 @@ private:
 
 	//Generates a vertex from the indices passed in, and adds it to the vertex and index list passed in if it doesn't already exist in it. If information isn't provided, pass in an empty string.
 	void GenerateVertFromIndices(const std::string& a_index,				 const std::string& a_normal,			 const std::string& a_uv, 
-								 const std::vector<vec3>* a_positionVec,    const std::vector<vec3>* a_normalVec,  const std::vector<glm::vec2>* a_uvVec,
+								 const std::vector<vec3>* a_positionVec,     const std::vector<vec3>* a_normalVec,  const std::vector<glm::vec2>* a_uvVec,
 								 std::vector<Vertex>* a_vertices,			 std::vector<unsigned int>* a_indices);
 
 	//Converts the current OBJ position/normal index to its positive equivalent.
@@ -130,15 +137,20 @@ private:
 	//Makes all of the necessary OpenGL calls to load the arrays of vertices and indices passed in to OpenGL.
 	void LoadIntoOpenGL(const Vertex *a_verticesArray, const unsigned int a_numOfVertices, const unsigned int *a_indicesArray, const unsigned int a_numOfIndices, const bool a_animated);
 
-	//Creates a new OpenGL program from the shaders passed in.
+	//Creates a new OpenGL program from the shaders passed in. Returns the index of the program.
 	unsigned int CreateProgram(const std::string& a_vertPath, const std::string& a_fragPath);
 
 public:
 	//Constructor for creating a new renderer.
 	Renderer(Camera* a_camera, TwBar* a_bar);
 
+	//Creates a new frame buffer. Returns the index of the frame buffer.
+	unsigned int LoadFrameBuffer(const vec4& a_dimensions, const vec3& a_backgroundColour, unsigned int& a_texture);
+
 	//Method for loading in a texture. Pass false into a_channels for RGB, or true for RGBA. Pass the index of the model to be textured into a_index.
 	void LoadTexture(const std::string& a_filePath, const bool a_channels, unsigned int a_index);
+	//Method for loading in a texture that has already been created (used in conjunction with LoadFrameBuffer to create render targets).
+	void LoadTexture(const unsigned int a_textureIndex, const unsigned int a_index);
 	//Method for loading in a normal map. Pass false into a_channels for RGB, or true for RGBA.  Pass the index of the model to have the normal map applied to it into a_index.
 	void LoadNormalMap(const std::string& a_filePath, const bool a_channels, unsigned int a_index);
 	//Method for loading in a specular map. Pass false into a_channels for RGB, or true for RGBA. Pass the index of the model to have the specular map applied to it into a_index.
