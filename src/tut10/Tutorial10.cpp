@@ -1,0 +1,82 @@
+#include "Tutorial10.h"
+#include "glm\glm.hpp"
+#include "glm\ext.hpp"
+#include "gl_core_4_4.h"
+#include "GLFW\glfw3.h"
+#include "FlyCamera.h"
+#include "Renderer.h"
+#include "glm\glm.hpp"
+
+int Tutorial10::Init()
+{
+	int baseInit = Application::Init();
+	if (baseInit != 0)
+		return baseInit;
+
+	m_camera = new FlyCamera(m_debugBar);
+	m_camera->SetPerspective(glm::pi<float>() * 0.25f, 16.0f / 9.0f, 0.1f, 10000.0f);
+	m_camera->SetLookAt(vec3(10, 10, 10), vec3(0), vec3(0, 1, 0));
+
+
+
+	auto major = ogl_GetMajorVersion();
+	auto minor = ogl_GetMinorVersion();
+	printf("GL: %i.%i\n", major, minor);
+
+	m_renderer = new Renderer(m_camera, m_debugBar);
+
+	std::vector<std::string> textures;
+	std::vector<std::string> normalMaps;
+	std::vector<std::string> specularMaps;
+	std::vector<bool> texChannels;
+	std::vector<bool> normChannels;
+	std::vector<bool> specularChannels;
+
+	textures.push_back("../data/Enemyelite/EnemyElite3_D.tga");
+	textures.push_back("../data/Enemyelite/Alienrifle_D.png");
+	normalMaps.push_back("../data/Enemyelite/EnemyElite_N.tga");
+	normalMaps.push_back("../data/Enemyelite/Alienrifle_N.png");
+	specularMaps.push_back("../data/Enemyelite/EnemyElite_S.tga");
+	specularMaps.push_back("../data/Enemyelite/Alienrifle_S.tga");
+	texChannels.push_back(false);
+	texChannels.push_back(false);
+	normChannels.push_back(false);
+	normChannels.push_back(false);
+	specularChannels.push_back(false);
+	specularChannels.push_back(false);
+
+	m_renderer->LoadFBX("../data/Enemyelite/EnemyElite.fbx", &textures, &normalMaps, &specularMaps, &texChannels, &normChannels, &specularChannels);
+
+	//m_renderer->LoadTexture("../data/Enemyelite/EnemyElite3_D.tga", false, 0);
+	//m_renderer->LoadNormalMap("../data/Enemyelite/EnemyElite3_N.tga", false, 0);
+	//m_renderer->LoadTexture("../data/Enemyelite/Alienrifle_D.png", false, 1);
+	//m_renderer->LoadNormalMap("../data/Enemyelite/Alienrifle_N.png", false, 1);
+	//
+	//m_renderer->LoadFBX("../data/Enemyelite/EnemyElite.fbx");
+
+
+	m_timer = 0;
+
+	return 0;
+}
+
+void Tutorial10::Update(float a_deltaTime)
+{
+	m_timer += a_deltaTime;
+	m_camera->Update(a_deltaTime);
+	m_renderer->UpdateAnimation(m_timer);
+}
+
+void Tutorial10::Draw()
+{
+	m_renderer->Draw();
+}
+
+int Tutorial10::Deinit()
+{
+	delete m_camera;
+
+	m_renderer->CleanupBuffers();
+
+	return Application::Deinit();
+}

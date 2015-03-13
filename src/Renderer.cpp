@@ -31,9 +31,38 @@ Renderer::Renderer(Camera* a_camera, TwBar* a_bar) : m_camera(a_camera), m_bar(a
 	TwAddVarRW(m_bar, "Light Direction", TW_TYPE_DIR3F, &m_lightDir[0], "");
 	TwAddVarRW(m_bar, "Specular Power", TW_TYPE_FLOAT, &m_specPow, "");
 
-	m_frameBuffers.push_back(0);
-	m_frameBufferDimensions.push_back(vec4(0, 0, 1280, 720));
-	m_frameBufferColours.push_back(vec3(0.25f, 0.25f, 0.75f));
+	//m_frameBuffers.push_back(0);
+	//m_frameBufferDimensions.push_back(vec4(0, 0, 1280, 720));
+	//m_frameBufferColours.push_back(vec3(0.25f, 0.25f, 0.75f));
+
+	//Set up the framebuffer that everything will be ran through- used for post processing effects.
+	unsigned int texture;
+	LoadFrameBuffer(vec4(0, 0, 1280, 720), vec3(0.25f, 0.25f, 0.75f), texture);
+
+	//Make a fullscreen quad to render the post processing framebuffer stuff through.
+	glm::vec2 halfTexel = 1.0f / glm::vec2(1280, 720) * 0.5f;
+	Vertex vertexArray[4];
+	vertexArray[0].position = vec4(-1, -1, 0, 1);
+	vertexArray[0].uv = glm::vec2(halfTexel.x, halfTexel.y);
+	vertexArray[1].position = vec4(-1, 1, 0, 1);
+	vertexArray[1].uv = glm::vec2(halfTexel.x, 1 - halfTexel.y);
+	vertexArray[2].position = vec4(1, -1, 0, 1);
+	vertexArray[2].uv = glm::vec2(1 - halfTexel.x, halfTexel.y);
+	vertexArray[3].position = vec4(1, 1, 0, 1);
+	vertexArray[3].uv = glm::vec2(1 - halfTexel.x, 1 - halfTexel.y);
+	
+	unsigned int indexArray[6];
+	indexArray[0] = 0;
+	indexArray[1] = 3;
+	indexArray[2] = 1;
+	indexArray[3] = 0;
+	indexArray[4] = 2;
+	indexArray[5] = 3;
+
+	LoadIntoOpenGL(vertexArray, 4, indexArray, 6, false);
+	LoadTexture(texture, 0);
+
+	m_postProcessingProgram = CreateProgram("../data/shaders/vertPostProcessing.txt", "../data/shaders/fragPostProcessing.txt");
 
 	//glEnable(GL_BLEND);
 	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -128,7 +157,7 @@ unsigned int Renderer::LoadFrameBuffer(const vec4& a_dimensions, const vec3& a_b
 	glBindTexture(GL_TEXTURE_2D, FBOTexture);
 
 	//Specify texture format
-	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, 512, 512);
+	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, a_dimensions.z, a_dimensions.w);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
@@ -139,7 +168,7 @@ unsigned int Renderer::LoadFrameBuffer(const vec4& a_dimensions, const vec3& a_b
 	unsigned int fboDepth;
 	glGenRenderbuffers(1, &fboDepth);
 	glBindRenderbuffer(GL_RENDERBUFFER, fboDepth);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, a_dimensions.z, a_dimensions.w);
 
 	//Attach the depth buffer to the FBO.
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, fboDepth);
@@ -708,7 +737,7 @@ void Renderer::Draw()
 			//I use noTexturesCheck to see if there are any models with no texture. 
 			//I use an int instead of a bool so that I can start at the index of the first found object without either when I start drawing.
 			unsigned int noTexturesCheck = -1;
-			for (unsigned int i = 0; i < m_numOfIndices.size(); ++i)
+			for (unsigned int i = 1; i < m_numOfIndices.size(); ++i)
 			{
 				if (m_textures[i] == -1 && m_normals[i] == -1 && m_speculars[i] == -1)
 				{
@@ -746,7 +775,7 @@ void Renderer::Draw()
 				//I use noTexturesCheck to see if there are any models with no normal map. 
 				//I use an int instead of a bool so that I can start at the index of the first found object without one when I start drawing.
 				unsigned int noNormalsCheck = -1;
-				for (unsigned int i = 0; i < m_numOfIndices.size(); ++i)
+				for (unsigned int i = 1; i < m_numOfIndices.size(); ++i)
 				{
 					if (m_textures[i] != -1 && m_normals[i] == -1 && m_speculars[i] == -1)
 					{
@@ -789,7 +818,7 @@ void Renderer::Draw()
 					//I use noSpecularCheck to see if there are any models with no specular. 
 					//I use an int instead of a bool so that I can start at the index of the first found object without one when I start drawing.
 					unsigned int noSpecularCheck = -1;
-					for (unsigned int i = 0; i < m_numOfIndices.size(); ++i)
+					for (unsigned int i = 1; i < m_numOfIndices.size(); ++i)
 					{
 						if (m_textures[i] != -1 && m_normals[i] != -1 && m_speculars[i] == -1)
 						{
@@ -837,7 +866,7 @@ void Renderer::Draw()
 						//I use notAnimatedCheck to see if there are any models that aren't animated. 
 						//I use an int instead of a bool so that I can start at the index of the first found object that isn't animated when I start drawing.
 						unsigned int notAnimatedCheck = -1;
-						for (unsigned int i = 0; i < m_numOfIndices.size(); ++i)
+						for (unsigned int i = 1; i < m_numOfIndices.size(); ++i)
 						{
 							if (m_textures[i] != -1 && m_normals[i] != -1 && m_animated[i] == false)
 							{
@@ -899,7 +928,7 @@ void Renderer::Draw()
 							glUniform3f((m_uniformLocations[m_animatedProgram])[CAMERA_POS], m_camera->GetWorldTransform()[3].x, m_camera->GetWorldTransform()[3].y, m_camera->GetWorldTransform()[3].z);
 							glUniform1f((m_uniformLocations[m_animatedProgram])[SPEC_POW], m_specPow);
 
-							for (unsigned int i = 0; i < m_numOfIndices.size(); ++i)
+							for (unsigned int i = 1; i < m_numOfIndices.size(); ++i)
 							{
 								if (m_animated[i] == false)
 									continue;
@@ -955,6 +984,19 @@ void Renderer::Draw()
 			}
 		}
 	}
+
+	//Do stuff to render the framebuffer used for post processing.
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glViewport(0, 0, 1280, 720);
+	glClear(GL_DEPTH_BUFFER_BIT);
+	glUseProgram(m_postProcessingProgram);
+	
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, m_textures[0]);
+
+	glBindVertexArray(m_VAO[0]);
+	glDrawElements(GL_TRIANGLES, m_numOfIndices[0], GL_UNSIGNED_INT, nullptr);
+
 }
 
 void Renderer::UpdateAnimation(const float a_time)

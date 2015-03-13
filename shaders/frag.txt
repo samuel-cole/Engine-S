@@ -26,7 +26,7 @@ void main() {
 	float d = max(0, dot( normalize(TBN * N), normalize(LightDir) ) );
 	vec3 E = normalize( CameraPos - vPosition );
 	vec3 R = reflect( -LightDir, vNormal );
-	float s = max( 0, dot ( R, E ) ) * texture(Specular, vTexCoord).xyz;
+	float s = texture(Specular, vTexCoord).xyz * max( 0, dot ( R, E ) );
 	s = pow( s, SpecPow );
 	
 	FragColour = texture( Diffuse, vTexCoord) * vec4(vColour, 1) * vec4( LightColour * d + LightColour * s, 1);

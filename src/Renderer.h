@@ -75,6 +75,8 @@ private:
 	unsigned int m_noTexturesProgram;
 	//Program used for particles.
 	unsigned int m_particleProgram;
+	//Program used for post-processing.
+	unsigned int m_postProcessingProgram;
 	/*Please note that programs for many situations are missing.
 	Some missing ones include a program for animated models without textures, specular and/or normal maps, and a program for models with a normal map but no texture*/
 
