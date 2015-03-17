@@ -21,7 +21,7 @@ vec4 BoxBlur()
 	colour += texture(target, vUV + vec2(-texel.x, -texel.y));
 	colour += texture(target, vUV + vec2(0, texel.y));
 	colour += texture(target, vUV + vec2(0, -texel.y));
-	colour += texture(target, vUV + vec2(texel.x, texel.y));s
+	colour += texture(target, vUV + vec2(texel.x, texel.y));
 	colour += texture(target, vUV + vec2(texel.x, 0));
 	colour += texture(target, vUV + vec2(texel.x, -texel.y));
 

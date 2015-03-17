@@ -102,8 +102,8 @@ private:
 	//Vector containing all of the GPU based particle emitters associated with this renderer.
 	std::vector<GPUParticleEmitter*> m_gpuEmitters;
 
-	//Camera.
-	Camera* m_camera;
+	//Vector containing all of the cameras in the scene. There should be one per framebuffer- each framebuffer will use the camera at the same index as it.
+	std::vector<Camera*> m_cameras;
 
 	//HUD bar used for debugging.
 	TwBar* m_bar;
@@ -119,35 +119,35 @@ private:
 	float m_specPow;
 
 	//Splits an OBJ face(index) line into its components, and uses those components to construct vertices which it pushes into the appropriate vectors.
-	void SplitIndex(const std::string& a_string,		   std::vector<Vertex>* a_vertices,
-					std::vector<unsigned int>* a_indices,  std::vector<vec3>* a_position,
-					std::vector<vec3>* a_normal,		   std::vector<glm::vec2>* a_uv);
+	void SplitIndex(const std::string& a_string,				std::vector<Vertex>* const a_vertices,
+					std::vector<unsigned int>* const a_indices, std::vector<vec3>* const a_position,
+					std::vector<vec3>* const a_normal,		    std::vector<glm::vec2>* const a_uv);
 
 	//Generates a vertex from the indices passed in, and adds it to the vertex and index list passed in if it doesn't already exist in it. If information isn't provided, pass in an empty string.
-	void GenerateVertFromIndices(const std::string& a_index,				 const std::string& a_normal,			 const std::string& a_uv, 
-								 const std::vector<vec3>* a_positionVec,     const std::vector<vec3>* a_normalVec,  const std::vector<glm::vec2>* a_uvVec,
-								 std::vector<Vertex>* a_vertices,			 std::vector<unsigned int>* a_indices);
+	void GenerateVertFromIndices(const std::string& a_index,					const std::string& a_normal,				const std::string& a_uv, 
+								 const std::vector<vec3>* const a_positionVec,  const std::vector<vec3>* const a_normalVec, const std::vector<glm::vec2>* const a_uvVec,
+								 std::vector<Vertex>* const a_vertices,			std::vector<unsigned int>* const a_indices);
 
 	//Converts the current OBJ position/normal index to its positive equivalent.
-	unsigned int PositivifyIndex(const int index, const std::vector<vec3>* a_positionOrNormal);
+	unsigned int PositivifyIndex(const int index, const std::vector<vec3>* const a_positionOrNormal);
 	//Converts the current OBJ uv index to its positive equivalent.
-	unsigned int PositivifyIndex(const int index, const std::vector<glm::vec2>* a_uv);
+	unsigned int PositivifyIndex(const int index, const std::vector<glm::vec2>* const a_uv);
 
 	//Loads in the file passed in as path, then uses it to create a new OpenGL buffer.
 	unsigned int LoadShader(const std::string& a_path, unsigned int a_type);
 
 	//Makes all of the necessary OpenGL calls to load the arrays of vertices and indices passed in to OpenGL.
-	void LoadIntoOpenGL(const Vertex *a_verticesArray, const unsigned int a_numOfVertices, const unsigned int *a_indicesArray, const unsigned int a_numOfIndices, const bool a_animated);
+	void LoadIntoOpenGL(const Vertex* const a_verticesArray, const unsigned int a_numOfVertices, const unsigned int* const a_indicesArray, const unsigned int a_numOfIndices, const bool a_animated);
 
 	//Creates a new OpenGL program from the shaders passed in. Returns the index of the program.
 	unsigned int CreateProgram(const std::string& a_vertPath, const std::string& a_fragPath);
 
 public:
 	//Constructor for creating a new renderer.
-	Renderer(Camera* a_camera, TwBar* a_bar);
+	Renderer(Camera* const a_camera, TwBar* const a_bar);
 
 	//Creates a new frame buffer. Returns the index of the frame buffer.
-	unsigned int LoadFrameBuffer(const vec4& a_dimensions, const vec3& a_backgroundColour, unsigned int& a_texture);
+	unsigned int LoadFrameBuffer(Camera* const a_camera, const vec4& a_dimensions, const vec3& a_backgroundColour, unsigned int& a_texture);
 
 	//Method for loading in a texture. Pass false into a_channels for RGB, or true for RGBA. Pass the index of the model to be textured into a_index.
 	void LoadTexture(const std::string& a_filePath, const bool a_channels, unsigned int a_index);
@@ -180,8 +180,8 @@ public:
 	unsigned int LoadFBX(const std::string& a_filePath);
 	//Method for loading an FBX model with textures. Use this method instead of calling LoadTexture() seperately for FBX models with multiple meshes. Pass false into the channels for RGB, or true for RGBA.
 	//Note that this method may not work well if used in conjunction with with the LoadTexture and LoadNormalMap functions- this already loads textures and normal maps, so you don't need to call those functions as well.
-	void LoadFBX(const std::string& a_filePath, const std::vector<std::string>* a_texturePaths, const std::vector<std::string>* a_normalMapPaths, const std::vector<std::string>* a_specularMapPaths,
-				 const std::vector<bool>* a_texChannels, const std::vector<bool>* a_normChannels, const std::vector<bool>* a_specularChannels);
+	void LoadFBX(const std::string& a_filePath, const std::vector<std::string>* const a_texturePaths, const std::vector<std::string>* const a_normalMapPaths, const std::vector<std::string>* const a_specularMapPaths,
+				 const std::vector<bool>* const a_texChannels, const std::vector<bool>* const a_normChannels, const std::vector<bool>* const a_specularChannels);
 	
 	//Method for loading an OBJ model. Returns the index of the model, for use in texturing.
 	unsigned int LoadOBJ(const std::string& a_filePath);

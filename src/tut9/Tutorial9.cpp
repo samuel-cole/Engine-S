@@ -17,7 +17,6 @@ int Tutorial9::Init()
 	m_camera->SetPerspective(glm::pi<float>() * 0.25f, 16.0f / 9.0f, 0.1f, 10000.0f);
 	m_camera->SetLookAt(vec3(10, 10, 10), vec3(0), vec3(0, 1, 0));
 
-
 	auto major = ogl_GetMajorVersion();
 	auto minor = ogl_GetMinorVersion();
 	printf("GL: %i.%i\n", major, minor);
@@ -25,7 +24,7 @@ int Tutorial9::Init()
 	m_renderer = new Renderer(m_camera, m_debugBar);
 
 	unsigned int texture;
-	m_frameBuffer = m_renderer->LoadFrameBuffer(vec4(0.0f, 0.0f, 512.0f, 512.0f), vec3(1.0f, 1.0f, 1.0f), texture);
+	m_frameBuffer = m_renderer->LoadFrameBuffer(m_camera, vec4(0.0f, 0.0f, 512.0f, 512.0f), vec3(1.0f, 1.0f, 1.0f), texture);
 
 	std::vector<std::string> textures;
 	std::vector<std::string> normalMaps;

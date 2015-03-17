@@ -17,7 +17,7 @@
 using glm::vec3;
 using std::string;
 
-Renderer::Renderer(Camera* a_camera, TwBar* a_bar) : m_camera(a_camera), m_bar(a_bar), m_file(nullptr),
+Renderer::Renderer(Camera* const a_camera, TwBar* const a_bar) : m_bar(a_bar), m_file(nullptr),
 													 m_standardProgram(-1), m_particleProgram(-1), m_noNormalsProgram(-1), m_animatedProgram(-1), m_noTexturesProgram(-1), m_noSpecularsProgram(-1)
 {
 	//Fill the uniform locations vector with empty vcetors. 300 should be more than enough programs.
@@ -37,7 +37,7 @@ Renderer::Renderer(Camera* a_camera, TwBar* a_bar) : m_camera(a_camera), m_bar(a
 
 	//Set up the framebuffer that everything will be ran through- used for post processing effects.
 	unsigned int texture;
-	LoadFrameBuffer(vec4(0, 0, 1280, 720), vec3(0.25f, 0.25f, 0.75f), texture);
+	LoadFrameBuffer(a_camera, vec4(0, 0, 1280, 720), vec3(0.25f, 0.25f, 0.75f), texture);
 
 	//Make a fullscreen quad to render the post processing framebuffer stuff through.
 	glm::vec2 halfTexel = 1.0f / glm::vec2(1280, 720) * 0.5f;
@@ -144,7 +144,7 @@ unsigned int Renderer::LoadShader(const string& a_path, const unsigned int a_typ
 	return shader;
 }
 
-unsigned int Renderer::LoadFrameBuffer(const vec4& a_dimensions, const vec3& a_backgroundColour, unsigned int& a_texture)
+unsigned int Renderer::LoadFrameBuffer(Camera* const a_camera, const vec4& a_dimensions, const vec3& a_backgroundColour, unsigned int& a_texture)
 {
 	//Create frame buffer
 	unsigned int FBO;
@@ -157,7 +157,7 @@ unsigned int Renderer::LoadFrameBuffer(const vec4& a_dimensions, const vec3& a_b
 	glBindTexture(GL_TEXTURE_2D, FBOTexture);
 
 	//Specify texture format
-	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, a_dimensions.z, a_dimensions.w);
+	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, (GLsizei)a_dimensions.z, (GLsizei)a_dimensions.w);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
@@ -168,7 +168,7 @@ unsigned int Renderer::LoadFrameBuffer(const vec4& a_dimensions, const vec3& a_b
 	unsigned int fboDepth;
 	glGenRenderbuffers(1, &fboDepth);
 	glBindRenderbuffer(GL_RENDERBUFFER, fboDepth);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, a_dimensions.z, a_dimensions.w);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, (GLsizei)a_dimensions.z, (GLsizei)a_dimensions.w);
 
 	//Attach the depth buffer to the FBO.
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, fboDepth);
@@ -187,6 +187,8 @@ unsigned int Renderer::LoadFrameBuffer(const vec4& a_dimensions, const vec3& a_b
 	m_frameBuffers.push_back(FBO);
 	m_frameBufferDimensions.push_back(a_dimensions);
 	m_frameBufferColours.push_back(a_backgroundColour);
+	
+	m_cameras.push_back(a_camera);
 
 	a_texture = FBOTexture;
 
@@ -533,8 +535,8 @@ unsigned int Renderer::LoadFBX(const string& a_filePath)
 	return m_numOfIndices.size() - 1;
 }
 
-void Renderer::LoadFBX(const string& a_filePath, const std::vector<string>* a_texturePaths, const std::vector<string>* a_normalMapPaths, const std::vector<string>* a_specularMapPaths,
-					   const std::vector<bool>* a_texChannels, const std::vector<bool>* a_normChannels, const std::vector<bool>* a_specularChannels)
+void Renderer::LoadFBX(const string& a_filePath, const std::vector<string>* const a_texturePaths, const std::vector<string>* const a_normalMapPaths, const std::vector<string>* const a_specularMapPaths,
+					   const std::vector<bool>* const a_texChannels, const std::vector<bool>* const a_normChannels, const std::vector<bool>* const a_specularChannels)
 {
 	if (m_noTexturesProgram == -1)
 	{
@@ -750,11 +752,11 @@ void Renderer::Draw()
 			{
 				glUseProgram(m_noTexturesProgram);
 
-				glUniformMatrix4fv((m_uniformLocations[m_noTexturesProgram])[PROJECTION_VIEW], 1, GL_FALSE, &(m_camera->GetProjectionView()[0][0]));
+				glUniformMatrix4fv((m_uniformLocations[m_noTexturesProgram])[PROJECTION_VIEW], 1, GL_FALSE, &(m_cameras[j]->GetProjectionView()[0][0]));
 
 				glUniform3f((m_uniformLocations[m_noTexturesProgram])[LIGHT_DIR], m_lightDir.x, m_lightDir.y, m_lightDir.z);
 				glUniform3f((m_uniformLocations[m_noTexturesProgram])[LIGHT_COLOUR], m_lightColour.x, m_lightColour.y, m_lightColour.z);
-				glUniform3f((m_uniformLocations[m_noTexturesProgram])[CAMERA_POS], m_camera->GetWorldTransform()[3].x, m_camera->GetWorldTransform()[3].y, m_camera->GetWorldTransform()[3].z);
+				glUniform3f((m_uniformLocations[m_noTexturesProgram])[CAMERA_POS], m_cameras[j]->GetWorldTransform()[3].x, m_cameras[j]->GetWorldTransform()[3].y, m_cameras[j]->GetWorldTransform()[3].z);
 				glUniform1f((m_uniformLocations[m_noTexturesProgram])[SPEC_POW], m_specPow);
 
 				for (unsigned int i = noTexturesCheck; i < m_numOfIndices.size(); ++i)
@@ -788,11 +790,11 @@ void Renderer::Draw()
 				{
 					glUseProgram(m_noNormalsProgram);
 
-					glUniformMatrix4fv((m_uniformLocations[m_noNormalsProgram])[PROJECTION_VIEW], 1, GL_FALSE, &(m_camera->GetProjectionView()[0][0]));
+					glUniformMatrix4fv((m_uniformLocations[m_noNormalsProgram])[PROJECTION_VIEW], 1, GL_FALSE, &(m_cameras[j]->GetProjectionView()[0][0]));
 
 					glUniform3f((m_uniformLocations[m_noNormalsProgram])[LIGHT_DIR], m_lightDir.x, m_lightDir.y, m_lightDir.z);
 					glUniform3f((m_uniformLocations[m_noNormalsProgram])[LIGHT_COLOUR], m_lightColour.x, m_lightColour.y, m_lightColour.z);
-					glUniform3f((m_uniformLocations[m_noNormalsProgram])[CAMERA_POS], m_camera->GetWorldTransform()[3].x, m_camera->GetWorldTransform()[3].y, m_camera->GetWorldTransform()[3].z);
+					glUniform3f((m_uniformLocations[m_noNormalsProgram])[CAMERA_POS], m_cameras[j]->GetWorldTransform()[3].x, m_cameras[j]->GetWorldTransform()[3].y, m_cameras[j]->GetWorldTransform()[3].z);
 					glUniform1f((m_uniformLocations[m_noNormalsProgram])[SPEC_POW], m_specPow);
 
 					for (unsigned int i = noNormalsCheck; i < m_numOfIndices.size(); ++i)
@@ -831,11 +833,11 @@ void Renderer::Draw()
 					{
 						glUseProgram(m_noSpecularsProgram);
 
-						glUniformMatrix4fv((m_uniformLocations[m_noSpecularsProgram])[PROJECTION_VIEW], 1, GL_FALSE, &(m_camera->GetProjectionView()[0][0]));
+						glUniformMatrix4fv((m_uniformLocations[m_noSpecularsProgram])[PROJECTION_VIEW], 1, GL_FALSE, &(m_cameras[j]->GetProjectionView()[0][0]));
 
 						glUniform3f((m_uniformLocations[m_noSpecularsProgram])[LIGHT_DIR], m_lightDir.x, m_lightDir.y, m_lightDir.z);
 						glUniform3f((m_uniformLocations[m_noSpecularsProgram])[LIGHT_COLOUR], m_lightColour.x, m_lightColour.y, m_lightColour.z);
-						glUniform3f((m_uniformLocations[m_noSpecularsProgram])[CAMERA_POS], m_camera->GetWorldTransform()[3].x, m_camera->GetWorldTransform()[3].y, m_camera->GetWorldTransform()[3].z);
+						glUniform3f((m_uniformLocations[m_noSpecularsProgram])[CAMERA_POS], m_cameras[j]->GetWorldTransform()[3].x, m_cameras[j]->GetWorldTransform()[3].y, m_cameras[j]->GetWorldTransform()[3].z);
 						glUniform1f((m_uniformLocations[m_noSpecularsProgram])[SPEC_POW], m_specPow);
 
 						for (unsigned int i = noSpecularCheck; i < m_numOfIndices.size(); ++i)
@@ -879,11 +881,11 @@ void Renderer::Draw()
 						{
 							glUseProgram(m_standardProgram);
 
-							glUniformMatrix4fv((m_uniformLocations[m_standardProgram])[PROJECTION_VIEW], 1, GL_FALSE, &(m_camera->GetProjectionView()[0][0]));
+							glUniformMatrix4fv((m_uniformLocations[m_standardProgram])[PROJECTION_VIEW], 1, GL_FALSE, &(m_cameras[j]->GetProjectionView()[0][0]));
 
 							glUniform3f((m_uniformLocations[m_standardProgram])[LIGHT_DIR], m_lightDir.x, m_lightDir.y, m_lightDir.z);
 							glUniform3f((m_uniformLocations[m_standardProgram])[LIGHT_COLOUR], m_lightColour.x, m_lightColour.y, m_lightColour.z);
-							glUniform3f((m_uniformLocations[m_standardProgram])[CAMERA_POS], m_camera->GetWorldTransform()[3].x, m_camera->GetWorldTransform()[3].y, m_camera->GetWorldTransform()[3].z);
+							glUniform3f((m_uniformLocations[m_standardProgram])[CAMERA_POS], m_cameras[j]->GetWorldTransform()[3].x, m_cameras[j]->GetWorldTransform()[3].y, m_cameras[j]->GetWorldTransform()[3].z);
 							glUniform1f((m_uniformLocations[m_standardProgram])[SPEC_POW], m_specPow);
 
 							for (unsigned int i = notAnimatedCheck; i < m_numOfIndices.size(); ++i)
@@ -919,13 +921,13 @@ void Renderer::Draw()
 
 							glUseProgram(m_animatedProgram);
 
-							glUniformMatrix4fv((m_uniformLocations[m_animatedProgram])[PROJECTION_VIEW], 1, GL_FALSE, &(m_camera->GetProjectionView()[0][0]));
+							glUniformMatrix4fv((m_uniformLocations[m_animatedProgram])[PROJECTION_VIEW], 1, GL_FALSE, &(m_cameras[j]->GetProjectionView()[0][0]));
 							glUniformMatrix4fv((m_uniformLocations[m_animatedProgram])[BONES], skeleton->m_boneCount, GL_FALSE, (float*)skeleton->m_bones);
 							glUniformMatrix4fv((m_uniformLocations[m_animatedProgram])[GLOBAL], 1, GL_FALSE, &(m_file->getMeshByIndex(0)->m_globalTransform[0][0]));
 
 							glUniform3f((m_uniformLocations[m_animatedProgram])[LIGHT_DIR], m_lightDir.x, m_lightDir.y, m_lightDir.z);
 							glUniform3f((m_uniformLocations[m_animatedProgram])[LIGHT_COLOUR], m_lightColour.x, m_lightColour.y, m_lightColour.z);
-							glUniform3f((m_uniformLocations[m_animatedProgram])[CAMERA_POS], m_camera->GetWorldTransform()[3].x, m_camera->GetWorldTransform()[3].y, m_camera->GetWorldTransform()[3].z);
+							glUniform3f((m_uniformLocations[m_animatedProgram])[CAMERA_POS], m_cameras[j]->GetWorldTransform()[3].x, m_cameras[j]->GetWorldTransform()[3].y, m_cameras[j]->GetWorldTransform()[3].z);
 							glUniform1f((m_uniformLocations[m_animatedProgram])[SPEC_POW], m_specPow);
 
 							for (unsigned int i = 1; i < m_numOfIndices.size(); ++i)
@@ -967,7 +969,7 @@ void Renderer::Draw()
 		{
 			glUseProgram(m_particleProgram);
 
-			glUniformMatrix4fv((m_uniformLocations[m_particleProgram])[PROJECTION_VIEW], 1, GL_FALSE, &(m_camera->GetProjectionView()[0][0]));
+			glUniformMatrix4fv((m_uniformLocations[m_particleProgram])[PROJECTION_VIEW], 1, GL_FALSE, &(m_cameras[j]->GetProjectionView()[0][0]));
 
 			for (unsigned int i = 0; i < m_emitters.size(); ++i)
 			{
@@ -980,7 +982,7 @@ void Renderer::Draw()
 		{
 			if (m_gpuEmitters[i] != nullptr)
 			{
-				m_gpuEmitters[i]->Draw((float)glfwGetTime(), m_camera->GetWorldTransform(), m_camera->GetProjectionView());
+				m_gpuEmitters[i]->Draw((float)glfwGetTime(), m_cameras[j]->GetWorldTransform(), m_cameras[j]->GetProjectionView());
 			}
 		}
 	}
@@ -1020,11 +1022,11 @@ void Renderer::UpdateEmitters(const float a_deltaTime)
 	for (unsigned int i = 0; i < m_emitters.size(); ++i)
 	{
 		if (m_emitters[i] != nullptr)
-			m_emitters[i]->Update(a_deltaTime, m_camera->GetWorldTransform());
+			m_emitters[i]->Update(a_deltaTime, m_cameras[0]->GetWorldTransform());
 	}
 }
 
-void Renderer::SplitIndex(const string& a_string, std::vector<Vertex>* a_vertices, std::vector<unsigned int>* a_indices, std::vector<vec3>* a_position, std::vector<vec3>* a_normal, std::vector<glm::vec2>* a_uv)
+void Renderer::SplitIndex(const string& a_string, std::vector<Vertex>* const a_vertices, std::vector<unsigned int>* const a_indices, std::vector<vec3>* const a_position, std::vector<vec3>* a_normal, std::vector<glm::vec2>* a_uv)
 {
 	unsigned int firstSpace = a_string.find(' ', 2);
 	unsigned int secondSpace = a_string.find(' ', firstSpace + 1);
@@ -1105,7 +1107,7 @@ void Renderer::SplitIndex(const string& a_string, std::vector<Vertex>* a_vertice
 	}
 }
 
-unsigned int Renderer::PositivifyIndex(const int index, const std::vector<vec3>* a_position)
+unsigned int Renderer::PositivifyIndex(const int index, const std::vector<vec3>* const a_position)
 {
 	if (index >= 0)
 		return index;
@@ -1113,7 +1115,7 @@ unsigned int Renderer::PositivifyIndex(const int index, const std::vector<vec3>*
 		return a_position->size() + index + 1;
 }
 
-unsigned int Renderer::PositivifyIndex(const int index, const std::vector<glm::vec2>* a_uv)
+unsigned int Renderer::PositivifyIndex(const int index, const std::vector<glm::vec2>* const a_uv)
 {
 	if (index >= 0)
 		return index;
@@ -1122,8 +1124,8 @@ unsigned int Renderer::PositivifyIndex(const int index, const std::vector<glm::v
 }
 
 void Renderer::GenerateVertFromIndices(const std::string& a_index, const std::string& a_normal, const std::string& a_uv,
-									   const std::vector<vec3>* a_positionVec, const std::vector<vec3>* a_normalVec, const std::vector<glm::vec2>* a_uvVec,
-									   std::vector<Vertex>* a_vertices,  std::vector<unsigned int>* a_indices)
+									   const std::vector<vec3>* const a_positionVec, const std::vector<vec3>* const a_normalVec, const std::vector<glm::vec2>* const a_uvVec,
+									   std::vector<Vertex>* const a_vertices,  std::vector<unsigned int>* const a_indices)
 {
 	Vertex vertex;
 	if (a_index != "")
@@ -1153,7 +1155,7 @@ void Renderer::GenerateVertFromIndices(const std::string& a_index, const std::st
 	}
 }
 
-void Renderer::LoadIntoOpenGL(const Vertex *a_verticesArray, const unsigned int a_numOfVertices, const unsigned int *a_indicesArray, const unsigned int a_numOfIndices, const bool a_animated)
+void Renderer::LoadIntoOpenGL(const Vertex* const a_verticesArray, const unsigned int a_numOfVertices, const unsigned int* const a_indicesArray, const unsigned int a_numOfIndices, const bool a_animated)
 {
 	//Add the newest number of indices to the vector.
 	m_numOfIndices.push_back(a_numOfIndices);

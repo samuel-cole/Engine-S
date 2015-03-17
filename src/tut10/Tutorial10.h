@@ -3,8 +3,8 @@
 
 #include "Application.h"
 
-
 class FlyCamera;
+class StaticCamera;
 class Renderer;
 
 class Tutorial10 : public Application
@@ -18,7 +18,10 @@ private:
 	float m_timer;
 
 	FlyCamera* m_camera;
+	StaticCamera* m_staticCamera;
 	Renderer* m_renderer;
+
+	unsigned int m_frameBuffer;
 };
 
 #endif
