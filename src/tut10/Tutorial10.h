@@ -7,6 +7,8 @@ class FlyCamera;
 class StaticCamera;
 class Renderer;
 
+#include <vector>
+
 class Tutorial10 : public Application
 {
 private:
@@ -18,10 +20,8 @@ private:
 	float m_timer;
 
 	FlyCamera* m_camera;
-	StaticCamera* m_staticCamera;
+	std::vector<StaticCamera*> m_staticCamera;
 	Renderer* m_renderer;
-
-	unsigned int m_frameBuffer;
 };
 
 #endif

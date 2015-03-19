@@ -1,30 +1,19 @@
-#include "Tutorial4.h"
-#include "glm\glm.hpp"
+#include "Tutorial11.h"
 #include "glm\ext.hpp"
-#include "gl_core_4_4.h"
-#include "GLFW\glfw3.h"
+#include "StaticCamera.h"
 #include "FlyCamera.h"
 #include "Renderer.h"
-#include "glm\glm.hpp"
 
-#include <thread>
-#include <vector>
 
-int Tutorial4::Init()
+int Tutorial11::Init()
 {
 	int baseInit = Application::Init();
 	if (baseInit != 0)
 		return baseInit;
 
 	m_camera = new FlyCamera(m_debugBar);
-	m_camera->SetPerspective(glm::pi<float>() * 0.25f, 16.0f / 9.0f, 0.1f, 1000.0f);
-	m_camera->SetLookAt(vec3(10, 10, 10), vec3(0), vec3(0, 1, 0));
-
-	
-
-	auto major = ogl_GetMajorVersion();
-	auto minor = ogl_GetMinorVersion();
-	printf("GL: %i.%i\n", major, minor);
+	m_camera->SetPerspective(glm::pi<float>() * 0.25f, 16.0f / 9.0f, 0.1f, 10000.0f);
+	m_camera->SetLookAt(vec3(10, 10, 10), vec3(0, 0, 0), vec3(0, 1, 0));
 
 	m_renderer = new Renderer(m_camera, m_debugBar);
 
@@ -56,32 +45,27 @@ int Tutorial4::Init()
 	//Visor
 	location = m_renderer->LoadOBJ("../data/vanquish/visor.obj");
 	m_renderer->LoadTexture("../data/vanquish/visor.tga", true, location);
-	
+
 	//Ground
-	location = m_renderer->GenerateGrid(10, 10, glm::vec3(0, 0, 0));
+	location = m_renderer->GenerateGrid(100, 100, glm::vec3(-50, 0, -50));
 	m_renderer->LoadTexture("../data/crate.png", false, location);
-	m_renderer->LoadNormalMap("../data/rock_normal.tga", false, location);
-
-	//m_renderer->LoadOBJ("../data/teapot.obj");
-	
-
+	//m_renderer->LoadNormalMap("../data/rock_normal.tga", false, location);
 
 	return 0;
 }
 
-void Tutorial4::Update(float a_deltaTime)
+void Tutorial11::Update(float a_deltaTime)
 {
 	m_camera->Update(a_deltaTime);
 }
 
-void Tutorial4::Draw()
+void Tutorial11::Draw()
 {
 	m_renderer->Draw();
 }
 
-int Tutorial4::Deinit()
+int Tutorial11::Deinit()
 {
-
 	delete m_camera;
 
 	m_renderer->CleanupBuffers();

@@ -1,15 +1,15 @@
-#ifndef TUTORIAL_9
-#define TUTORIAL_9
+#ifndef TUTORIAL_11
+#define TUTORIAL_11
 
 #include "Application.h"
 
-
-
-class ParticleEmitter;
 class FlyCamera;
+class StaticCamera;
 class Renderer;
 
-class Tutorial9 : public Application
+#include <vector>
+
+class Tutorial11 : public Application
 {
 private:
 	int Init();
@@ -20,9 +20,8 @@ private:
 	float m_timer;
 
 	FlyCamera* m_camera;
+	std::vector<StaticCamera*> m_staticCamera;
 	Renderer* m_renderer;
-	unsigned int m_emitter;
-
 };
 
 #endif

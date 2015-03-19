@@ -2,6 +2,7 @@
 #include "gl_core_4_4.h"
 #include "GLFW\glfw3.h"
 #include "InputManager.h"
+#include <time.h>
 
 int Application::Run()
 {
@@ -65,6 +66,8 @@ int Application::Init()
 	InputManager::SetupAntBarCallbacks();
 
 	m_debugBar = TwNewBar("Debug Bar");
+
+	srand(time(0));
 
 	return 0;
 }

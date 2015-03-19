@@ -2,7 +2,7 @@
 
 int main ()
 {
-	Tutorial10* game = new Tutorial10();
+	Tutorial10* game = new Tutorial10;
 
 	return game->Run();
 }

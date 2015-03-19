@@ -25,7 +25,8 @@ enum UniformTypes
 	SPEC_POW,
 	DIFFUSE,
 	NORMAL,
-	SPECULAR
+	SPECULAR,
+	LIGHT_PROJVIEW
 };
 
 struct Vertex
@@ -77,6 +78,8 @@ private:
 	unsigned int m_particleProgram;
 	//Program used for post-processing.
 	unsigned int m_postProcessingProgram;
+	//Program used for generating shadow maps.
+	unsigned int m_shadowGenProgram;
 	/*Please note that programs for many situations are missing.
 	Some missing ones include a program for animated models without textures, specular and/or normal maps, and a program for models with a normal map but no texture*/
 
@@ -96,6 +99,16 @@ private:
 	std::vector<vec4> m_frameBufferDimensions;
 	//Vector containing the background colours of each frame buffer. 
 	std::vector<vec3> m_frameBufferColours;
+
+	//Vector containing indices to the m_frameBuffers vector- shows which framebuffers are used for post processing.
+	//std::vector<unsigned int> m_postProcessingBufferIndices;
+
+	//Handle to the texture that stores the shadow map
+	unsigned int m_shadowMap;
+	//The texture output of the shadow map.
+	unsigned int m_shadowMapTexture;
+	//The projection matrix for lights, used in creating a shadow map.
+	glm::mat4 m_lightProjection;
 
 	//Vector containing all of the CPU based particle emitters associated with this renderer.
 	std::vector<ParticleEmitter*> m_emitters;
@@ -137,17 +150,22 @@ private:
 	unsigned int LoadShader(const std::string& a_path, unsigned int a_type);
 
 	//Makes all of the necessary OpenGL calls to load the arrays of vertices and indices passed in to OpenGL.
-	void LoadIntoOpenGL(const Vertex* const a_verticesArray, const unsigned int a_numOfVertices, const unsigned int* const a_indicesArray, const unsigned int a_numOfIndices, const bool a_animated);
+	void LoadIntoOpenGL(const Vertex * const a_verticesArray, const unsigned int a_numOfVertices, const unsigned int* const a_indicesArray, const unsigned int a_numOfIndices, const bool a_animated);
 
 	//Creates a new OpenGL program from the shaders passed in. Returns the index of the program.
 	unsigned int CreateProgram(const std::string& a_vertPath, const std::string& a_fragPath);
+
+	//Method called by draw for drawing models. Pass in the index of the camera from which the models should be viewed.
+	void DrawModels(unsigned int a_cameraIndex);
 
 public:
 	//Constructor for creating a new renderer.
 	Renderer(Camera* const a_camera, TwBar* const a_bar);
 
-	//Creates a new frame buffer. Returns the index of the frame buffer.
-	unsigned int LoadFrameBuffer(Camera* const a_camera, const vec4& a_dimensions, const vec3& a_backgroundColour, unsigned int& a_texture);
+	//Creates a new frame buffer. Returns the texture that is generated.
+	unsigned int LoadFrameBuffer(Camera* const a_camera, const vec4& a_dimensions, const vec3& a_backgroundColour);
+	//Creates a shadow map.
+	void LoadShadowMap();
 
 	//Method for loading in a texture. Pass false into a_channels for RGB, or true for RGBA. Pass the index of the model to be textured into a_index.
 	void LoadTexture(const std::string& a_filePath, const bool a_channels, unsigned int a_index);
@@ -159,7 +177,7 @@ public:
 	void LoadSpecularMap(const std::string& a_filePath, const bool a_channels, unsigned int a_index);
 	
 	//Generates a grid of vertices on the x-z plane with the specified number of rows and columns. Returns the index of the grid, for use in texturing.
-	unsigned int GenerateGrid(const unsigned int a_rows, const unsigned int a_columns);
+	unsigned int GenerateGrid(const unsigned int a_rows, const unsigned int a_columns, const glm::vec3& a_offset);
 
 	//Method for creating a particle emitter. Note that the emit rate variable will not be used if gpu-based particles are created.
 	unsigned int CreateEmitter(const unsigned int a_maxParticles, const unsigned int a_emitRate, const float a_lifespanMin, const float a_lifespanMax,
@@ -186,7 +204,7 @@ public:
 	//Method for loading an OBJ model. Returns the index of the model, for use in texturing.
 	unsigned int LoadOBJ(const std::string& a_filePath);
 	
-	//Draw method- does all drawing for all models and particles.
+	//Draw method- does all drawing for all models and particles to all framebuffers.
 	void Draw();
 
 	//Updates all animated FBX files to the time specified with a_time. TODO: Allow the time for each animation to be set seperately. To do this currently, you must have multiple renderer instances.
