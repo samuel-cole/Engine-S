@@ -5,17 +5,17 @@ layout(location=1) in vec4 Colour;
 layout(location=2) in vec4 Normal;
 layout(location=3) in vec4 Tangent;
 layout(location=4) in vec2 TexCoord;
-layout(location=5) in vec4 Weights;
-layout(location=6) in vec4 Indices;
 
 out vec3 vPosition;
 out vec3 vColour;
 out vec3 vNormal;
 out vec3 vTangent;
 out vec3 vBiTangent;
+out vec3 vShadowCoord;
 out vec2 vTexCoord;
 
 uniform mat4 ProjectionView;
+uniform mat4 LightMatrix;
 
 void main() {
 	vColour = Colour.xyz;
@@ -24,5 +24,6 @@ void main() {
 	vTangent = Tangent.xyz;
 	vBiTangent = cross(vNormal, vTangent);
 	vTexCoord = TexCoord;
+	vShadowCoord = (LightMatrix * Position).xyz;
 	gl_Position = ProjectionView * Position;
 };

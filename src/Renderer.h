@@ -2,6 +2,7 @@
 #define RENDERER_H
 
 #include "glm\glm.hpp"
+#include "glm\ext.hpp"
 #include <vector>
 #include <map>
 #include "AntTweakBar.h"
@@ -26,11 +27,14 @@ enum UniformTypes
 	DIFFUSE,
 	NORMAL,
 	SPECULAR,
-	LIGHT_PROJVIEW
+	LIGHT_MATRIX,
+	SHADOW_MAP,
+	SHADOW_BIAS
 };
 
 struct Vertex
 {
+	//TODO: change these to vec3s- the fourth variable i just being dropped in the vert shader anyway.
 	//Used in all vertices
 	vec4 position;
 	vec4 colour;
@@ -64,24 +68,20 @@ private:
 	//Vector containing which buffers are animated.
 	std::vector<bool> m_animated;
 
+	//TODO: change these programs to use an enum. 
+	//TODO: add additional programs for different combinations of shadows and maps.
 	//Program used for animated models.
 	unsigned int m_animatedProgram;
 	//Program used for standard models.
 	unsigned int m_standardProgram;
-	//Program used when a texture and normal map is included with the model, but no specular map.
-	unsigned int m_noSpecularsProgram;
-	//Program used when a texture is included with the model, but no normal map.
-	unsigned int m_noNormalsProgram;
-	//Program used when no normal map or texture is included with the model.
-	unsigned int m_noTexturesProgram;
 	//Program used for particles.
 	unsigned int m_particleProgram;
 	//Program used for post-processing.
 	unsigned int m_postProcessingProgram;
 	//Program used for generating shadow maps.
 	unsigned int m_shadowGenProgram;
-	/*Please note that programs for many situations are missing.
-	Some missing ones include a program for animated models without textures, specular and/or normal maps, and a program for models with a normal map but no texture*/
+	//Program used for generating shadow maps for animated objects.
+	unsigned int m_animShadowGenProgram;
 
 	//Uniform Locations. Indexed with program id, then uniform type.
 	std::vector<std::vector<unsigned int>> m_uniformLocations;
@@ -92,6 +92,15 @@ private:
 	std::vector<unsigned int> m_normals;
 	//Vector containing all of the specular maps associated with this renderer.
 	std::vector<unsigned int> m_speculars;
+
+	//Default black diffuse used for objects without a diffuse map.
+	unsigned int m_defaultDiffuse;
+	//Default normal map used for objects without a normal map.
+	unsigned int m_defaultNormal;
+	//Default specular map used for objects without a specular map.
+	unsigned int m_defaultSpec;
+	//Default shadow map used for situations in which a shadow map hasn't been generated.
+	unsigned int m_defaultShadow;
 
 	//Vector containing all of the framebuffers associated with this renderer.
 	std::vector<unsigned int> m_frameBuffers;
@@ -105,10 +114,17 @@ private:
 
 	//Handle to the texture that stores the shadow map
 	unsigned int m_shadowMap;
-	//The texture output of the shadow map.
-	unsigned int m_shadowMapTexture;
+	//Handle to th depth of the shadow map.
+	unsigned int m_shadowDepth;
 	//The projection matrix for lights, used in creating a shadow map.
 	glm::mat4 m_lightProjection;
+	//Matrix used to offset the light matrix while using a shadow map.
+	const glm::mat4 M_TEXTURE_SPACE_OFFSET = glm::mat4(0.5f, 0.0f, 0.0f, 0.0f,
+													   0.0f, 0.5f, 0.0f, 0.0f,
+													   0.0f, 0.0f, 0.5f, 0.0f,
+													   0.5f, 0.5f, 0.5f, 1.0f);
+	//Matrix the projection view matrix of the light used in shadow mapping.
+	glm::mat4 m_lightProjView;
 
 	//Vector containing all of the CPU based particle emitters associated with this renderer.
 	std::vector<ParticleEmitter*> m_emitters;
@@ -149,6 +165,9 @@ private:
 	//Loads in the file passed in as path, then uses it to create a new OpenGL buffer.
 	unsigned int LoadShader(const std::string& a_path, unsigned int a_type);
 
+	//Loads in the texture with the specified path, and returns a handle to that texture.
+	unsigned int LoadTexture(const std::string& a_path);
+
 	//Makes all of the necessary OpenGL calls to load the arrays of vertices and indices passed in to OpenGL.
 	void LoadIntoOpenGL(const Vertex * const a_verticesArray, const unsigned int a_numOfVertices, const unsigned int* const a_indicesArray, const unsigned int a_numOfIndices, const bool a_animated);
 
@@ -156,6 +175,7 @@ private:
 	unsigned int CreateProgram(const std::string& a_vertPath, const std::string& a_fragPath);
 
 	//Method called by draw for drawing models. Pass in the index of the camera from which the models should be viewed.
+	//TODO: Refactor to use a series of enum types to determine which types (normals, textures, shadows, etc.) are turned on.
 	void DrawModels(unsigned int a_cameraIndex);
 
 public:
@@ -164,17 +184,17 @@ public:
 
 	//Creates a new frame buffer. Returns the texture that is generated.
 	unsigned int LoadFrameBuffer(Camera* const a_camera, const vec4& a_dimensions, const vec3& a_backgroundColour);
-	//Creates a shadow map.
-	void LoadShadowMap();
+	//Creates a shadow map. Setting light width to a high number gives a large area that shadows can be created within, while setting it to a low number generates higher quality shadow maps.
+	void GenerateShadowMap(const float a_lightWidth);
 
-	//Method for loading in a texture. Pass false into a_channels for RGB, or true for RGBA. Pass the index of the model to be textured into a_index.
-	void LoadTexture(const std::string& a_filePath, const bool a_channels, unsigned int a_index);
+	//Method for loading in a texture. Pass the index of the model to be textured into a_index.
+	void LoadTexture(const std::string& a_filePath, unsigned int a_index);
 	//Method for loading in a texture that has already been created (used in conjunction with LoadFrameBuffer to create render targets).
 	void LoadTexture(const unsigned int a_textureIndex, const unsigned int a_index);
-	//Method for loading in a normal map. Pass false into a_channels for RGB, or true for RGBA.  Pass the index of the model to have the normal map applied to it into a_index.
-	void LoadNormalMap(const std::string& a_filePath, const bool a_channels, unsigned int a_index);
-	//Method for loading in a specular map. Pass false into a_channels for RGB, or true for RGBA. Pass the index of the model to have the specular map applied to it into a_index.
-	void LoadSpecularMap(const std::string& a_filePath, const bool a_channels, unsigned int a_index);
+	//Method for loading in a normal map. Pass the index of the model to have the normal map applied to it into a_index.
+	void LoadNormalMap(const std::string& a_filePath, unsigned int a_index);
+	//Method for loading in a specular map. Pass the index of the model to have the specular map applied to it into a_index.
+	void LoadSpecularMap(const std::string& a_filePath, unsigned int a_index);
 	
 	//Generates a grid of vertices on the x-z plane with the specified number of rows and columns. Returns the index of the grid, for use in texturing.
 	unsigned int GenerateGrid(const unsigned int a_rows, const unsigned int a_columns, const glm::vec3& a_offset);
@@ -196,10 +216,9 @@ public:
 	
 	//Method for loading an FBX model without textures/normalmaps, or with only one mesh (if it has textures/normalmaps and only one mesh, LoadTexture/LoadNormalMap can be loaded seperately). Returns the index of the model, for use in texturing.
 	unsigned int LoadFBX(const std::string& a_filePath);
-	//Method for loading an FBX model with textures. Use this method instead of calling LoadTexture() seperately for FBX models with multiple meshes. Pass false into the channels for RGB, or true for RGBA.
+	//Method for loading an FBX model with textures. Use this method instead of calling LoadTexture() seperately for FBX models with multiple meshes.
 	//Note that this method may not work well if used in conjunction with with the LoadTexture and LoadNormalMap functions- this already loads textures and normal maps, so you don't need to call those functions as well.
-	void LoadFBX(const std::string& a_filePath, const std::vector<std::string>* const a_texturePaths, const std::vector<std::string>* const a_normalMapPaths, const std::vector<std::string>* const a_specularMapPaths,
-				 const std::vector<bool>* const a_texChannels, const std::vector<bool>* const a_normChannels, const std::vector<bool>* const a_specularChannels);
+	void LoadFBX(const std::string& a_filePath, const std::vector<std::string>* const a_texturePaths, const std::vector<std::string>* const a_normalMapPaths, const std::vector<std::string>* const a_specularMapPaths);
 	
 	//Method for loading an OBJ model. Returns the index of the model, for use in texturing.
 	unsigned int LoadOBJ(const std::string& a_filePath);

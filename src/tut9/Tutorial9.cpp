@@ -38,18 +38,12 @@ int Tutorial9::Init()
 	normalMaps.push_back("../data/Enemyelite/Alienrifle_N.png");
 	specularMaps.push_back("../data/Enemyelite/EnemyElite_S.tga");
 	specularMaps.push_back("../data/Enemyelite/Alienrifle_S.tga");
-	texChannels.push_back(false);
-	texChannels.push_back(false);
-	normChannels.push_back(false);
-	normChannels.push_back(false);
-	specularChannels.push_back(false);
-	specularChannels.push_back(false);
 	
-	m_renderer->LoadFBX("../data/Enemyelite/EnemyElite.fbx", &textures, &normalMaps, &specularMaps, &texChannels, &normChannels, &specularChannels);
+	m_renderer->LoadFBX("../data/Enemyelite/EnemyElite.fbx", &textures, &normalMaps, &specularMaps);
 
 	unsigned int grid = m_renderer->GenerateGrid(1000, 1000, glm::vec3(0, 0, 0));
 	m_renderer->LoadTexture(texture, grid);
-	m_renderer->LoadNormalMap("../data/rock_normal.tga", false, grid);
+	m_renderer->LoadNormalMap("../data/rock_normal.tga", grid);
 
 	m_emitter = m_renderer->CreateEmitter(100000, 0.0f, 500.0f, 5.0f, 5.0f, 1.0f, 1.0f, vec4(1, 0, 0, 1), vec4(1, 1, 0, 1), true);
 

@@ -38,14 +38,8 @@ int Tutorial6::Init()
 	normalMaps.push_back("../data/Enemyelite/Alienrifle_N.png");
 	specularMaps.push_back("../data/Enemyelite/EnemyElite_S.tga");
 	specularMaps.push_back("../data/Enemyelite/Alienrifle_S.tga");
-	texChannels.push_back(false);
-	texChannels.push_back(false);
-	normChannels.push_back(false);
-	normChannels.push_back(false);
-	specularChannels.push_back(false);
-	specularChannels.push_back(false);
 
-	m_renderer->LoadFBX("../data/Enemyelite/EnemyElite.fbx", &textures, &normalMaps, &specularMaps, &texChannels, &normChannels, &specularChannels);
+	m_renderer->LoadFBX("../data/Enemyelite/EnemyElite.fbx", &textures, &normalMaps, &specularMaps);
 
 	//m_renderer->LoadTexture("../data/Enemyelite/EnemyElite3_D.tga", false, 0);
 	//m_renderer->LoadNormalMap("../data/Enemyelite/EnemyElite3_N.tga", false, 0);

@@ -28,7 +28,7 @@ int Tutorial3::Init()
 
 	unsigned int location = m_renderer->GenerateGrid(10, 10, vec3(0, 0, 0));
 
-	m_renderer->LoadTexture("../data/rock_diffuse.tga", false, location);
+	m_renderer->LoadTexture("../data/rock_diffuse.tga", location);
 
 	return 0;
 }

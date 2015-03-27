@@ -6,5 +6,5 @@ uniform mat4 LightMatrix;
 
 void main()
 {
-	gl_Position = ProjectionView * Position;
+	gl_Position = LightMatrix * Position;
 }

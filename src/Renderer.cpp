@@ -17,8 +17,8 @@
 using glm::vec3;
 using std::string;
 
-Renderer::Renderer(Camera* const a_camera, TwBar* const a_bar) : m_bar(a_bar), m_file(nullptr),
-m_standardProgram(-1), m_particleProgram(-1), m_noNormalsProgram(-1), m_animatedProgram(-1), m_noTexturesProgram(-1), m_noSpecularsProgram(-1), m_postProcessingProgram(-1), m_shadowGenProgram(-1)
+Renderer::Renderer(Camera* const a_camera, TwBar* const a_bar) : m_bar(a_bar), m_file(nullptr), m_shadowDepth(-1),
+m_standardProgram(-1), m_particleProgram(-1), m_animatedProgram(-1), m_postProcessingProgram(-1), m_shadowGenProgram(-1), m_animShadowGenProgram(-1)
 {
 	//Fill the uniform locations vector with empty vcetors. 300 should be more than enough programs.
 	m_uniformLocations.assign(300, std::vector<unsigned int>());
@@ -63,6 +63,12 @@ m_standardProgram(-1), m_particleProgram(-1), m_noNormalsProgram(-1), m_animated
 
 	m_postProcessingProgram = CreateProgram("../data/shaders/vertPostProcessing.txt", "../data/shaders/fragPostProcessing.txt");
 
+	m_defaultDiffuse = LoadTexture("../data/default/specular.png");
+	m_defaultNormal = LoadTexture("../data/default/normal.png");
+	m_defaultSpec = LoadTexture("../data/default/specular.png");
+	m_defaultShadow = LoadTexture("../data/default/shadow.png");
+
+
 	//glEnable(GL_BLEND);
 	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
@@ -86,10 +92,10 @@ unsigned int Renderer::CreateProgram(const string& a_vertPath, const string& a_f
 	if (success == GL_FALSE)
 	{
 		int infoLogLength = 0;
-		glGetShaderiv(programID, GL_INFO_LOG_LENGTH, &infoLogLength);
+		glGetProgramiv(programID, GL_INFO_LOG_LENGTH, &infoLogLength);
 		char* infoLog = new char[infoLogLength];
 
-		glGetShaderInfoLog(programID, infoLogLength, 0, infoLog);
+		glGetProgramInfoLog(programID, infoLogLength, 0, infoLog);
 		printf("Error: Failed to link shader program!\n");
 		printf("%s\n", infoLog);
 		delete[] infoLog;
@@ -110,6 +116,8 @@ unsigned int Renderer::CreateProgram(const string& a_vertPath, const string& a_f
 	m_uniformLocations[programID].push_back(glGetUniformLocation(programID, "Normal"));
 	m_uniformLocations[programID].push_back(glGetUniformLocation(programID, "Specular"));
 	m_uniformLocations[programID].push_back(glGetUniformLocation(programID, "LightMatrix"));
+	m_uniformLocations[programID].push_back(glGetUniformLocation(programID, "ShadowMap"));
+	m_uniformLocations[programID].push_back(glGetUniformLocation(programID, "ShadowBias"));
 
 	return programID;
 }
@@ -196,26 +204,32 @@ unsigned int Renderer::LoadFrameBuffer(Camera* const a_camera, const vec4& a_dim
 	return FBOTexture;
 }
 
-void Renderer::LoadShadowMap()
+void Renderer::GenerateShadowMap(const float a_lightWidth)
 {
 	if (m_shadowGenProgram == -1)
-		m_shadowGenProgram = CreateProgram("../data/shaders/vertShadowPath", "../data/shaders/fragShadowPath");
+		m_shadowGenProgram = CreateProgram("../data/shaders/vertShadowMap.txt", "../data/shaders/fragShadowMap.txt");
+
+	if (m_standardProgram == -1)
+		m_standardProgram = CreateProgram("../data/shaders/vert.txt", "../data/shaders/frag.txt");
+
+	if (m_animShadowGenProgram == -1)
+		m_animShadowGenProgram = CreateProgram("../data/shaders/vertShadowMapAnimated.txt", "..data/shaders/fragShadowMap.txt");
 
 	//Generate framebuffer to store shadow map in.
 	glGenFramebuffers(1, &m_shadowMap);
 	glBindFramebuffer(GL_FRAMEBUFFER, m_shadowMap);
 
-	unsigned int depth;
-	glGenTextures(1, &depth);
+	glGenTextures(1, &m_shadowDepth);
+	glBindTexture(GL_TEXTURE_2D, m_shadowDepth);
 
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, 1024, 1024, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, 4096, 4096, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
 	//Capture depth- not colour.
-	glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depth, 0);
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, m_shadowDepth, 0);
 
 	glDrawBuffer(GL_NONE);
 
@@ -225,16 +239,29 @@ void Renderer::LoadShadowMap()
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-	m_lightProjection = glm::ortho<float>(-10, 10, -10, 10, -10, 10);
+	m_lightProjection = glm::ortho<float>(-a_lightWidth, a_lightWidth, -a_lightWidth, a_lightWidth, -a_lightWidth, a_lightWidth);
 }
 
-void Renderer::LoadTexture(const string& a_filePath, const bool a_channels, unsigned int a_index)
+unsigned int Renderer::LoadTexture(const std::string& a_path)
 {
-	if (m_noNormalsProgram == -1)
-	{
-		m_noNormalsProgram = CreateProgram("../data/shaders/vert.txt", "../data/shaders/fragNoNorm.txt");
-	}
+	int imageWidth = 0, imageHeight = 0, imageFormat = 0;
+	unsigned char* data = stbi_load(a_path.c_str(), &imageWidth, &imageHeight, &imageFormat, STBI_default);
 
+	unsigned int textureIndex;
+
+	glGenTextures(1, &textureIndex);
+	glBindTexture(GL_TEXTURE_2D, textureIndex);
+	glTexImage2D(GL_TEXTURE_2D, 0, (imageFormat == 4) ? GL_RGBA : GL_RGB, imageWidth, imageHeight, 0, (imageFormat == 4) ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, data);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+	stbi_image_free(data);
+
+	return textureIndex;
+}
+
+void Renderer::LoadTexture(const string& a_filePath, unsigned int a_index)
+{
 	while (a_index >= m_textures.size())
 	{
 		m_textures.push_back(-1);
@@ -245,7 +272,7 @@ void Renderer::LoadTexture(const string& a_filePath, const bool a_channels, unsi
 
 	glGenTextures(1, &m_textures[a_index]);
 	glBindTexture(GL_TEXTURE_2D, m_textures[a_index]);
-	glTexImage2D(GL_TEXTURE_2D, 0, (a_channels) ? GL_RGBA : GL_RGB, imageWidth, imageHeight, 0, (a_channels) ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, data);
+	glTexImage2D(GL_TEXTURE_2D, 0, (imageFormat == 4) ? GL_RGBA : GL_RGB, imageWidth, imageHeight, 0, (imageFormat == 4) ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, data);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
@@ -254,11 +281,6 @@ void Renderer::LoadTexture(const string& a_filePath, const bool a_channels, unsi
 
 void Renderer::LoadTexture(const unsigned int a_textureIndex, const unsigned int a_index)
 {
-	if (m_noNormalsProgram == -1)
-	{
-		m_noNormalsProgram = CreateProgram("../data/shaders/vert.txt", "../data/shaders/fragNoNorm.txt");
-	}
-
 	while (a_index >= m_textures.size())
 	{
 		m_textures.push_back(-1);
@@ -267,14 +289,8 @@ void Renderer::LoadTexture(const unsigned int a_textureIndex, const unsigned int
 	m_textures[a_index] = a_textureIndex;
 }
 
-void Renderer::LoadNormalMap(const string& a_filePath, const bool a_channels, unsigned int a_index)
+void Renderer::LoadNormalMap(const string& a_filePath, unsigned int a_index)
 {
-	//Check to see if a program that can handle normal maps has been created, and make one if it hasn't.
-	if (m_noSpecularsProgram == -1)
-	{
-		m_noSpecularsProgram = CreateProgram("../data/shaders/vert.txt", "../data/shaders/fragNoSpec.txt");
-	}
-
 	while (a_index >= m_normals.size())
 	{
 		m_normals.push_back(-1);
@@ -285,21 +301,15 @@ void Renderer::LoadNormalMap(const string& a_filePath, const bool a_channels, un
 
 	glGenTextures(1, &m_normals[a_index]);
 	glBindTexture(GL_TEXTURE_2D, m_normals[a_index]);
-	glTexImage2D(GL_TEXTURE_2D, 0, (a_channels) ? GL_RGBA : GL_RGB, imageWidth, imageHeight, 0, (a_channels) ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, data);
+	glTexImage2D(GL_TEXTURE_2D, 0, (imageFormat == 4) ? GL_RGBA : GL_RGB, imageWidth, imageHeight, 0, (imageFormat == 4) ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, data);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
 	stbi_image_free(data);
 }
 
-void Renderer::LoadSpecularMap(const string& a_filePath, const bool a_channels, unsigned int a_index)
+void Renderer::LoadSpecularMap(const string& a_filePath, unsigned int a_index)
 {
-	//Check to see if a program that can handle normal maps has been created, and make one if it hasn't.
-	if (m_standardProgram == -1)
-	{
-		m_standardProgram = CreateProgram("../data/shaders/vert.txt", "../data/shaders/frag.txt");
-	}
-
 	while (a_index >= m_speculars.size())
 	{
 		m_speculars.push_back(-1);
@@ -310,7 +320,7 @@ void Renderer::LoadSpecularMap(const string& a_filePath, const bool a_channels, 
 
 	glGenTextures(1, &m_speculars[a_index]);
 	glBindTexture(GL_TEXTURE_2D, m_speculars[a_index]);
-	glTexImage2D(GL_TEXTURE_2D, 0, (a_channels) ? GL_RGBA : GL_RGB, imageWidth, imageHeight, 0, (a_channels) ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, data);
+	glTexImage2D(GL_TEXTURE_2D, 0, (imageFormat == 4) ? GL_RGBA : GL_RGB, imageWidth, imageHeight, 0, (imageFormat == 4) ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, data);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
@@ -319,10 +329,9 @@ void Renderer::LoadSpecularMap(const string& a_filePath, const bool a_channels, 
 
 unsigned int Renderer::GenerateGrid(const unsigned int a_rows, const unsigned int a_columns, const glm::vec3& a_offset)
 {
-	if (m_noTexturesProgram == -1)
-	{
-		m_noTexturesProgram = CreateProgram("../data/shaders/vert.txt", "../data/shaders/fragNoTex.txt");
-	}
+	if (m_standardProgram == -1)
+		m_standardProgram = CreateProgram("../data/shaders/vert.txt", "../data/shaders/frag.txt");
+	
 
 	unsigned int rows = a_rows + 1;
 	unsigned int columns = a_rows + 1;
@@ -341,7 +350,7 @@ unsigned int Renderer::GenerateGrid(const unsigned int a_rows, const unsigned in
 			aoVertices[r * columns + c].colour = vec4(colour, 1);
 			aoVertices[r * columns + c].normal = glm::vec4(0, 1, 0, 1);
 			aoVertices[r * columns + c].tangent = glm::vec4(1, 0, 0, 1);
-			aoVertices[r * columns + c].uv = glm::vec2((float)r / (rows / rows), (float)c / (columns / columns));
+			aoVertices[r * columns + c].uv = glm::vec2((float)r / 1, (float)c / 1);
 		}
 	}
 	
@@ -512,9 +521,9 @@ void Renderer::DestroyEmitter(const unsigned int a_emitterIndex, const bool a_gp
 
 unsigned int Renderer::LoadFBX(const string& a_filePath)
 {
-	if (m_noTexturesProgram == -1)
+	if (m_standardProgram == -1)
 	{
-		m_noTexturesProgram = CreateProgram("../data/shaders/vert.txt", "../data/shaders/fragNoTex.txt");
+		m_standardProgram = CreateProgram("../data/shaders/vert.txt", "../data/shaders/fragNoTex.txt");
 	}
 
 	m_file = new FBXFile();
@@ -571,12 +580,11 @@ unsigned int Renderer::LoadFBX(const string& a_filePath)
 	return m_numOfIndices.size() - 1;
 }
 
-void Renderer::LoadFBX(const string& a_filePath, const std::vector<string>* const a_texturePaths, const std::vector<string>* const a_normalMapPaths, const std::vector<string>* const a_specularMapPaths,
-					   const std::vector<bool>* const a_texChannels, const std::vector<bool>* const a_normChannels, const std::vector<bool>* const a_specularChannels)
+void Renderer::LoadFBX(const string& a_filePath, const std::vector<string>* const a_texturePaths, const std::vector<string>* const a_normalMapPaths, const std::vector<string>* const a_specularMapPaths)
 {
-	if (m_noTexturesProgram == -1)
+	if (m_standardProgram == -1)
 	{
-		m_noTexturesProgram = CreateProgram("../data/shaders/vert.txt", "../data/shaders/fragNoTex.txt");
+		m_standardProgram = CreateProgram("../data/shaders/vert.txt", "../data/shaders/frag.txt");
 	}
 
 	m_file = new FBXFile();
@@ -612,15 +620,15 @@ void Renderer::LoadFBX(const string& a_filePath, const std::vector<string>* cons
 
 		if (j < a_texturePaths->size())
 		{
-			LoadTexture((*a_texturePaths)[j], (*a_texChannels)[j], m_numOfIndices.size() - 1);
+			LoadTexture((*a_texturePaths)[j], m_numOfIndices.size() - 1);
 		}
 		if (j < a_normalMapPaths->size())
 		{
-			LoadNormalMap((*a_normalMapPaths)[j], (*a_normChannels)[j], m_numOfIndices.size() - 1);
+			LoadNormalMap((*a_normalMapPaths)[j], m_numOfIndices.size() - 1);
 		}
 		if (j < a_specularMapPaths->size())
 		{
-			LoadSpecularMap((*a_specularMapPaths)[j], (*a_specularChannels)[j], m_numOfIndices.size() - 1);
+			LoadSpecularMap((*a_specularMapPaths)[j], m_numOfIndices.size() - 1);
 		}
 	}
 
@@ -649,10 +657,9 @@ void Renderer::LoadFBX(const string& a_filePath, const std::vector<string>* cons
 
 unsigned int Renderer::LoadOBJ(const string& a_filePath)
 {
-	if (m_noTexturesProgram == -1)
-	{
-		m_noTexturesProgram = CreateProgram("../data/shaders/vert.txt", "../data/shaders/fragNoTex.txt");
-	}
+	if (m_standardProgram == -1)
+		m_standardProgram = CreateProgram("../data/shaders/vert.txt", "../data/shaders/frag.txt");
+	
 
 	//Load file
 	std::ifstream file(a_filePath);
@@ -763,19 +770,42 @@ void Renderer::Draw()
 
 	if (m_shadowGenProgram != -1)
 	{
-		//Render to the shadow map.
+		//Render to the shadow map for non-animated objects.
 		glBindFramebuffer(GL_FRAMEBUFFER, m_shadowMap);
-		glViewport(0, 0, 1024, 1024);
+		glViewport(0, 0, 4096, 4096);
 		glClear(GL_DEPTH_BUFFER_BIT);
 
 		glUseProgram(m_shadowGenProgram);
-		mat4 lightProjView = m_lightProjection * glm::lookAt(m_lightDir, vec3(0, 0, 0), vec3(0, 1, 0));
-		glUniformMatrix4fv((m_uniformLocations[m_shadowGenProgram])[LIGHT_PROJVIEW], 1, GL_FALSE, &(lightProjView[0][0]));
+		m_lightProjView = m_lightProjection * glm::lookAt(m_lightDir, vec3(0, 0, 0), vec3(0, 1, 0));
+		glUniformMatrix4fv((m_uniformLocations[m_shadowGenProgram])[LIGHT_MATRIX], 1, GL_FALSE, &(m_lightProjView[0][0]));
 
-		for (unsigned int i = 0; i < m_numOfIndices.size(); ++i)
+		for (unsigned int i = 1; i < m_numOfIndices.size(); ++i)
 		{
-			glBindVertexArray(m_VAO[i]);
-			glDrawElements(GL_TRIANGLES, m_numOfIndices[i], GL_UNSIGNED_INT, nullptr);
+			if (!m_animated[i])
+			{
+				glBindVertexArray(m_VAO[i]);
+				glDrawElements(GL_TRIANGLES, m_numOfIndices[i], GL_UNSIGNED_INT, nullptr);
+			}
+		}
+
+		//Render to the shadow map for animated objects.
+		if (m_animatedProgram != -1)
+		{
+			FBXSkeleton* skeleton = m_file->getSkeletonByIndex(0);
+
+			glUseProgram(m_animShadowGenProgram);
+			glUniformMatrix4fv((m_uniformLocations[m_animShadowGenProgram])[LIGHT_MATRIX], 1, GL_FALSE, &(m_lightProjView[0][0]));
+			glUniformMatrix4fv((m_uniformLocations[m_animShadowGenProgram])[BONES], skeleton->m_boneCount, GL_FALSE, (float*)skeleton->m_bones);
+			glUniformMatrix4fv((m_uniformLocations[m_animShadowGenProgram])[GLOBAL], 1, GL_FALSE, &(m_file->getMeshByIndex(0)->m_globalTransform[0][0]));
+
+			for (unsigned int i = 1; i < m_numOfIndices.size(); ++i)
+			{
+				if (m_animated[i])
+				{
+					glBindVertexArray(m_VAO[i]);
+					glDrawElements(GL_TRIANGLES, m_numOfIndices[i], GL_UNSIGNED_INT, nullptr);
+				}
+			}
 		}
 	}
 
@@ -809,35 +839,59 @@ void Renderer::Draw()
 
 void Renderer::DrawModels(unsigned int j)
 {
-	if (m_noTexturesProgram != -1)
+	if (m_standardProgram != -1)
 	{
-		//I use noTexturesCheck to see if there are any models with no texture. 
-		//I use an int instead of a bool so that I can start at the index of the first found object without either when I start drawing.
-		unsigned int noTexturesCheck = -1;
+		//I use notAnimatedCheck to see if there are any models that aren't animated. 
+		//I use an int instead of a bool so that I can start at the index of the first found object that isn't animated when I start drawing.
+		unsigned int notAnimatedCheck = -1;
 		for (unsigned int i = 1; i < m_numOfIndices.size(); ++i)
 		{
-			if (m_textures[i] == -1 && m_normals[i] == -1 && m_speculars[i] == -1)
+			if (m_animated[i] == false)
 			{
-				noTexturesCheck = i;
+				notAnimatedCheck = i;
 				break;
 			}
 		}
 
-		if (noTexturesCheck != -1)
+		if (notAnimatedCheck != -1)
 		{
-			glUseProgram(m_noTexturesProgram);
+			glUseProgram(m_standardProgram);
 
-			glUniformMatrix4fv((m_uniformLocations[m_noTexturesProgram])[PROJECTION_VIEW], 1, GL_FALSE, &(m_cameras[j]->GetProjectionView()[0][0]));
+			mat4 lightMatrix = M_TEXTURE_SPACE_OFFSET * m_lightProjView;
+			glUniformMatrix4fv((m_uniformLocations[m_standardProgram])[LIGHT_MATRIX], 1, GL_FALSE, &(lightMatrix[0][0]));
+			glUniformMatrix4fv((m_uniformLocations[m_standardProgram])[PROJECTION_VIEW], 1, GL_FALSE, &(m_cameras[j]->GetProjectionView()[0][0]));
 
-			glUniform3f((m_uniformLocations[m_noTexturesProgram])[LIGHT_DIR], m_lightDir.x, m_lightDir.y, m_lightDir.z);
-			glUniform3f((m_uniformLocations[m_noTexturesProgram])[LIGHT_COLOUR], m_lightColour.x, m_lightColour.y, m_lightColour.z);
-			glUniform3f((m_uniformLocations[m_noTexturesProgram])[CAMERA_POS], m_cameras[j]->GetWorldTransform()[3].x, m_cameras[j]->GetWorldTransform()[3].y, m_cameras[j]->GetWorldTransform()[3].z);
-			glUniform1f((m_uniformLocations[m_noTexturesProgram])[SPEC_POW], m_specPow);
 
-			for (unsigned int i = noTexturesCheck; i < m_numOfIndices.size(); ++i)
+			glUniform3f((m_uniformLocations[m_standardProgram])[LIGHT_DIR], m_lightDir.x, m_lightDir.y, m_lightDir.z);
+			glUniform3f((m_uniformLocations[m_standardProgram])[LIGHT_COLOUR], m_lightColour.x, m_lightColour.y, m_lightColour.z);
+			glUniform3f((m_uniformLocations[m_standardProgram])[CAMERA_POS], m_cameras[j]->GetWorldTransform()[3].x, m_cameras[j]->GetWorldTransform()[3].y, m_cameras[j]->GetWorldTransform()[3].z);
+			glUniform1f((m_uniformLocations[m_standardProgram])[SPEC_POW], m_specPow);
+			glUniform1f((m_uniformLocations[m_standardProgram])[SHADOW_BIAS], 0.01f);
+
+			for (unsigned int i = notAnimatedCheck; i < m_numOfIndices.size(); ++i)
 			{
-				if (m_textures[i] != -1 || m_normals[i] != -1 || m_speculars[i] != -1)
+				if (m_animated[i])
 					continue;
+
+				// Set Texture/Diffuse Slot poo
+				glActiveTexture(GL_TEXTURE0);
+				glBindTexture(GL_TEXTURE_2D, ((m_textures[i] == -1) ? m_defaultDiffuse : m_textures[i]));
+				glUniform1i((m_uniformLocations[m_standardProgram])[DIFFUSE], 0);
+
+				// Set Normal Slot
+				glActiveTexture(GL_TEXTURE1);
+				glBindTexture(GL_TEXTURE_2D, ((m_normals[i] == -1) ? m_defaultNormal : m_normals[i]));
+				glUniform1i((m_uniformLocations[m_standardProgram])[NORMAL], 1);
+
+				// Set Specular Slot
+				glActiveTexture(GL_TEXTURE2);
+				glBindTexture(GL_TEXTURE_2D, ((m_speculars[i] == -1) ? m_defaultSpec : m_speculars[i]));
+				glUniform1i((m_uniformLocations[m_standardProgram])[SPECULAR], 2);
+
+				// Set Shadow Map Slot
+				glActiveTexture(GL_TEXTURE3);
+				glBindTexture(GL_TEXTURE_2D, ((m_shadowDepth == -1) ? m_defaultShadow : m_shadowDepth));
+				glUniform1i((m_uniformLocations[m_standardProgram])[SHADOW_MAP], 3);
 
 				//Draw stuff
 				glBindVertexArray(m_VAO[i]);
@@ -845,199 +899,70 @@ void Renderer::DrawModels(unsigned int j)
 			}
 		}
 
-
-		//No normals program can only have a value if a no texture program has already been created, hence this is nested.
-		if (m_noNormalsProgram != -1)
+		if (m_animatedProgram != -1)
 		{
-			//I use noTexturesCheck to see if there are any models with no normal map. 
-			//I use an int instead of a bool so that I can start at the index of the first found object without one when I start drawing.
-			unsigned int noNormalsCheck = -1;
+			//Here I check for animated models to draw.
+			unsigned int animatedCheck = -1;
 			for (unsigned int i = 1; i < m_numOfIndices.size(); ++i)
 			{
-				if (m_textures[i] != -1 && m_normals[i] == -1 && m_speculars[i] == -1)
+				if (m_animated[i] == true)
 				{
-					noNormalsCheck = i;
+					animatedCheck = i;
 					break;
 				}
 			}
 
-			if (noNormalsCheck != -1)
+			if (animatedCheck != -1)
 			{
-				glUseProgram(m_noNormalsProgram);
+				FBXSkeleton* skeleton = m_file->getSkeletonByIndex(0);
 
-				glUniformMatrix4fv((m_uniformLocations[m_noNormalsProgram])[PROJECTION_VIEW], 1, GL_FALSE, &(m_cameras[j]->GetProjectionView()[0][0]));
+				glUseProgram(m_animatedProgram);
 
-				glUniform3f((m_uniformLocations[m_noNormalsProgram])[LIGHT_DIR], m_lightDir.x, m_lightDir.y, m_lightDir.z);
-				glUniform3f((m_uniformLocations[m_noNormalsProgram])[LIGHT_COLOUR], m_lightColour.x, m_lightColour.y, m_lightColour.z);
-				glUniform3f((m_uniformLocations[m_noNormalsProgram])[CAMERA_POS], m_cameras[j]->GetWorldTransform()[3].x, m_cameras[j]->GetWorldTransform()[3].y, m_cameras[j]->GetWorldTransform()[3].z);
-				glUniform1f((m_uniformLocations[m_noNormalsProgram])[SPEC_POW], m_specPow);
+				mat4 lightMatrix = M_TEXTURE_SPACE_OFFSET * m_lightProjView;
+				glUniformMatrix4fv((m_uniformLocations[m_standardProgram])[LIGHT_MATRIX], 1, GL_FALSE, &(lightMatrix[0][0]));
+				glUniformMatrix4fv((m_uniformLocations[m_animatedProgram])[PROJECTION_VIEW], 1, GL_FALSE, &(m_cameras[j]->GetProjectionView()[0][0]));
+				glUniformMatrix4fv((m_uniformLocations[m_animatedProgram])[BONES], skeleton->m_boneCount, GL_FALSE, (float*)skeleton->m_bones);
+				glUniformMatrix4fv((m_uniformLocations[m_animatedProgram])[GLOBAL], 1, GL_FALSE, &(m_file->getMeshByIndex(0)->m_globalTransform[0][0]));
 
-				for (unsigned int i = noNormalsCheck; i < m_numOfIndices.size(); ++i)
+				glUniform3f((m_uniformLocations[m_animatedProgram])[LIGHT_DIR], m_lightDir.x, m_lightDir.y, m_lightDir.z);
+				glUniform3f((m_uniformLocations[m_animatedProgram])[LIGHT_COLOUR], m_lightColour.x, m_lightColour.y, m_lightColour.z);
+				glUniform3f((m_uniformLocations[m_animatedProgram])[CAMERA_POS], m_cameras[j]->GetWorldTransform()[3].x, m_cameras[j]->GetWorldTransform()[3].y, m_cameras[j]->GetWorldTransform()[3].z);
+				glUniform1f((m_uniformLocations[m_animatedProgram])[SPEC_POW], m_specPow);
+				glUniform1f((m_uniformLocations[m_standardProgram])[SHADOW_BIAS], 0.01f);
+
+				for (unsigned int i = animatedCheck; i < m_numOfIndices.size(); ++i)
 				{
-					if (m_textures[i] == -1 || m_normals[i] != -1 || m_speculars[i] != -1)
+					if (!m_animated[i])
 						continue;
 
 					// Set Texture/Diffuse Slot
 					glActiveTexture(GL_TEXTURE0);
-					glBindTexture(GL_TEXTURE_2D, m_textures[i]);
-					glUniform1i((m_uniformLocations[m_noNormalsProgram])[DIFFUSE], 0);
+					glBindTexture(GL_TEXTURE_2D, ((m_textures[i] == -1) ? m_defaultDiffuse : m_textures[i]));
+					glUniform1i((m_uniformLocations[m_standardProgram])[DIFFUSE], 0);
+
+					// Set Normal Slot
+					glActiveTexture(GL_TEXTURE1);
+					glBindTexture(GL_TEXTURE_2D, ((m_normals[i] == -1) ? m_defaultNormal : m_normals[i]));
+					glUniform1i((m_uniformLocations[m_standardProgram])[NORMAL], 1);
+
+					// Set Specular Slot
+					glActiveTexture(GL_TEXTURE2);
+					glBindTexture(GL_TEXTURE_2D, ((m_speculars[i] == -1) ? m_defaultSpec : m_speculars[i]));
+					glUniform1i((m_uniformLocations[m_standardProgram])[SPECULAR], 2);
+
+					// Set Shadow Map Slot
+					glActiveTexture(GL_TEXTURE3);
+					glBindTexture(GL_TEXTURE_2D, ((m_shadowDepth == -1) ? m_defaultShadow : m_shadowDepth));
+					glUniform1i((m_uniformLocations[m_standardProgram])[SHADOW_MAP], 3);
 
 					//Draw stuff
 					glBindVertexArray(m_VAO[i]);
 					glDrawElements(GL_TRIANGLES, m_numOfIndices[i], GL_UNSIGNED_INT, nullptr);
 				}
 			}
-
-
-			//Standard program can only have a value if a no normals program has already been created, hence this is nested.
-			if (m_noSpecularsProgram != -1)
-			{
-				//I use noSpecularCheck to see if there are any models with no specular. 
-				//I use an int instead of a bool so that I can start at the index of the first found object without one when I start drawing.
-				unsigned int noSpecularCheck = -1;
-				for (unsigned int i = 1; i < m_numOfIndices.size(); ++i)
-				{
-					if (m_textures[i] != -1 && m_normals[i] != -1 && m_speculars[i] == -1)
-					{
-						noSpecularCheck = i;
-						break;
-					}
-				}
-
-				if (noSpecularCheck != -1)
-				{
-					glUseProgram(m_noSpecularsProgram);
-
-					glUniformMatrix4fv((m_uniformLocations[m_noSpecularsProgram])[PROJECTION_VIEW], 1, GL_FALSE, &(m_cameras[j]->GetProjectionView()[0][0]));
-
-					glUniform3f((m_uniformLocations[m_noSpecularsProgram])[LIGHT_DIR], m_lightDir.x, m_lightDir.y, m_lightDir.z);
-					glUniform3f((m_uniformLocations[m_noSpecularsProgram])[LIGHT_COLOUR], m_lightColour.x, m_lightColour.y, m_lightColour.z);
-					glUniform3f((m_uniformLocations[m_noSpecularsProgram])[CAMERA_POS], m_cameras[j]->GetWorldTransform()[3].x, m_cameras[j]->GetWorldTransform()[3].y, m_cameras[j]->GetWorldTransform()[3].z);
-					glUniform1f((m_uniformLocations[m_noSpecularsProgram])[SPEC_POW], m_specPow);
-
-					for (unsigned int i = noSpecularCheck; i < m_numOfIndices.size(); ++i)
-					{
-						if (m_textures[i] == -1 || m_normals[i] == -1 || m_speculars[i] != -1)
-							continue;
-
-						// Set Texture/Diffuse Slot
-						glActiveTexture(GL_TEXTURE0);
-						glBindTexture(GL_TEXTURE_2D, m_textures[i]);
-						glUniform1i((m_uniformLocations[m_noSpecularsProgram])[DIFFUSE], 0);
-
-						// Set Normal Slot
-						glActiveTexture(GL_TEXTURE1);
-						glBindTexture(GL_TEXTURE_2D, m_normals[i]);
-						glUniform1i((m_uniformLocations[m_noSpecularsProgram])[NORMAL], 1);
-
-						//Draw stuff
-						glBindVertexArray(m_VAO[i]);
-						glDrawElements(GL_TRIANGLES, m_numOfIndices[i], GL_UNSIGNED_INT, nullptr);
-					}
-				}
-
-
-				//Standard program can only have a value if a no normals program has already been created, hence this is nested.
-				if (m_standardProgram != -1)
-				{
-					//I use notAnimatedCheck to see if there are any models that aren't animated. 
-					//I use an int instead of a bool so that I can start at the index of the first found object that isn't animated when I start drawing.
-					unsigned int notAnimatedCheck = -1;
-					for (unsigned int i = 1; i < m_numOfIndices.size(); ++i)
-					{
-						if (m_textures[i] != -1 && m_normals[i] != -1 && m_animated[i] == false)
-						{
-							notAnimatedCheck = i;
-							break;
-						}
-					}
-
-					if (notAnimatedCheck != -1)
-					{
-						glUseProgram(m_standardProgram);
-
-						glUniformMatrix4fv((m_uniformLocations[m_standardProgram])[PROJECTION_VIEW], 1, GL_FALSE, &(m_cameras[j]->GetProjectionView()[0][0]));
-
-						glUniform3f((m_uniformLocations[m_standardProgram])[LIGHT_DIR], m_lightDir.x, m_lightDir.y, m_lightDir.z);
-						glUniform3f((m_uniformLocations[m_standardProgram])[LIGHT_COLOUR], m_lightColour.x, m_lightColour.y, m_lightColour.z);
-						glUniform3f((m_uniformLocations[m_standardProgram])[CAMERA_POS], m_cameras[j]->GetWorldTransform()[3].x, m_cameras[j]->GetWorldTransform()[3].y, m_cameras[j]->GetWorldTransform()[3].z);
-						glUniform1f((m_uniformLocations[m_standardProgram])[SPEC_POW], m_specPow);
-
-						for (unsigned int i = notAnimatedCheck; i < m_numOfIndices.size(); ++i)
-						{
-							if (m_textures[i] == -1 || m_normals[i] == -1 || m_speculars[i] == 1 || m_animated[i])
-								continue;
-
-							// Set Texture/Diffuse Slot
-							glActiveTexture(GL_TEXTURE0);
-							glBindTexture(GL_TEXTURE_2D, m_textures[i]);
-							glUniform1i((m_uniformLocations[m_standardProgram])[DIFFUSE], 0);
-
-							// Set Normal Slot
-							glActiveTexture(GL_TEXTURE1);
-							glBindTexture(GL_TEXTURE_2D, m_normals[i]);
-							glUniform1i((m_uniformLocations[m_standardProgram])[NORMAL], 1);
-
-							// Set Specular Slot
-							glActiveTexture(GL_TEXTURE1);
-							glBindTexture(GL_TEXTURE_2D, m_speculars[i]);
-							glUniform1i((m_uniformLocations[m_standardProgram])[SPECULAR], 1);
-
-							//Draw stuff
-							glBindVertexArray(m_VAO[i]);
-							glDrawElements(GL_TRIANGLES, m_numOfIndices[i], GL_UNSIGNED_INT, nullptr);
-						}
-					}
-
-					//Animated program can only have a value if a standard program has already been created, hence this is nested.
-					if (m_animatedProgram != -1)
-					{
-						FBXSkeleton* skeleton = m_file->getSkeletonByIndex(0);
-
-						glUseProgram(m_animatedProgram);
-
-						glUniformMatrix4fv((m_uniformLocations[m_animatedProgram])[PROJECTION_VIEW], 1, GL_FALSE, &(m_cameras[j]->GetProjectionView()[0][0]));
-						glUniformMatrix4fv((m_uniformLocations[m_animatedProgram])[BONES], skeleton->m_boneCount, GL_FALSE, (float*)skeleton->m_bones);
-						glUniformMatrix4fv((m_uniformLocations[m_animatedProgram])[GLOBAL], 1, GL_FALSE, &(m_file->getMeshByIndex(0)->m_globalTransform[0][0]));
-
-						glUniform3f((m_uniformLocations[m_animatedProgram])[LIGHT_DIR], m_lightDir.x, m_lightDir.y, m_lightDir.z);
-						glUniform3f((m_uniformLocations[m_animatedProgram])[LIGHT_COLOUR], m_lightColour.x, m_lightColour.y, m_lightColour.z);
-						glUniform3f((m_uniformLocations[m_animatedProgram])[CAMERA_POS], m_cameras[j]->GetWorldTransform()[3].x, m_cameras[j]->GetWorldTransform()[3].y, m_cameras[j]->GetWorldTransform()[3].z);
-						glUniform1f((m_uniformLocations[m_animatedProgram])[SPEC_POW], m_specPow);
-
-						for (unsigned int i = 1; i < m_numOfIndices.size(); ++i)
-						{
-							if (m_animated[i] == false)
-								continue;
-
-							//At the moment, only textured models with normal maps and specular maps are supported for animation, so continue if this isn't the case.
-							if (m_textures[i] == -1 || m_normals[i] == -1 || m_speculars[i] == -1 || !m_animated[i])
-								continue;
-
-							// Set Texture/Diffuse Slot
-							glActiveTexture(GL_TEXTURE0);
-							glBindTexture(GL_TEXTURE_2D, m_textures[i]);
-							glUniform1i((m_uniformLocations[m_animatedProgram])[DIFFUSE], 0);
-
-							// Set Normal Slot
-							glActiveTexture(GL_TEXTURE1);
-							glBindTexture(GL_TEXTURE_2D, m_normals[i]);
-							glUniform1i((m_uniformLocations[m_animatedProgram])[NORMAL], 1);
-
-							//Set Specular Slot
-							glActiveTexture(GL_TEXTURE2);
-							glBindTexture(GL_TEXTURE_2D, m_speculars[i]);
-							glUniform1i((m_uniformLocations[m_animatedProgram])[SPECULAR], 1);
-
-							//Draw stuff
-							glBindVertexArray(m_VAO[i]);
-							glDrawElements(GL_TRIANGLES, m_numOfIndices[i], GL_UNSIGNED_INT, nullptr);
-						}
-					}
-				}
-			}
 		}
 	}
+		
 
 	//Particles are seperate from the huge mess of nested 'if' statements above because they are not dependant on any types of models being created.
 	if (m_particleProgram != -1)
@@ -1291,27 +1216,17 @@ void Renderer::CleanupBuffers()
 		glDeleteBuffers(1, &m_IBO[i]);
 	}
 
-	if (m_noTexturesProgram != -1)
-	{
-		glDeleteProgram(m_noTexturesProgram);
-		if (m_noNormalsProgram != -1)
-		{
-			glDeleteProgram(m_noNormalsProgram);
-			if (m_noSpecularsProgram != -1)
-			{
-				glDeleteProgram(m_noSpecularsProgram);
-				if (m_standardProgram != -1)
-				{
-					glDeleteProgram(m_standardProgram);
-					if (m_animatedProgram != -1)
-					{
-						glDeleteProgram(m_animatedProgram);
-					}
-				}
-			}
-		}
-	}
 
+	if (m_standardProgram != -1)
+		glDeleteProgram(m_standardProgram);
+	if (m_animatedProgram != -1)
+		glDeleteProgram(m_animatedProgram);
 	if (m_particleProgram != -1)
 		glDeleteProgram(m_particleProgram);
+	if (m_postProcessingProgram != -1)
+		glDeleteProgram(m_postProcessingProgram);
+	if (m_shadowGenProgram != -1)
+		glDeleteProgram(m_shadowGenProgram);
+	if (m_animShadowGenProgram != -1)
+		glDeleteProgram(m_animShadowGenProgram);
 }

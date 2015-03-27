@@ -26,9 +26,9 @@ int Tutorial5::Init()
 	
 	unsigned int grid = m_renderer->GenerateGrid(10, 10, glm::vec3(0, 0, 0));
 
-	m_renderer->LoadTexture("../data/rock_diffuse.tga", false, grid);
+	m_renderer->LoadTexture("../data/rock_diffuse.tga", grid);
 
-	m_renderer->LoadNormalMap("../data/rock_normal.tga", false, grid);
+	m_renderer->LoadNormalMap("../data/rock_normal.tga", grid);
 
 
 
