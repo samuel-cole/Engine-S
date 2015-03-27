@@ -26,10 +26,10 @@ void main() {
 	mat3 TBN = mat3(normalize(vTangent), normalize(vBiTangent), normalize(vNormal));
 	vec3 N = texture(Normal, vTexCoord).xyz * 2 - 1;
 
-	float d = max(0, dot( normalize(TBN * N), normalize(LightDir) ) );
+	float d = max(0, dot( normalize(TBN * N), -normalize(LightDir) ) );
 	vec3 E = normalize( CameraPos - vPosition );
-	vec3 R = reflect( -LightDir, vNormal );
-	float s = texture(Specular, vTexCoord).xyz * max( 0, dot ( R, E ) );
+	vec3 R = reflect( LightDir, vNormal );
+	float s = texture(Specular, vTexCoord).xyz * max( 0, dot ( R, -E ) );
 	s = pow( s, SpecPow );
 	
 	if (texture(ShadowMap, vShadowCoord.xy).r < vShadowCoord.z - ShadowBias) {

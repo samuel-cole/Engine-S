@@ -349,7 +349,7 @@ unsigned int Renderer::GenerateGrid(const unsigned int a_rows, const unsigned in
 	
 			aoVertices[r * columns + c].colour = vec4(colour, 1);
 			aoVertices[r * columns + c].normal = glm::vec4(0, 1, 0, 1);
-			aoVertices[r * columns + c].tangent = glm::vec4(1, 0, 0, 1);
+			aoVertices[r * columns + c].tangent = glm::vec4(1, 0, 1, 1);
 			aoVertices[r * columns + c].uv = glm::vec2((float)r / 1, (float)c / 1);
 		}
 	}
@@ -776,7 +776,7 @@ void Renderer::Draw()
 		glClear(GL_DEPTH_BUFFER_BIT);
 
 		glUseProgram(m_shadowGenProgram);
-		m_lightProjView = m_lightProjection * glm::lookAt(m_lightDir, vec3(0, 0, 0), vec3(0, 1, 0));
+		m_lightProjView = m_lightProjection * glm::lookAt(-m_lightDir, vec3(0, 0, 0), vec3(0, 1, 0));
 		glUniformMatrix4fv((m_uniformLocations[m_shadowGenProgram])[LIGHT_MATRIX], 1, GL_FALSE, &(m_lightProjView[0][0]));
 
 		for (unsigned int i = 1; i < m_numOfIndices.size(); ++i)
@@ -873,7 +873,7 @@ void Renderer::DrawModels(unsigned int j)
 				if (m_animated[i])
 					continue;
 
-				// Set Texture/Diffuse Slot poo
+				// Set Texture/Diffuse Slot
 				glActiveTexture(GL_TEXTURE0);
 				glBindTexture(GL_TEXTURE_2D, ((m_textures[i] == -1) ? m_defaultDiffuse : m_textures[i]));
 				glUniform1i((m_uniformLocations[m_standardProgram])[DIFFUSE], 0);
@@ -1216,6 +1216,11 @@ void Renderer::CleanupBuffers()
 		glDeleteBuffers(1, &m_IBO[i]);
 	}
 
+	for (unsigned int i = 0; i < m_frameBuffers.size(); ++i)
+	{
+		glDeleteFramebuffers(1, &m_frameBuffers[i]);
+	}
+
 
 	if (m_standardProgram != -1)
 		glDeleteProgram(m_standardProgram);
@@ -1229,4 +1234,13 @@ void Renderer::CleanupBuffers()
 		glDeleteProgram(m_shadowGenProgram);
 	if (m_animShadowGenProgram != -1)
 		glDeleteProgram(m_animShadowGenProgram);
+
+	if (m_shadowDepth != -1)
+		glDeleteTextures(1, &m_shadowDepth);
+
+	for (int i = 0; i < m_textures.size(); ++i)
+	{
+		if (m_textures[i] != -1)
+			glDeleteTextures(1, &m_textures[i]);
+	}
 }

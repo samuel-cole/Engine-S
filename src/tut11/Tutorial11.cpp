@@ -21,43 +21,43 @@ int Tutorial11::Init()
 	unsigned int location = m_renderer->LoadOBJ("../data/vanquish/lower.obj");
 	m_renderer->LoadTexture("../data/vanquish/lower_d.tga", location);
 	m_renderer->LoadNormalMap("../data/vanquish/lower_n.tga", location);
-	m_renderer->LoadSpecularMap("../data/Enemyelite/EnemyElite_S.tga", location);
+	//m_renderer->LoadSpecularMap("../data/Enemyelite/EnemyElite_S.tga", location);
 
-	//Upper suit poo
+	//Upper suit
 	location = m_renderer->LoadOBJ("../data/vanquish/upper.obj");
 	m_renderer->LoadTexture("../data/vanquish/upper_d.tga", location);
 	m_renderer->LoadNormalMap("../data/vanquish/upper_n.tga", location);
-	m_renderer->LoadSpecularMap("../data/Enemyelite/EnemyElite_S.tga", location);
+	//m_renderer->LoadSpecularMap("../data/Enemyelite/EnemyElite_S.tga", location);
 	
 	//Inner suit
 	location = m_renderer->LoadOBJ("../data/vanquish/inner.obj");
 	m_renderer->LoadTexture("../data/vanquish/inner_d.tga", location);
 	m_renderer->LoadNormalMap("../data/vanquish/inner_n.tga", location);
-	m_renderer->LoadSpecularMap("../data/Enemyelite/EnemyElite_S.tga", location);
+	//m_renderer->LoadSpecularMap("../data/Enemyelite/EnemyElite_S.tga", location);
 	
 	//Hand
 	location = m_renderer->LoadOBJ("../data/vanquish/hand.obj");
 	m_renderer->LoadTexture("../data/vanquish/inner_d.tga", location);
 	m_renderer->LoadNormalMap("../data/vanquish/inner_n.tga", location);
-	m_renderer->LoadSpecularMap("../data/Enemyelite/EnemyElite_S.tga", location);
+	//m_renderer->LoadSpecularMap("../data/Enemyelite/EnemyElite_S.tga", location);
 	
 	//Buttons
 	location = m_renderer->LoadOBJ("../data/vanquish/buttons.obj");
 	m_renderer->LoadTexture("../data/vanquish/upper_d.tga", location);
 	m_renderer->LoadNormalMap("../data/vanquish/upper_n.tga", location);
-	m_renderer->LoadSpecularMap("../data/Enemyelite/EnemyElite_S.tga", location);
+	//m_renderer->LoadSpecularMap("../data/Enemyelite/EnemyElite_S.tga", location);
 	
 	//Visor
 	location = m_renderer->LoadOBJ("../data/vanquish/visor.obj");
 	m_renderer->LoadTexture("../data/vanquish/visor.tga", location);
-	m_renderer->LoadNormalMap("../data/rock_normal.tga", location);
-	m_renderer->LoadSpecularMap("../data/Enemyelite/EnemyElite_S.tga", location);
+	//m_renderer->LoadNormalMap("../data/rock_normal.tga", location);
+	//m_renderer->LoadSpecularMap("../data/Enemyelite/EnemyElite_S.tga", location);
 	
 	//Ground
 	location = m_renderer->GenerateGrid(100, 100, glm::vec3(-50, 0, -50));
 	m_renderer->LoadTexture("../data/crate.png", location);
-	m_renderer->LoadNormalMap("../data/rock_normal.tga", location);
-	m_renderer->LoadSpecularMap("../data/Enemyelite/EnemyElite_S.tga", location);
+	//m_renderer->LoadNormalMap("../data/rock_normal.tga", location);
+	//m_renderer->LoadSpecularMap("../data/Enemyelite/EnemyElite_S.tga", location);
 	
 	std::vector<std::string> textures;
 	std::vector<std::string> normalMaps;
@@ -75,10 +75,8 @@ int Tutorial11::Init()
 	
 	m_renderer->LoadFBX("../data/Enemyelite/EnemyElite.fbx", &textures, &normalMaps, &specularMaps);
 	
-	unsigned int ground = m_renderer->GenerateGrid(100, 100, glm::vec3(-50, 0, -50));
-	m_renderer->LoadTexture("../data/crate.png", ground);
-	m_renderer->LoadSpecularMap("../data/Enemyelite/EnemyElite_S.tga", ground);
-	m_renderer->LoadNormalMap("../data/rock_normal.tga", ground);
+	//m_renderer->LoadFBX("../data/stanford/cube.fbx", &textures, &normalMaps, &specularMaps);
+
 	
 	m_renderer->GenerateShadowMap(50.0f);
 	
