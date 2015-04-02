@@ -17,13 +17,17 @@ out vec2 vTexCoord;
 uniform mat4 ProjectionView;
 uniform mat4 LightMatrix;
 
+uniform sampler2D PerlinMap;
+
 void main() {
 	vColour = Colour.xyz;
 	vNormal = Normal.xyz;
 	vPosition = Position.xyz;
+	//vPosition.y += texture(PerlinMap, TexCoord).r;
+	vPosition += vNormal * texture(PerlinMap, TexCoord).r;
 	vTangent = Tangent.xyz;
 	vBiTangent = cross(vNormal, vTangent);
 	vTexCoord = TexCoord;
 	vShadowCoord = (LightMatrix * Position).xyz;
-	gl_Position = ProjectionView * Position;
+	gl_Position = ProjectionView * vec4(vPosition, 1);
 };

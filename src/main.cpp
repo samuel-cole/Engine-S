@@ -1,8 +1,8 @@
-#include "tut11\Tutorial11.h"
+#include "tut12\Tutorial12.h"
 
 int main ()
 {
-	Tutorial11* game = new Tutorial11;
+	Tutorial12* game = new Tutorial12;
 
 	return game->Run();
 }

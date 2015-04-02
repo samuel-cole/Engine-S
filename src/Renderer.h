@@ -29,7 +29,8 @@ enum UniformTypes
 	SPECULAR,
 	LIGHT_MATRIX,
 	SHADOW_MAP,
-	SHADOW_BIAS
+	SHADOW_BIAS,
+	PERLIN_MAP
 };
 
 struct Vertex
@@ -92,6 +93,8 @@ private:
 	std::vector<unsigned int> m_normals;
 	//Vector containing all of the specular maps associated with this renderer.
 	std::vector<unsigned int> m_speculars;
+	//Vector containing all of the perlin maps associated with this renderer.
+	std::vector<unsigned int> m_perlins;
 
 	//Default black diffuse used for objects without a diffuse map.
 	unsigned int m_defaultDiffuse;
@@ -101,6 +104,8 @@ private:
 	unsigned int m_defaultSpec;
 	//Default shadow map used for situations in which a shadow map hasn't been generated.
 	unsigned int m_defaultShadow;
+	//Default perlin map used for situations in which a perlin map hasn't been generated.
+	unsigned int m_defaultPerlin;
 
 	//Vector containing all of the framebuffers associated with this renderer.
 	std::vector<unsigned int> m_frameBuffers;
@@ -114,9 +119,10 @@ private:
 
 	//Handle to the texture that stores the shadow map
 	unsigned int m_shadowMap;
-	//Handle to th depth of the shadow map.
+	//Handle to the depth of the shadow map.
 	unsigned int m_shadowDepth;
 	//The projection matrix for lights, used in creating a shadow map.
+	//TODO: change this to update as the camera changes position- should be smaller as the camera gets closer to the plane being illuminated.
 	glm::mat4 m_lightProjection;
 	//Matrix used to offset the light matrix while using a shadow map.
 	const glm::mat4 M_TEXTURE_SPACE_OFFSET = glm::mat4(0.5f, 0.0f, 0.0f, 0.0f,
@@ -186,6 +192,9 @@ public:
 	unsigned int LoadFrameBuffer(Camera* const a_camera, const vec4& a_dimensions, const vec3& a_backgroundColour);
 	//Creates a shadow map. Setting light width to a high number gives a large area that shadows can be created within, while setting it to a low number generates higher quality shadow maps.
 	void GenerateShadowMap(const float a_lightWidth);
+	//Generates a perlin noise map. Pass the index of the model to be perlined into a_index. Note that perlin maps are currently not supported for animated models. a_octaves determines how bumpy the map will be.
+	//TODO: Generate normals for the perlin map.
+	void GeneratePerlinNoiseMap(const unsigned int a_rows, const unsigned int a_columns, unsigned int a_octaves, float a_amplitude, float a_persistence, unsigned int a_index);
 
 	//Method for loading in a texture. Pass the index of the model to be textured into a_index.
 	void LoadTexture(const std::string& a_filePath, unsigned int a_index);
@@ -214,6 +223,7 @@ public:
 	//Method for destroying an emitter- takes in the index of the emitter, and whether it was GPU based or not.
 	void DestroyEmitter(const unsigned int a_emitterIndex, const bool a_gpuBased);
 	
+	//TODO: Condense FBX functions down to only have one LoadFBX that works.
 	//Method for loading an FBX model without textures/normalmaps, or with only one mesh (if it has textures/normalmaps and only one mesh, LoadTexture/LoadNormalMap can be loaded seperately). Returns the index of the model, for use in texturing.
 	unsigned int LoadFBX(const std::string& a_filePath);
 	//Method for loading an FBX model with textures. Use this method instead of calling LoadTexture() seperately for FBX models with multiple meshes.

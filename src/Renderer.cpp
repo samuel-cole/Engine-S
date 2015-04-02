@@ -67,6 +67,7 @@ m_standardProgram(-1), m_particleProgram(-1), m_animatedProgram(-1), m_postProce
 	m_defaultNormal = LoadTexture("../data/default/normal.png");
 	m_defaultSpec = LoadTexture("../data/default/specular.png");
 	m_defaultShadow = LoadTexture("../data/default/shadow.png");
+	m_defaultPerlin = LoadTexture("../data/default/specular.png");
 
 
 	//glEnable(GL_BLEND);
@@ -118,6 +119,7 @@ unsigned int Renderer::CreateProgram(const string& a_vertPath, const string& a_f
 	m_uniformLocations[programID].push_back(glGetUniformLocation(programID, "LightMatrix"));
 	m_uniformLocations[programID].push_back(glGetUniformLocation(programID, "ShadowMap"));
 	m_uniformLocations[programID].push_back(glGetUniformLocation(programID, "ShadowBias"));
+	m_uniformLocations[programID].push_back(glGetUniformLocation(programID, "PerlinMap"));
 
 	return programID;
 }
@@ -242,6 +244,47 @@ void Renderer::GenerateShadowMap(const float a_lightWidth)
 	m_lightProjection = glm::ortho<float>(-a_lightWidth, a_lightWidth, -a_lightWidth, a_lightWidth, -a_lightWidth, a_lightWidth);
 }
 
+void Renderer::GeneratePerlinNoiseMap(const unsigned int a_rows, const unsigned int a_columns, unsigned int a_octaves, float a_amplitude, float a_persistence, unsigned int a_index)
+{
+	float *perlinData = new float[a_rows * a_columns];
+	
+	for (unsigned int i = 0; i < a_rows; ++i)
+	{
+		for (unsigned int j = 0; j < a_columns; ++j)
+		{
+			perlinData[i * a_columns + j] = 0;
+
+			float amplitude = a_amplitude;
+
+
+			for (unsigned int o = 0; o < a_octaves; ++o)
+			{
+				float frequency = powf(2, (float)o);
+				glm::vec2 test = glm::vec2((float)i, (float)j) * (1.0f / glm::max(a_rows, a_columns)) * 3 * frequency;
+				float perlinSample = glm::perlin(test);
+				perlinSample *= 0.5f + 0.5f;
+				perlinData[i * a_columns + j] += perlinSample * amplitude;
+				amplitude *= a_persistence;
+			}
+		}
+	}
+
+	while (a_index >= m_textures.size())
+	{
+		m_textures.push_back(-1);
+	}
+	 
+	glGenTextures(1, &m_perlins[a_index]);
+	glBindTexture(GL_TEXTURE_2D, m_perlins[a_index]);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, a_rows, a_columns, 0, GL_RED, GL_FLOAT, perlinData);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+}
+
 unsigned int Renderer::LoadTexture(const std::string& a_path)
 {
 	int imageWidth = 0, imageHeight = 0, imageFormat = 0;
@@ -350,7 +393,7 @@ unsigned int Renderer::GenerateGrid(const unsigned int a_rows, const unsigned in
 			aoVertices[r * columns + c].colour = vec4(colour, 1);
 			aoVertices[r * columns + c].normal = glm::vec4(0, 1, 0, 1);
 			aoVertices[r * columns + c].tangent = glm::vec4(1, 0, 1, 1);
-			aoVertices[r * columns + c].uv = glm::vec2((float)r / 1, (float)c / 1);
+			aoVertices[r * columns + c].uv = glm::vec2((float)(r + 1)/rows, (float)(c + 1)/columns);
 		}
 	}
 	
@@ -776,6 +819,7 @@ void Renderer::Draw()
 		glClear(GL_DEPTH_BUFFER_BIT);
 
 		glUseProgram(m_shadowGenProgram);
+		//TODO: change this so that the light is coming from the camera position.
 		m_lightProjView = m_lightProjection * glm::lookAt(-m_lightDir, vec3(0, 0, 0), vec3(0, 1, 0));
 		glUniformMatrix4fv((m_uniformLocations[m_shadowGenProgram])[LIGHT_MATRIX], 1, GL_FALSE, &(m_lightProjView[0][0]));
 
@@ -866,7 +910,11 @@ void Renderer::DrawModels(unsigned int j)
 			glUniform3f((m_uniformLocations[m_standardProgram])[LIGHT_COLOUR], m_lightColour.x, m_lightColour.y, m_lightColour.z);
 			glUniform3f((m_uniformLocations[m_standardProgram])[CAMERA_POS], m_cameras[j]->GetWorldTransform()[3].x, m_cameras[j]->GetWorldTransform()[3].y, m_cameras[j]->GetWorldTransform()[3].z);
 			glUniform1f((m_uniformLocations[m_standardProgram])[SPEC_POW], m_specPow);
-			glUniform1f((m_uniformLocations[m_standardProgram])[SHADOW_BIAS], 0.01f);
+			if (m_shadowGenProgram != -1)
+				glUniform1f((m_uniformLocations[m_standardProgram])[SHADOW_BIAS], 0.01f);
+			else
+				glUniform1f((m_uniformLocations[m_standardProgram])[SHADOW_BIAS], 100.0f);
+
 
 			for (unsigned int i = notAnimatedCheck; i < m_numOfIndices.size(); ++i)
 			{
@@ -892,6 +940,11 @@ void Renderer::DrawModels(unsigned int j)
 				glActiveTexture(GL_TEXTURE3);
 				glBindTexture(GL_TEXTURE_2D, ((m_shadowDepth == -1) ? m_defaultShadow : m_shadowDepth));
 				glUniform1i((m_uniformLocations[m_standardProgram])[SHADOW_MAP], 3);
+
+				// Set Perlin Noise Map
+				glActiveTexture(GL_TEXTURE4);
+				glBindTexture(GL_TEXTURE_2D, ((m_perlins[i] == -1) ? m_defaultPerlin : m_perlins[i]));
+				glUniform1i((m_uniformLocations[m_standardProgram])[PERLIN_MAP], 4);
 
 				//Draw stuff
 				glBindVertexArray(m_VAO[i]);
@@ -1156,6 +1209,8 @@ void Renderer::LoadIntoOpenGL(const Vertex* const a_verticesArray, const unsigne
 		m_normals.push_back(-1);
 	if (m_speculars.size() < m_numOfIndices.size())
 		m_speculars.push_back(-1);
+	if (m_perlins.size() < m_numOfIndices.size())
+		m_perlins.push_back(-1);
 
 	//Add new buffer variables to the vectors.
 	m_VAO.push_back(-1);
@@ -1238,7 +1293,7 @@ void Renderer::CleanupBuffers()
 	if (m_shadowDepth != -1)
 		glDeleteTextures(1, &m_shadowDepth);
 
-	for (int i = 0; i < m_textures.size(); ++i)
+	for (unsigned int i = 0; i < m_textures.size(); ++i)
 	{
 		if (m_textures[i] != -1)
 			glDeleteTextures(1, &m_textures[i]);
