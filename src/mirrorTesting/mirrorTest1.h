@@ -1,5 +1,5 @@
-#ifndef TUTORIAL_10
-#define TUTORIAL_10
+#ifndef MIRROR_TEST_1
+#define MIRROR_TEST_1
 
 #include "Application.h"
 
@@ -9,7 +9,7 @@ class Renderer;
 
 #include <vector>
 
-class Tutorial10 : public Application
+class MirrorTest1 : public Application
 {
 private:
 	int Init();

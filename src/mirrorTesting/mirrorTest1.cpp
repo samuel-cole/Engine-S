@@ -1,11 +1,11 @@
-#include "Tutorial10.h"
+#include "MirrorTest1.h"
 #include "glm\ext.hpp"
 #include "StaticCamera.h"
 #include "FlyCamera.h"
 #include "Renderer.h"
 
 
-int Tutorial10::Init()
+int MirrorTest1::Init()
 {
 	int baseInit = Application::Init();
 	if (baseInit != 0)
@@ -18,15 +18,13 @@ int Tutorial10::Init()
 	m_renderer = new Renderer(m_camera, m_debugBar);
 
 	std::vector<unsigned int> frameTextures;
-	for (unsigned int i = 0; i < 100; ++i)
-	{
-		m_staticCamera.push_back(new StaticCamera());
-		m_staticCamera[i]->SetPerspective(glm::pi<float>() * 0.25f, 16.0f / 9.0f, 0.1f, 10000.0f);
-		m_staticCamera[i]->SetLookAt(vec3((rand()/(float)RAND_MAX) * 20.0f - 10.0f, (rand()/(float)RAND_MAX) * 20.0f - 10.0f, (rand()/(float)RAND_MAX) * 20.0f - 10.0f), vec3(0, 10, 0), vec3(0, 1, 0));
 
-		frameTextures.push_back(-1);
-		frameTextures[i] = m_renderer->LoadFrameBuffer(m_staticCamera[i], vec4(0.0f, 0.0f, 512.0f, 512.0f), vec3(1.0f, 1.0f, 1.0f));
-	}
+	m_staticCamera.push_back(new StaticCamera());
+	m_staticCamera[0]->SetPerspective(glm::pi<float>() * 0.25f, 16.0f / 9.0f, 0.1f, 10000.0f);
+	m_staticCamera[0]->SetLookAt(vec3(0, 0, 10), vec3(0, 5, 0), vec3(0, 1, 0));
+
+	frameTextures.push_back(-1);
+	frameTextures[0] = m_renderer->LoadFrameBuffer(m_staticCamera[0], vec4(0.0f, 0.0f, 512.0f, 512.0f), vec3(1.0f, 1.0f, 1.0f));
 
 	std::vector<std::string> textures;
 	std::vector<std::string> normalMaps;
@@ -34,24 +32,22 @@ int Tutorial10::Init()
 	std::vector<bool> texChannels;
 	std::vector<bool> normChannels;
 	std::vector<bool> specularChannels;
-
+	
 	textures.push_back("../data/Enemyelite/EnemyElite3_D.tga");
 	textures.push_back("../data/Enemyelite/Alienrifle_D.png");
 	normalMaps.push_back("../data/Enemyelite/EnemyElite_N.tga");
 	normalMaps.push_back("../data/Enemyelite/Alienrifle_N.png");
 	specularMaps.push_back("../data/Enemyelite/EnemyElite_S.tga");
 	specularMaps.push_back("../data/Enemyelite/Alienrifle_S.tga");
-
+	
 	m_model = m_renderer->LoadFBX("../data/Enemyelite/EnemyElite.fbx", &textures, &normalMaps, &specularMaps);
 
-	for (unsigned int i = 0; i < 10; ++i)
-	{
-		for (unsigned int j = 0; j < 10; ++j)
-		{
-			unsigned int grid = m_renderer->GenerateGrid(1, 1, glm::vec3(i, 0, j));
-			m_renderer->LoadTexture(frameTextures[i* 10 + j], grid);
-		}
-	}
+	unsigned int grid = m_renderer->GenerateGrid(10, 10, glm::vec3(0, 0, 0));
+	m_renderer->LoadTexture(frameTextures[0], grid);
+
+	//m_renderer->SetTransform(glm::rotate(m_renderer->GetTransform(grid), 3.14159265358979f/2.0f, vec3(1.0f, 0, 0)), grid);
+	//m_renderer->SetTransform(glm::translate(glm::mat4(), vec3(0, 0, 1000.0f)) * m_renderer->GetTransform(grid), grid);
+	m_renderer->SetTransform(glm::translate(m_renderer->GetTransform(grid), vec3(100, 0, 0)), grid);
 
 	m_renderer->GenerateShadowMap(50.0f);
 
@@ -60,7 +56,7 @@ int Tutorial10::Init()
 	return 0;
 }
 
-void Tutorial10::Update(float a_deltaTime)
+void MirrorTest1::Update(float a_deltaTime)
 {
 	m_timer += a_deltaTime;
 	for (unsigned int i = 0; i < m_staticCamera.size(); ++i)
@@ -71,12 +67,12 @@ void Tutorial10::Update(float a_deltaTime)
 	m_renderer->UpdateAnimation(m_timer, m_model);
 }
 
-void Tutorial10::Draw()
+void MirrorTest1::Draw()
 {
 	m_renderer->Draw();
 }
 
-int Tutorial10::Deinit()
+int MirrorTest1::Deinit()
 {
 	delete m_camera;
 	for (unsigned int i = 0; i < m_staticCamera.size(); ++i)

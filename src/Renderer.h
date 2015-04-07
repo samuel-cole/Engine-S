@@ -11,7 +11,8 @@ using glm::vec4;
 using glm::vec3;
 
 class Camera;
-class FBXFile;
+class FBXSkeleton;
+class FBXAnimation;
 class ParticleEmitter;
 class GPUParticleEmitter;
 
@@ -66,8 +67,13 @@ private:
 	//Vector containing the number of indices associated with each IBO.
 	std::vector<unsigned int> m_numOfIndices;
 
-	//Vector containing which buffers are animated.
-	std::vector<bool> m_animated;
+	//Vector containing the skeletons of animated objects. Set to nullptr for non-animated models.
+	std::vector<FBXSkeleton*> m_skeletons;
+	//Vector containing the animations of animated objects. Set to nullptr for non-animated models.
+	std::vector<FBXAnimation*> m_animations;
+
+	//Vector containing the world transforms of every object.
+	std::vector<glm::mat4> m_globals;
 
 	//TODO: change these programs to use an enum. 
 	//TODO: add additional programs for different combinations of shadows and maps.
@@ -143,9 +149,6 @@ private:
 	//HUD bar used for debugging.
 	TwBar* m_bar;
 
-	//Pointer to the FBX file being used. TODO: Change this to work with multiple FBXFiles.
-	FBXFile* m_file;
-
 	//The direction that light is coming from.
 	vec3 m_lightDir;
 	//The colour of the light.
@@ -175,7 +178,7 @@ private:
 	unsigned int LoadTexture(const std::string& a_path);
 
 	//Makes all of the necessary OpenGL calls to load the arrays of vertices and indices passed in to OpenGL.
-	void LoadIntoOpenGL(const Vertex * const a_verticesArray, const unsigned int a_numOfVertices, const unsigned int* const a_indicesArray, const unsigned int a_numOfIndices, const bool a_animated);
+	void LoadIntoOpenGL(const Vertex * const a_verticesArray, const unsigned int a_numOfVertices, const unsigned int* const a_indicesArray, const unsigned int a_numOfIndices);
 
 	//Creates a new OpenGL program from the shaders passed in. Returns the index of the program.
 	unsigned int CreateProgram(const std::string& a_vertPath, const std::string& a_fragPath);
@@ -194,18 +197,24 @@ public:
 	void GenerateShadowMap(const float a_lightWidth);
 	//Generates a perlin noise map. Pass the index of the model to be perlined into a_index. Note that perlin maps are currently not supported for animated models. a_octaves determines how bumpy the map will be.
 	//TODO: Generate normals for the perlin map.
-	void GeneratePerlinNoiseMap(const unsigned int a_rows, const unsigned int a_columns, unsigned int a_octaves, float a_amplitude, float a_persistence, unsigned int a_index);
+	void GeneratePerlinNoiseMap(const unsigned int a_rows, const unsigned int a_columns, const unsigned int a_octaves, const float a_amplitude, const float a_persistence, const unsigned int a_index);
 
 	//Method for loading in a texture. Pass the index of the model to be textured into a_index.
-	void LoadTexture(const std::string& a_filePath, unsigned int a_index);
+	void LoadTexture(const std::string& a_filePath, const unsigned int a_index);
 	//Method for loading in a texture that has already been created (used in conjunction with LoadFrameBuffer to create render targets).
 	void LoadTexture(const unsigned int a_textureIndex, const unsigned int a_index);
 	//Method for loading in a normal map. Pass the index of the model to have the normal map applied to it into a_index.
-	void LoadNormalMap(const std::string& a_filePath, unsigned int a_index);
+	void LoadNormalMap(const std::string& a_filePath, const unsigned int a_index);
 	//Method for loading in a specular map. Pass the index of the model to have the specular map applied to it into a_index.
-	void LoadSpecularMap(const std::string& a_filePath, unsigned int a_index);
+	void LoadSpecularMap(const std::string& a_filePath, const unsigned int a_index);
 	
+	//Mutator method for the global transform matrices of each model. a_index refers to the index of the model to be transformed.
+	void SetTransform(const glm::mat4& a_transform, const unsigned int a_index);
+	//Accessor method for the global transform matrices of each model. a_index refers to the index of the model to get the transform of.
+	const glm::mat4& GetTransform(const unsigned int a_index);
+
 	//Generates a grid of vertices on the x-z plane with the specified number of rows and columns. Returns the index of the grid, for use in texturing.
+	//TODO: Remove offset once transforms are implemented.
 	unsigned int GenerateGrid(const unsigned int a_rows, const unsigned int a_columns, const glm::vec3& a_offset);
 
 	//Method for creating a particle emitter. Note that the emit rate variable will not be used if gpu-based particles are created.
@@ -223,12 +232,8 @@ public:
 	//Method for destroying an emitter- takes in the index of the emitter, and whether it was GPU based or not.
 	void DestroyEmitter(const unsigned int a_emitterIndex, const bool a_gpuBased);
 	
-	//TODO: Condense FBX functions down to only have one LoadFBX that works.
-	//Method for loading an FBX model without textures/normalmaps, or with only one mesh (if it has textures/normalmaps and only one mesh, LoadTexture/LoadNormalMap can be loaded seperately). Returns the index of the model, for use in texturing.
-	unsigned int LoadFBX(const std::string& a_filePath);
-	//Method for loading an FBX model with textures. Use this method instead of calling LoadTexture() seperately for FBX models with multiple meshes.
-	//Note that this method may not work well if used in conjunction with with the LoadTexture and LoadNormalMap functions- this already loads textures and normal maps, so you don't need to call those functions as well.
-	void LoadFBX(const std::string& a_filePath, const std::vector<std::string>* const a_texturePaths, const std::vector<std::string>* const a_normalMapPaths, const std::vector<std::string>* const a_specularMapPaths);
+	//Function for loading an FBX model. Returns the index of the model.
+	unsigned int LoadFBX(const std::string& a_filePath, const std::vector<std::string>* const a_texturePaths, const std::vector<std::string>* const a_normalMapPaths, const std::vector<std::string>* const a_specularMapPaths);
 	
 	//Method for loading an OBJ model. Returns the index of the model, for use in texturing.
 	unsigned int LoadOBJ(const std::string& a_filePath);
@@ -236,8 +241,8 @@ public:
 	//Draw method- does all drawing for all models and particles to all framebuffers.
 	void Draw();
 
-	//Updates all animated FBX files to the time specified with a_time. TODO: Allow the time for each animation to be set seperately. To do this currently, you must have multiple renderer instances.
-	void UpdateAnimation(const float a_time);
+	//Updates the animated FBX file specified by a_index to the time specified with a_time.
+	void UpdateAnimation(const float a_time, const unsigned int a_index);
 	//Updates all CPU-based particle emitters (and, by extension, all CPU-based particles).
 	void UpdateEmitters(const float a_deltaTime);
 

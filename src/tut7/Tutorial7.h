@@ -20,8 +20,6 @@ private:
 
 	unsigned int m_emitter;
 	unsigned int m_emitter2;
-
-	float m_timer;
 };
 
 #endif

@@ -26,41 +26,17 @@ int Tutorial7::Init()
 	m_renderer = new Renderer(m_camera, m_debugBar);
 
 
-	std::vector<std::string> textures;
-	std::vector<std::string> normalMaps;
-	std::vector<std::string> specularMaps;
-	std::vector<bool> texChannels;
-	std::vector<bool> normChannels;
-	std::vector<bool> specularChannels;
-
-	textures.push_back("../data/Enemyelite/EnemyElite3_D.tga");
-	textures.push_back("../data/Enemyelite/Alienrifle_D.png");
-	normalMaps.push_back("../data/Enemyelite/EnemyElite_N.tga");
-	normalMaps.push_back("../data/Enemyelite/Alienrifle_N.png");
-	specularMaps.push_back("../data/Enemyelite/EnemyElite_S.tga");
-	specularMaps.push_back("../data/Enemyelite/Alienrifle_S.tga");
-
-	m_renderer->LoadFBX("../data/Enemyelite/EnemyElite.fbx", &textures, &normalMaps, &specularMaps);
-
 	m_emitter = m_renderer->CreateEmitter(1000, 500, 0.1f, 1.0f, 1, 5, 1, 0.1f, vec4(1, 0, 0, 1), vec4(1, 1, 0, 1), false);
 	m_emitter2 = m_renderer->CreateEmitter(1000, 500, 0.1f, 2.0f, 1, 5, 1, 0.1f, vec4(0, 0, 1, 1), vec4(1, 1, 1, 1), false);
-	
-
-	m_timer = 0;
 
 	return 0;
 }
 
 void Tutorial7::Update(float a_deltaTime)
 {
-	m_timer += a_deltaTime;
-
 	m_camera->Update(a_deltaTime);
 
 	m_renderer->UpdateEmitters(a_deltaTime);
-
-	m_renderer->UpdateAnimation(m_timer);
-
 }
 
 void Tutorial7::Draw()

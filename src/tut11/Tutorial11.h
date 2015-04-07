@@ -21,6 +21,8 @@ private:
 
 	FlyCamera* m_camera;
 	Renderer* m_renderer;
+
+	unsigned int m_model;
 };
 
 #endif

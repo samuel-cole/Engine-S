@@ -67,7 +67,7 @@ int Application::Init()
 
 	m_debugBar = TwNewBar("Debug Bar");
 
-	srand(time(0));
+	srand((unsigned int)time(0));
 
 	return 0;
 }

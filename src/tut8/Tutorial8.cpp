@@ -18,32 +18,13 @@ int Tutorial8::Init()
 	m_camera->SetLookAt(vec3(10, 10, 10), vec3(0), vec3(0, 1, 0));
 
 
-
 	auto major = ogl_GetMajorVersion();
 	auto minor = ogl_GetMinorVersion();
 	printf("GL: %i.%i\n", major, minor);
 
 	m_renderer = new Renderer(m_camera, m_debugBar);
 
-	srand((unsigned int)time(0));
-
 	particleDirection = true;
-
-	//std::vector<std::string> textures;
-	//std::vector<std::string> normalMaps;
-	//std::vector<bool> texchannels;
-	//std::vector<bool> normchannels;
-	//
-	//textures.push_back("../data/Enemyelite/EnemyElite3_D.tga");
-	//textures.push_back("../data/Enemyelite/Alienrifle_D.png");
-	//normalMaps.push_back("../data/Enemyelite/EnemyElite_N.tga");
-	//normalMaps.push_back("../data/Enemyelite/Alienrifle_N.png");
-	//texchannels.push_back(false);
-	//texchannels.push_back(false);
-	//normchannels.push_back(false);
-	//normchannels.push_back(false);
-	//
-	//m_renderer->LoadFBX("../data/Enemyelite/EnemyElite.fbx", &textures, &normalMaps, &texchannels, &normchannels);
 
 	//m_emitter = m_renderer->CreateEmitter(100000,			//Max particles
 	//									  0.1f,				//Lifespan minimum 
@@ -99,8 +80,6 @@ void Tutorial8::Update(float a_deltaTime)
 	m_timer += a_deltaTime;
 
 	m_camera->Update(a_deltaTime);
-
-	m_renderer->UpdateAnimation(m_timer);
 
 	//m_renderer->SetEmitterPosition(m_emitter, true, m_renderer->GetEmitterPosition(m_emitter, true) + vec3((float)rand() / (float)RAND_MAX, (float)rand() / (float)RAND_MAX, (float)rand() / (float)RAND_MAX) * 2 - vec3(1, 1, 1));
 	//m_renderer->SetEmitterPosition(m_emitter, true, m_renderer->GetEmitterPosition(m_emitter, true) + vec3(1, 0, 0));

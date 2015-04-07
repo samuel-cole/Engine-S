@@ -17,14 +17,14 @@
 using glm::vec3;
 using std::string;
 
-Renderer::Renderer(Camera* const a_camera, TwBar* const a_bar) : m_bar(a_bar), m_file(nullptr), m_shadowDepth(-1),
+Renderer::Renderer(Camera* const a_camera, TwBar* const a_bar) : m_bar(a_bar), m_shadowDepth(-1),
 m_standardProgram(-1), m_particleProgram(-1), m_animatedProgram(-1), m_postProcessingProgram(-1), m_shadowGenProgram(-1), m_animShadowGenProgram(-1)
 {
 	//Fill the uniform locations vector with empty vcetors. 300 should be more than enough programs.
 	m_uniformLocations.assign(300, std::vector<unsigned int>());
 
 	m_lightColour = vec3(1, 1, 1);
-	m_lightDir = vec3(1, 1, 1);
+	m_lightDir = vec3(1, -1, 1);
 	m_specPow = 2.0f;
 
 	TwAddVarRW(m_bar, "Light Colour", TW_TYPE_COLOR3F, &m_lightColour[0], "");
@@ -58,7 +58,7 @@ m_standardProgram(-1), m_particleProgram(-1), m_animatedProgram(-1), m_postProce
 	indexArray[4] = 2;
 	indexArray[5] = 3;
 
-	LoadIntoOpenGL(vertexArray, 4, indexArray, 6, false);
+	LoadIntoOpenGL(vertexArray, 4, indexArray, 6);
 	LoadTexture(texture, 0);
 
 	m_postProcessingProgram = CreateProgram("../data/shaders/vertPostProcessing.txt", "../data/shaders/fragPostProcessing.txt");
@@ -244,7 +244,7 @@ void Renderer::GenerateShadowMap(const float a_lightWidth)
 	m_lightProjection = glm::ortho<float>(-a_lightWidth, a_lightWidth, -a_lightWidth, a_lightWidth, -a_lightWidth, a_lightWidth);
 }
 
-void Renderer::GeneratePerlinNoiseMap(const unsigned int a_rows, const unsigned int a_columns, unsigned int a_octaves, float a_amplitude, float a_persistence, unsigned int a_index)
+void Renderer::GeneratePerlinNoiseMap(const unsigned int a_rows, const unsigned int a_columns, const unsigned int a_octaves, const float a_amplitude, const float a_persistence, const unsigned int a_index)
 {
 	float *perlinData = new float[a_rows * a_columns];
 	
@@ -265,6 +265,7 @@ void Renderer::GeneratePerlinNoiseMap(const unsigned int a_rows, const unsigned 
 				perlinSample *= 0.5f + 0.5f;
 				perlinData[i * a_columns + j] += perlinSample * amplitude;
 				amplitude *= a_persistence;
+				std::cout << perlinData[i * a_columns + j] << std::endl;
 			}
 		}
 	}
@@ -303,7 +304,7 @@ unsigned int Renderer::LoadTexture(const std::string& a_path)
 	return textureIndex;
 }
 
-void Renderer::LoadTexture(const string& a_filePath, unsigned int a_index)
+void Renderer::LoadTexture(const string& a_filePath, const unsigned int a_index)
 {
 	while (a_index >= m_textures.size())
 	{
@@ -332,7 +333,7 @@ void Renderer::LoadTexture(const unsigned int a_textureIndex, const unsigned int
 	m_textures[a_index] = a_textureIndex;
 }
 
-void Renderer::LoadNormalMap(const string& a_filePath, unsigned int a_index)
+void Renderer::LoadNormalMap(const string& a_filePath, const unsigned int a_index)
 {
 	while (a_index >= m_normals.size())
 	{
@@ -351,7 +352,7 @@ void Renderer::LoadNormalMap(const string& a_filePath, unsigned int a_index)
 	stbi_image_free(data);
 }
 
-void Renderer::LoadSpecularMap(const string& a_filePath, unsigned int a_index)
+void Renderer::LoadSpecularMap(const string& a_filePath, const unsigned int a_index)
 {
 	while (a_index >= m_speculars.size())
 	{
@@ -368,6 +369,27 @@ void Renderer::LoadSpecularMap(const string& a_filePath, unsigned int a_index)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
 	stbi_image_free(data);
+}
+
+void Renderer::SetTransform(const mat4& a_transform, const unsigned int a_index)
+{
+	while (a_index >= m_globals.size())
+	{
+		m_globals.push_back(mat4());
+	}
+	m_globals[a_index] = a_transform;
+}
+
+const mat4& Renderer::GetTransform(const unsigned int a_index)
+{
+	if (a_index >= m_globals.size())
+	{
+		std::cout << "Error: GetTransform() index greater than vector size used.";
+		//Crash the program
+		return m_globals[a_index];
+	}
+	else
+		return m_globals[a_index];
 }
 
 unsigned int Renderer::GenerateGrid(const unsigned int a_rows, const unsigned int a_columns, const glm::vec3& a_offset)
@@ -416,7 +438,7 @@ unsigned int Renderer::GenerateGrid(const unsigned int a_rows, const unsigned in
 		}
 	}
 
-	LoadIntoOpenGL(aoVertices, rows * columns, auiIndices, (rows - 1) * (columns - 1) * 6, false);
+	LoadIntoOpenGL(aoVertices, rows * columns, auiIndices, (rows - 1) * (columns - 1) * 6);
 
 	delete[] aoVertices;
 	delete[] auiIndices;
@@ -562,81 +584,20 @@ void Renderer::DestroyEmitter(const unsigned int a_emitterIndex, const bool a_gp
 	}
 }
 
-unsigned int Renderer::LoadFBX(const string& a_filePath)
-{
-	if (m_standardProgram == -1)
-	{
-		m_standardProgram = CreateProgram("../data/shaders/vert.txt", "../data/shaders/fragNoTex.txt");
-	}
-
-	m_file = new FBXFile();
-
-	m_file->load(a_filePath.c_str());
-	for (unsigned int j = 0; j < m_file->getMeshCount(); ++j)
-	{
-		FBXMeshNode* mesh = m_file->getMeshByIndex(j);
-		m_file->initialiseOpenGLTextures();
-
-		Vertex* vertices = new Vertex[mesh->m_vertices.size()];
-		for (unsigned int i = 0; i < mesh->m_vertices.size(); ++i)
-		{
-			vertices[i].position = mesh->m_vertices[i].position;
-			vertices[i].normal = mesh->m_vertices[i].normal;
-			vertices[i].uv = mesh->m_vertices[i].texCoord1;
-			vertices[i].colour = mesh->m_vertices[i].colour;
-			vertices[i].tangent = mesh->m_vertices[i].tangent;
-			vertices[i].weights = mesh->m_vertices[i].weights;
-			vertices[i].indices = mesh->m_vertices[i].indices;
-		}
-
-		unsigned int* indices = new unsigned int[mesh->m_indices.size()];
-		for (unsigned int i = 0; i < mesh->m_indices.size(); ++i)
-		{
-			indices[i] = mesh->m_indices[i];
-		}
-
-		LoadIntoOpenGL(vertices, mesh->m_vertices.size(), indices, mesh->m_indices.size(), m_file->getSkeletonCount() > 0);
-
-		delete[] vertices;
-		delete[] indices;
-	}
-
-
-	if (m_file->getSkeletonCount() > 0)
-	{
-		if (m_animatedProgram == -1)
-			m_animatedProgram = CreateProgram("../data/shaders/vertAnim.txt", "../data/shaders/frag.txt");
-
-		FBXSkeleton* skeleton = m_file->getSkeletonByIndex(0);
-		FBXAnimation* animation = m_file->getAnimationByIndex(0);
-
-		skeleton->updateBones();
-
-		skeleton->evaluate(animation, 0);
-
-		for (unsigned int i = 0; i < skeleton->m_boneCount; ++i)
-		{
-			skeleton->m_nodes[i]->updateGlobalTransform();
-		}
-	}
-
-	return m_numOfIndices.size() - 1;
-}
-
-void Renderer::LoadFBX(const string& a_filePath, const std::vector<string>* const a_texturePaths, const std::vector<string>* const a_normalMapPaths, const std::vector<string>* const a_specularMapPaths)
+unsigned int Renderer::LoadFBX(const string& a_filePath, const std::vector<string>* const a_texturePaths, const std::vector<string>* const a_normalMapPaths, const std::vector<string>* const a_specularMapPaths)
 {
 	if (m_standardProgram == -1)
 	{
 		m_standardProgram = CreateProgram("../data/shaders/vert.txt", "../data/shaders/frag.txt");
 	}
 
-	m_file = new FBXFile();
+	FBXFile* file = new FBXFile();
 
-	m_file->load(a_filePath.c_str());
-	for (unsigned int j = 0; j < m_file->getMeshCount(); ++j)
+	file->load(a_filePath.c_str());
+	for (unsigned int j = 0; j < file->getMeshCount(); ++j)
 	{
-		FBXMeshNode* mesh = m_file->getMeshByIndex(j);
-		m_file->initialiseOpenGLTextures();
+		FBXMeshNode* mesh = file->getMeshByIndex(j);
+		file->initialiseOpenGLTextures();
 
 		Vertex* vertices = new Vertex[mesh->m_vertices.size()];
 		for (unsigned int i = 0; i < mesh->m_vertices.size(); ++i)
@@ -656,7 +617,9 @@ void Renderer::LoadFBX(const string& a_filePath, const std::vector<string>* cons
 			indices[i] = mesh->m_indices[i];
 		}		
 
-		LoadIntoOpenGL(vertices, mesh->m_vertices.size(), indices, mesh->m_indices.size(), m_file->getSkeletonCount() > 0);
+		SetTransform(mesh->m_globalTransform, m_numOfIndices.size());
+
+		LoadIntoOpenGL(vertices, mesh->m_vertices.size(), indices, mesh->m_indices.size());
 
 		delete[] vertices;
 		delete[] indices;
@@ -673,29 +636,30 @@ void Renderer::LoadFBX(const string& a_filePath, const std::vector<string>* cons
 		{
 			LoadSpecularMap((*a_specularMapPaths)[j], m_numOfIndices.size() - 1);
 		}
-	}
 
-
-	if (m_file->getSkeletonCount() > 0)
-	{
-		if (m_animatedProgram == -1)
-			m_animatedProgram = CreateProgram("../data/shaders/vertAnim.txt", "../data/shaders/frag.txt");
-
-		for (unsigned int i = 0; i < m_file->getSkeletonCount(); ++i)
+		if (file->getSkeletonCount() > 0)
 		{
-			FBXSkeleton* skeleton = m_file->getSkeletonByIndex(i);
-			FBXAnimation* animation = m_file->getAnimationByIndex(i);
+			if (m_animatedProgram == -1)
+				m_animatedProgram = CreateProgram("../data/shaders/vertAnim.txt", "../data/shaders/frag.txt");
 			
-			skeleton->updateBones();
-
-			skeleton->evaluate(animation, 0);
-
-			for (unsigned int j = 0; j < skeleton->m_boneCount; ++j)
+			if (j < file->getSkeletonCount() && j < file->getAnimationCount())
 			{
-				skeleton->m_nodes[j]->updateGlobalTransform();
+				m_skeletons[m_numOfIndices.size() - 1] = file->getSkeletonByIndex(j);
+				m_animations[m_numOfIndices.size() - 1] = file->getAnimationByIndex(j);
+
+				m_skeletons[m_numOfIndices.size() - 1]->updateBones();
+
+				m_skeletons[m_numOfIndices.size() - 1]->evaluate(m_animations[m_numOfIndices.size() - 1], 0);
+
+				for (unsigned int i = 0; i < m_skeletons[m_numOfIndices.size() - 1]->m_boneCount; ++i)
+				{
+					m_skeletons[m_numOfIndices.size() - 1]->m_nodes[i]->updateGlobalTransform();
+				}
 			}
 		}
 	}
+
+	return m_numOfIndices.size() - file->getMeshCount();
 }
 
 unsigned int Renderer::LoadOBJ(const string& a_filePath)
@@ -799,7 +763,7 @@ unsigned int Renderer::LoadOBJ(const string& a_filePath)
 		auiIndices[i] = indices[i];
 	}
 
-	LoadIntoOpenGL(aoVertices, vertices.size(), auiIndices, indices.size(), false);
+	LoadIntoOpenGL(aoVertices, vertices.size(), auiIndices, indices.size());
 
 	delete[] aoVertices;
 	delete[] auiIndices;
@@ -825,8 +789,10 @@ void Renderer::Draw()
 
 		for (unsigned int i = 1; i < m_numOfIndices.size(); ++i)
 		{
-			if (!m_animated[i])
+			if (m_skeletons[i] == nullptr)
 			{
+				glUniformMatrix4fv((m_uniformLocations[m_shadowGenProgram])[GLOBAL], 1, GL_FALSE, &((m_globals[i])[0][0]));
+
 				glBindVertexArray(m_VAO[i]);
 				glDrawElements(GL_TRIANGLES, m_numOfIndices[i], GL_UNSIGNED_INT, nullptr);
 			}
@@ -835,17 +801,16 @@ void Renderer::Draw()
 		//Render to the shadow map for animated objects.
 		if (m_animatedProgram != -1)
 		{
-			FBXSkeleton* skeleton = m_file->getSkeletonByIndex(0);
-
 			glUseProgram(m_animShadowGenProgram);
 			glUniformMatrix4fv((m_uniformLocations[m_animShadowGenProgram])[LIGHT_MATRIX], 1, GL_FALSE, &(m_lightProjView[0][0]));
-			glUniformMatrix4fv((m_uniformLocations[m_animShadowGenProgram])[BONES], skeleton->m_boneCount, GL_FALSE, (float*)skeleton->m_bones);
-			glUniformMatrix4fv((m_uniformLocations[m_animShadowGenProgram])[GLOBAL], 1, GL_FALSE, &(m_file->getMeshByIndex(0)->m_globalTransform[0][0]));
 
 			for (unsigned int i = 1; i < m_numOfIndices.size(); ++i)
 			{
-				if (m_animated[i])
+				if (m_skeletons[i] != nullptr)
 				{
+					glUniformMatrix4fv((m_uniformLocations[m_animShadowGenProgram])[BONES], m_skeletons[i]->m_boneCount, GL_FALSE, (float*)m_skeletons[i]->m_bones);
+					glUniformMatrix4fv((m_uniformLocations[m_animShadowGenProgram])[GLOBAL], 1, GL_FALSE, &((m_globals[i])[0][0]));
+
 					glBindVertexArray(m_VAO[i]);
 					glDrawElements(GL_TRIANGLES, m_numOfIndices[i], GL_UNSIGNED_INT, nullptr);
 				}
@@ -890,7 +855,7 @@ void Renderer::DrawModels(unsigned int j)
 		unsigned int notAnimatedCheck = -1;
 		for (unsigned int i = 1; i < m_numOfIndices.size(); ++i)
 		{
-			if (m_animated[i] == false)
+			if (m_skeletons[i] == nullptr)
 			{
 				notAnimatedCheck = i;
 				break;
@@ -905,7 +870,6 @@ void Renderer::DrawModels(unsigned int j)
 			glUniformMatrix4fv((m_uniformLocations[m_standardProgram])[LIGHT_MATRIX], 1, GL_FALSE, &(lightMatrix[0][0]));
 			glUniformMatrix4fv((m_uniformLocations[m_standardProgram])[PROJECTION_VIEW], 1, GL_FALSE, &(m_cameras[j]->GetProjectionView()[0][0]));
 
-
 			glUniform3f((m_uniformLocations[m_standardProgram])[LIGHT_DIR], m_lightDir.x, m_lightDir.y, m_lightDir.z);
 			glUniform3f((m_uniformLocations[m_standardProgram])[LIGHT_COLOUR], m_lightColour.x, m_lightColour.y, m_lightColour.z);
 			glUniform3f((m_uniformLocations[m_standardProgram])[CAMERA_POS], m_cameras[j]->GetWorldTransform()[3].x, m_cameras[j]->GetWorldTransform()[3].y, m_cameras[j]->GetWorldTransform()[3].z);
@@ -913,12 +877,12 @@ void Renderer::DrawModels(unsigned int j)
 			if (m_shadowGenProgram != -1)
 				glUniform1f((m_uniformLocations[m_standardProgram])[SHADOW_BIAS], 0.01f);
 			else
-				glUniform1f((m_uniformLocations[m_standardProgram])[SHADOW_BIAS], 100.0f);
+				glUniform1f((m_uniformLocations[m_standardProgram])[SHADOW_BIAS], 1000.0f);
 
 
 			for (unsigned int i = notAnimatedCheck; i < m_numOfIndices.size(); ++i)
 			{
-				if (m_animated[i])
+				if (m_skeletons[i] != nullptr)
 					continue;
 
 				// Set Texture/Diffuse Slot
@@ -946,6 +910,9 @@ void Renderer::DrawModels(unsigned int j)
 				glBindTexture(GL_TEXTURE_2D, ((m_perlins[i] == -1) ? m_defaultPerlin : m_perlins[i]));
 				glUniform1i((m_uniformLocations[m_standardProgram])[PERLIN_MAP], 4);
 
+				// Set Transform
+				glUniformMatrix4fv((m_uniformLocations[m_standardProgram])[GLOBAL], 1, GL_FALSE, &((m_globals[i])[0][0]));
+
 				//Draw stuff
 				glBindVertexArray(m_VAO[i]);
 				glDrawElements(GL_TRIANGLES, m_numOfIndices[i], GL_UNSIGNED_INT, nullptr);
@@ -958,7 +925,7 @@ void Renderer::DrawModels(unsigned int j)
 			unsigned int animatedCheck = -1;
 			for (unsigned int i = 1; i < m_numOfIndices.size(); ++i)
 			{
-				if (m_animated[i] == true)
+				if (m_skeletons[i] != nullptr)
 				{
 					animatedCheck = i;
 					break;
@@ -967,25 +934,24 @@ void Renderer::DrawModels(unsigned int j)
 
 			if (animatedCheck != -1)
 			{
-				FBXSkeleton* skeleton = m_file->getSkeletonByIndex(0);
-
 				glUseProgram(m_animatedProgram);
 
 				mat4 lightMatrix = M_TEXTURE_SPACE_OFFSET * m_lightProjView;
 				glUniformMatrix4fv((m_uniformLocations[m_standardProgram])[LIGHT_MATRIX], 1, GL_FALSE, &(lightMatrix[0][0]));
 				glUniformMatrix4fv((m_uniformLocations[m_animatedProgram])[PROJECTION_VIEW], 1, GL_FALSE, &(m_cameras[j]->GetProjectionView()[0][0]));
-				glUniformMatrix4fv((m_uniformLocations[m_animatedProgram])[BONES], skeleton->m_boneCount, GL_FALSE, (float*)skeleton->m_bones);
-				glUniformMatrix4fv((m_uniformLocations[m_animatedProgram])[GLOBAL], 1, GL_FALSE, &(m_file->getMeshByIndex(0)->m_globalTransform[0][0]));
 
 				glUniform3f((m_uniformLocations[m_animatedProgram])[LIGHT_DIR], m_lightDir.x, m_lightDir.y, m_lightDir.z);
 				glUniform3f((m_uniformLocations[m_animatedProgram])[LIGHT_COLOUR], m_lightColour.x, m_lightColour.y, m_lightColour.z);
 				glUniform3f((m_uniformLocations[m_animatedProgram])[CAMERA_POS], m_cameras[j]->GetWorldTransform()[3].x, m_cameras[j]->GetWorldTransform()[3].y, m_cameras[j]->GetWorldTransform()[3].z);
 				glUniform1f((m_uniformLocations[m_animatedProgram])[SPEC_POW], m_specPow);
-				glUniform1f((m_uniformLocations[m_standardProgram])[SHADOW_BIAS], 0.01f);
+				if (m_shadowGenProgram != -1)
+					glUniform1f((m_uniformLocations[m_animatedProgram])[SHADOW_BIAS], 0.01f);
+				else
+					glUniform1f((m_uniformLocations[m_animatedProgram])[SHADOW_BIAS], 1000.0f);
 
 				for (unsigned int i = animatedCheck; i < m_numOfIndices.size(); ++i)
 				{
-					if (!m_animated[i])
+					if (m_skeletons[i] == nullptr)
 						continue;
 
 					// Set Texture/Diffuse Slot
@@ -1007,6 +973,10 @@ void Renderer::DrawModels(unsigned int j)
 					glActiveTexture(GL_TEXTURE3);
 					glBindTexture(GL_TEXTURE_2D, ((m_shadowDepth == -1) ? m_defaultShadow : m_shadowDepth));
 					glUniform1i((m_uniformLocations[m_standardProgram])[SHADOW_MAP], 3);
+
+					// Set Transform
+					glUniformMatrix4fv((m_uniformLocations[m_animatedProgram])[GLOBAL], 1, GL_FALSE, &((m_globals[i])[0][0]));
+					glUniformMatrix4fv((m_uniformLocations[m_animatedProgram])[BONES], m_skeletons[i]->m_boneCount, GL_FALSE, (float*)m_skeletons[i]->m_bones);
 
 					//Draw stuff
 					glBindVertexArray(m_VAO[i]);
@@ -1040,18 +1010,17 @@ void Renderer::DrawModels(unsigned int j)
 	}
 }
 
-void Renderer::UpdateAnimation(const float a_time)
+void Renderer::UpdateAnimation(const float a_time, const unsigned int a_index)
 {
-	if (m_file != nullptr && m_file->getSkeletonCount() > 0)
+	if (m_skeletons[a_index] != nullptr)
 	{
-		FBXSkeleton* skeleton = m_file->getSkeletonByIndex(0);
-		skeleton->updateBones();
+		m_skeletons[a_index]->updateBones();
 
-		skeleton->evaluate(m_file->getAnimationByIndex(0), a_time);
+		m_skeletons[a_index]->evaluate(m_animations[a_index], a_time);
 
-		for (unsigned int i = 0; i < skeleton->m_boneCount; ++i)
+		for (unsigned int i = 0; i < m_skeletons[a_index]->m_boneCount; ++i)
 		{
-			skeleton->m_nodes[i]->updateGlobalTransform();
+			m_skeletons[a_index]->m_nodes[i]->updateGlobalTransform();
 		}
 	}
 }
@@ -1194,13 +1163,15 @@ void Renderer::GenerateVertFromIndices(const std::string& a_index, const std::st
 	}
 }
 
-void Renderer::LoadIntoOpenGL(const Vertex* const a_verticesArray, const unsigned int a_numOfVertices, const unsigned int* const a_indicesArray, const unsigned int a_numOfIndices, const bool a_animated)
+void Renderer::LoadIntoOpenGL(const Vertex* const a_verticesArray, const unsigned int a_numOfVertices, const unsigned int* const a_indicesArray, const unsigned int a_numOfIndices)
 {
 	//Add the newest number of indices to the vector.
 	m_numOfIndices.push_back(a_numOfIndices);
 
 	//Add whether the object being loaded is animated.
-	m_animated.push_back(a_animated);
+	m_skeletons.push_back(nullptr);
+	m_animations.push_back(nullptr);
+
 
 	//Add a new empty texture and normal map if they haven't already been created.
 	if (m_textures.size() < m_numOfIndices.size())
@@ -1211,6 +1182,9 @@ void Renderer::LoadIntoOpenGL(const Vertex* const a_verticesArray, const unsigne
 		m_speculars.push_back(-1);
 	if (m_perlins.size() < m_numOfIndices.size())
 		m_perlins.push_back(-1);
+
+	if (m_globals.size() < m_numOfIndices.size())
+		m_globals.push_back(mat4());
 
 	//Add new buffer variables to the vectors.
 	m_VAO.push_back(-1);

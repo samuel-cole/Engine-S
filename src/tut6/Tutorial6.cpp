@@ -39,15 +39,7 @@ int Tutorial6::Init()
 	specularMaps.push_back("../data/Enemyelite/EnemyElite_S.tga");
 	specularMaps.push_back("../data/Enemyelite/Alienrifle_S.tga");
 
-	m_renderer->LoadFBX("../data/Enemyelite/EnemyElite.fbx", &textures, &normalMaps, &specularMaps);
-
-	//m_renderer->LoadTexture("../data/Enemyelite/EnemyElite3_D.tga", false, 0);
-	//m_renderer->LoadNormalMap("../data/Enemyelite/EnemyElite3_N.tga", false, 0);
-	//m_renderer->LoadTexture("../data/Enemyelite/Alienrifle_D.png", false, 1);
-	//m_renderer->LoadNormalMap("../data/Enemyelite/Alienrifle_N.png", false, 1);
-	//
-	//m_renderer->LoadFBX("../data/Enemyelite/EnemyElite.fbx");
-
+	m_model = m_renderer->LoadFBX("../data/Enemyelite/EnemyElite.fbx", &textures, &normalMaps, &specularMaps);
 
 	m_timer = 0;
 
@@ -58,7 +50,7 @@ void Tutorial6::Update(float a_deltaTime)
 {
 	m_timer += a_deltaTime;
 	m_camera->Update(a_deltaTime);
-	m_renderer->UpdateAnimation(m_timer);
+	m_renderer->UpdateAnimation(m_timer, m_model);
 }
 
 void Tutorial6::Draw()

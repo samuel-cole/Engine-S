@@ -35,49 +35,43 @@ int Tutorial12::Init()
 	
 
 	//Ground
-	//unsigned int location = m_renderer->GenerateGrid(100, 100, glm::vec3(-50, 0, -50));
-	//m_renderer->LoadTexture("../data/crate.png", location);
-	//m_renderer->GeneratePerlinNoiseMap(100, 100, 6, 20.0f, 0.3f, location);
+	unsigned int location = m_renderer->GenerateGrid(100, 100, glm::vec3(-50, 0, -50));
+	m_renderer->LoadTexture("../data/crate.png", location);
+	m_renderer->GeneratePerlinNoiseMap(100, 100, 6, 20.0f, 0.3f, location);
 	//
 	//Lower suit
-	unsigned int location = m_renderer->LoadOBJ("../data/vanquish/lower.obj");
+	location = m_renderer->LoadOBJ("../data/vanquish/lower.obj");
 	m_renderer->LoadTexture("../data/vanquish/lower_d.tga", location);
 	m_renderer->LoadNormalMap("../data/vanquish/lower_n.tga", location);
-	m_renderer->GeneratePerlinNoiseMap(100, 100, 6, 0.03f, 0.3f, location);
 	//m_renderer->LoadSpecularMap("../data/Enemyelite/EnemyElite_S.tga", location);
 	
 	//Upper suit
 	location = m_renderer->LoadOBJ("../data/vanquish/upper.obj");
 	m_renderer->LoadTexture("../data/vanquish/upper_d.tga", location);
 	m_renderer->LoadNormalMap("../data/vanquish/upper_n.tga", location);
-	m_renderer->GeneratePerlinNoiseMap(100, 100, 6, 0.03f, 0.3f, location);
 	//m_renderer->LoadSpecularMap("../data/Enemyelite/EnemyElite_S.tga", location);
 	
 	//Inner suit
 	location = m_renderer->LoadOBJ("../data/vanquish/inner.obj");
 	m_renderer->LoadTexture("../data/vanquish/inner_d.tga", location);
 	m_renderer->LoadNormalMap("../data/vanquish/inner_n.tga", location);
-	m_renderer->GeneratePerlinNoiseMap(100, 100, 6, 0.03f, 0.3f, location);
 	//m_renderer->LoadSpecularMap("../data/Enemyelite/EnemyElite_S.tga", location);
 	
 	//Hand
 	location = m_renderer->LoadOBJ("../data/vanquish/hand.obj");
 	m_renderer->LoadTexture("../data/vanquish/inner_d.tga", location);
 	m_renderer->LoadNormalMap("../data/vanquish/inner_n.tga", location);
-	m_renderer->GeneratePerlinNoiseMap(100, 100, 6, 0.03f, 0.3f, location);
 	//m_renderer->LoadSpecularMap("../data/Enemyelite/EnemyElite_S.tga", location);
 	
 	//Buttons
 	location = m_renderer->LoadOBJ("../data/vanquish/buttons.obj");
 	m_renderer->LoadTexture("../data/vanquish/upper_d.tga", location);
 	m_renderer->LoadNormalMap("../data/vanquish/upper_n.tga", location);
-	m_renderer->GeneratePerlinNoiseMap(100, 100, 6, 0.03f, 0.3f, location);
 	//m_renderer->LoadSpecularMap("../data/Enemyelite/EnemyElite_S.tga", location);
 	
 	//Visor
 	location = m_renderer->LoadOBJ("../data/vanquish/visor.obj");
 	m_renderer->LoadTexture("../data/vanquish/visor.tga", location);
-	m_renderer->GeneratePerlinNoiseMap(100, 100, 6, 0.03f, 0.3f, location);
 
 	return 0;
 }

@@ -1,8 +1,8 @@
-#include "tut12\Tutorial12.h"
+#include "mirrorTesting\mirrorTest1.h"
 
 int main ()
 {
-	Tutorial12* game = new Tutorial12;
+	MirrorTest1* game = new MirrorTest1;
 
 	return game->Run();
 }
