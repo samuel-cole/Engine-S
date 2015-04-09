@@ -7,5 +7,5 @@ uniform mat4 Global;
 
 void main()
 {
-	gl_Position = LightMatrix * Global * Position;
+	gl_Position = LightMatrix * (Global * Position);
 }

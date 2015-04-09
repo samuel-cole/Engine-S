@@ -58,7 +58,7 @@ int Tutorial4::Init()
 	m_renderer->LoadTexture("../data/vanquish/visor.tga", location);
 	
 	//Ground
-	location = m_renderer->GenerateGrid(10, 10, glm::vec3(0, 0, 0));
+	location = m_renderer->GenerateGrid(10, 10);
 	m_renderer->LoadTexture("../data/crate.png", location);
 	m_renderer->LoadNormalMap("../data/rock_normal.tga", location);
 

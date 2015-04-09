@@ -31,7 +31,7 @@ void main() {
 	float d = max(0, dot( normalize(TBN * N), -normalize(LightDir) ) );
 	vec3 E = normalize( CameraPos - vPosition );
 	vec3 R = reflect( LightDir, vNormal );
-	float s = texture(Specular, vTexCoord).xyz * max( 0, dot ( R, -E ) );
+	float s = texture(Specular, vTexCoord).xyz * max( 0, dot ( R, E ) );
 	s = pow( s, SpecPow );
 	
 	if (texture(ShadowMap, vShadowCoord.xy).r < vShadowCoord.z - ShadowBias) {

@@ -25,7 +25,8 @@ int Tutorial10::Init()
 		m_staticCamera[i]->SetLookAt(vec3((rand()/(float)RAND_MAX) * 20.0f - 10.0f, (rand()/(float)RAND_MAX) * 20.0f - 10.0f, (rand()/(float)RAND_MAX) * 20.0f - 10.0f), vec3(0, 10, 0), vec3(0, 1, 0));
 
 		frameTextures.push_back(-1);
-		frameTextures[i] = m_renderer->LoadFrameBuffer(m_staticCamera[i], vec4(0.0f, 0.0f, 512.0f, 512.0f), vec3(1.0f, 1.0f, 1.0f));
+		unsigned int buffer;
+		frameTextures[i] = m_renderer->LoadFrameBuffer(m_staticCamera[i], vec4(0.0f, 0.0f, 512.0f, 512.0f), vec3(1.0f, 1.0f, 1.0f), buffer);
 	}
 
 	std::vector<std::string> textures;
@@ -48,7 +49,8 @@ int Tutorial10::Init()
 	{
 		for (unsigned int j = 0; j < 10; ++j)
 		{
-			unsigned int grid = m_renderer->GenerateGrid(1, 1, glm::vec3(i, 0, j));
+			//This is currently broken- I need to add an offset to each one (I had this originally, then changed how offsets work).
+			unsigned int grid = m_renderer->GenerateGrid(1, 1);
 			m_renderer->LoadTexture(frameTextures[i* 10 + j], grid);
 		}
 	}

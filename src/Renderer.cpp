@@ -36,7 +36,8 @@ m_standardProgram(-1), m_particleProgram(-1), m_animatedProgram(-1), m_postProce
 	//m_frameBufferColours.push_back(vec3(0.25f, 0.25f, 0.75f));
 
 	//Set up the framebuffer that everything will be ran through- used for post processing effects.
-	unsigned int texture = LoadFrameBuffer(a_camera, vec4(0, 0, 1280, 720), vec3(0.25f, 0.25f, 0.75f));
+	unsigned int buffer;
+	unsigned int texture = LoadFrameBuffer(a_camera, vec4(0, 0, 1280, 720), vec3(0.25f, 0.25f, 0.75f), buffer);
 
 	//Make a fullscreen quad to render the post processing framebuffer stuff through.
 	glm::vec2 halfTexel = 1.0f / glm::vec2(1280, 720) * 0.5f;
@@ -109,6 +110,7 @@ unsigned int Renderer::CreateProgram(const string& a_vertPath, const string& a_f
 	m_uniformLocations[programID].push_back(glGetUniformLocation(programID, "ProjectionView"));
 	m_uniformLocations[programID].push_back(glGetUniformLocation(programID, "Bones"));
 	m_uniformLocations[programID].push_back(glGetUniformLocation(programID, "Global"));
+	m_uniformLocations[programID].push_back(glGetUniformLocation(programID, "TransposeInverseGlobal"));
 	m_uniformLocations[programID].push_back(glGetUniformLocation(programID, "LightDir"));
 	m_uniformLocations[programID].push_back(glGetUniformLocation(programID, "LightColour"));
 	m_uniformLocations[programID].push_back(glGetUniformLocation(programID, "CameraPos"));
@@ -154,7 +156,7 @@ unsigned int Renderer::LoadShader(const string& a_path, const unsigned int a_typ
 	return shader;
 }
 
-unsigned int Renderer::LoadFrameBuffer(Camera* const a_camera, const vec4& a_dimensions, const vec3& a_backgroundColour)
+unsigned int Renderer::LoadFrameBuffer(Camera* const a_camera, const vec4& a_dimensions, const vec3& a_backgroundColour, unsigned int& a_frameBufferNo)
 {
 	//Create frame buffer
 	unsigned int FBO;
@@ -203,7 +205,26 @@ unsigned int Renderer::LoadFrameBuffer(Camera* const a_camera, const vec4& a_dim
 	
 	m_cameras.push_back(a_camera);
 
+	a_frameBufferNo = m_frameBuffers.size() - 1;
+
 	return FBOTexture;
+}
+
+unsigned int Renderer::AddFrameBufferIgnore(const unsigned int a_frameBuffer, const unsigned int a_object)
+{
+	m_frameBufferIgnores.push_back(std::make_pair(a_frameBuffer, a_object));
+	return m_frameBufferIgnores.size() - 1;
+}
+
+void Renderer::RemoveFrameBufferIgnore(const unsigned int a_ignoreIndex)
+{
+	if (m_frameBufferIgnores.size() > a_ignoreIndex)
+	{
+		if (a_ignoreIndex == m_frameBufferIgnores.size() - 1)
+			m_frameBufferIgnores.pop_back();
+		else
+			m_frameBufferIgnores[a_ignoreIndex].first = -1;
+	}
 }
 
 void Renderer::GenerateShadowMap(const float a_lightWidth)
@@ -392,7 +413,7 @@ const mat4& Renderer::GetTransform(const unsigned int a_index)
 		return m_globals[a_index];
 }
 
-unsigned int Renderer::GenerateGrid(const unsigned int a_rows, const unsigned int a_columns, const glm::vec3& a_offset)
+unsigned int Renderer::GenerateGrid(const unsigned int a_rows, const unsigned int a_columns)
 {
 	if (m_standardProgram == -1)
 		m_standardProgram = CreateProgram("../data/shaders/vert.txt", "../data/shaders/frag.txt");
@@ -406,14 +427,14 @@ unsigned int Renderer::GenerateGrid(const unsigned int a_rows, const unsigned in
 	{
 		for (unsigned int c = 0; c < columns; ++c)
 		{
-			aoVertices[ r * columns + c].position = vec4((float)c + a_offset.x, a_offset.y, (float)r + a_offset.z, 1);
+			aoVertices[ r * columns + c].position = vec4((float)c - a_columns/2, 0, (float)r - a_rows/2, 1);
 	
 			//Creating an arbitrary colour.
 			//vec3 colour(sinf( (c / (float)(columns - 1)) * (r / (float)(rows - 1))));
 			vec3 colour(1,1,1);
 	
 			aoVertices[r * columns + c].colour = vec4(colour, 1);
-			aoVertices[r * columns + c].normal = glm::vec4(0, 1, 0, 1);
+			aoVertices[r * columns + c].normal = glm::vec4(0, 1, 0, 0);
 			aoVertices[r * columns + c].tangent = glm::vec4(1, 0, 1, 1);
 			aoVertices[r * columns + c].uv = glm::vec2((float)(r + 1)/rows, (float)(c + 1)/columns);
 		}
@@ -885,6 +906,19 @@ void Renderer::DrawModels(unsigned int j)
 				if (m_skeletons[i] != nullptr)
 					continue;
 
+				//Check to see if this model is on this frame buffer's ignore list.
+				bool onIgnoreList = false;
+				for (unsigned int k = 0; k < m_frameBufferIgnores.size(); ++k)
+				{
+					if (m_frameBufferIgnores[k].first == j && m_frameBufferIgnores[k].second == i)
+					{
+						onIgnoreList = true;
+						break;
+					}
+				}
+				if (onIgnoreList)
+					continue;
+
 				// Set Texture/Diffuse Slot
 				glActiveTexture(GL_TEXTURE0);
 				glBindTexture(GL_TEXTURE_2D, ((m_textures[i] == -1) ? m_defaultDiffuse : m_textures[i]));
@@ -912,6 +946,8 @@ void Renderer::DrawModels(unsigned int j)
 
 				// Set Transform
 				glUniformMatrix4fv((m_uniformLocations[m_standardProgram])[GLOBAL], 1, GL_FALSE, &((m_globals[i])[0][0]));
+				mat4 transposeInverseGlobal = glm::transpose(glm::inverse(m_globals[i]));
+				glUniformMatrix4fv((m_uniformLocations[m_standardProgram])[TRANS_INV_GLOBAL], 1, GL_FALSE, &(transposeInverseGlobal[0][0]));
 
 				//Draw stuff
 				glBindVertexArray(m_VAO[i]);
@@ -954,6 +990,19 @@ void Renderer::DrawModels(unsigned int j)
 					if (m_skeletons[i] == nullptr)
 						continue;
 
+					//Check to see if this model is on this frame buffer's ignore list.
+					bool onIgnoreList = false;
+					for (unsigned int k = 0; k < m_frameBufferIgnores.size(); ++k)
+					{
+						if (m_frameBufferIgnores[k].first == j && m_frameBufferIgnores[k].second == i)
+						{
+							onIgnoreList = true;
+							break;
+						}
+					}
+					if (onIgnoreList)
+						continue;
+
 					// Set Texture/Diffuse Slot
 					glActiveTexture(GL_TEXTURE0);
 					glBindTexture(GL_TEXTURE_2D, ((m_textures[i] == -1) ? m_defaultDiffuse : m_textures[i]));
@@ -976,7 +1025,10 @@ void Renderer::DrawModels(unsigned int j)
 
 					// Set Transform
 					glUniformMatrix4fv((m_uniformLocations[m_animatedProgram])[GLOBAL], 1, GL_FALSE, &((m_globals[i])[0][0]));
+					mat4 transposeInverseGlobal = glm::transpose(glm::inverse(m_globals[i]));
+					glUniformMatrix4fv((m_uniformLocations[m_animatedProgram])[TRANS_INV_GLOBAL], 1, GL_FALSE, &(transposeInverseGlobal[0][0]));
 					glUniformMatrix4fv((m_uniformLocations[m_animatedProgram])[BONES], m_skeletons[i]->m_boneCount, GL_FALSE, (float*)m_skeletons[i]->m_bones);
+
 
 					//Draw stuff
 					glBindVertexArray(m_VAO[i]);
@@ -1077,6 +1129,8 @@ void Renderer::SplitIndex(const string& a_string, std::vector<Vertex>* const a_v
 		}
 		else if (firstNumSecondSlash == firstNumFirstSlash + 1)
 		{
+			//Double slash
+
 			//Get info out of string...
 			//First num stuff
 			string firstNumNormal = firstNum.substr(firstNumSecondSlash + 1, string::npos);
@@ -1141,9 +1195,9 @@ void Renderer::GenerateVertFromIndices(const std::string& a_index, const std::st
 	else
 		vertex.position = vec4(0, 0, 0, 1);
 	if (a_normal != "")
-		vertex.normal = vec4((*a_normalVec)[PositivifyIndex(std::stoi(a_normal) - 1, a_normalVec)], 1);
+		vertex.normal = vec4((*a_normalVec)[PositivifyIndex(std::stoi(a_normal) - 1, a_normalVec)], 0);
 	else
-		vertex.normal = vec4(0, 1, 0, 1);
+		vertex.normal = vec4(0, 1, 0, 0);
 	if (a_uv != "")
 		vertex.uv = glm::vec2((*a_uvVec)[PositivifyIndex(std::stoi(a_uv) - 1, a_uvVec)]);
 	else

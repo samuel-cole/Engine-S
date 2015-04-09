@@ -21,6 +21,7 @@ enum UniformTypes
 	PROJECTION_VIEW,
 	BONES,
 	GLOBAL,
+	TRANS_INV_GLOBAL,
 	LIGHT_DIR,
 	LIGHT_COLOUR,
 	CAMERA_POS,
@@ -120,6 +121,9 @@ private:
 	//Vector containing the background colours of each frame buffer. 
 	std::vector<vec3> m_frameBufferColours;
 
+	//Stores which frame buffers should ignore which objects- first unsigned int is for the frame buffer that is going to ignore an object, second one is for the object to be ignored.
+	std::vector<std::pair<unsigned int, unsigned int>> m_frameBufferIgnores;
+
 	//Vector containing indices to the m_frameBuffers vector- shows which framebuffers are used for post processing.
 	//std::vector<unsigned int> m_postProcessingBufferIndices;
 
@@ -191,8 +195,13 @@ public:
 	//Constructor for creating a new renderer.
 	Renderer(Camera* const a_camera, TwBar* const a_bar);
 
-	//Creates a new frame buffer. Returns the texture that is generated.
-	unsigned int LoadFrameBuffer(Camera* const a_camera, const vec4& a_dimensions, const vec3& a_backgroundColour);
+	//Creates a new frame buffer. Returns the texture that is generated. Use a_frameBufferNo to access the number of the frame buffer- this is only needed for frame buffer ignores.
+	unsigned int LoadFrameBuffer(Camera* const a_camera, const vec4& a_dimensions, const vec3& a_backgroundColour, unsigned int& a_frameBufferNo);
+	//Causes a_object to not be rendered within a_framebuffer. Returns the index of the ignore used, use this to remove the ignore if necessary.
+	unsigned int AddFrameBufferIgnore(const unsigned int a_frameBuffer, const unsigned int a_object);
+	//Removes the object/framebuffer pair at the specified index from the ignore list.
+	void RemoveFrameBufferIgnore(const unsigned int a_ignoreIndex);
+
 	//Creates a shadow map. Setting light width to a high number gives a large area that shadows can be created within, while setting it to a low number generates higher quality shadow maps.
 	void GenerateShadowMap(const float a_lightWidth);
 	//Generates a perlin noise map. Pass the index of the model to be perlined into a_index. Note that perlin maps are currently not supported for animated models. a_octaves determines how bumpy the map will be.
@@ -214,8 +223,7 @@ public:
 	const glm::mat4& GetTransform(const unsigned int a_index);
 
 	//Generates a grid of vertices on the x-z plane with the specified number of rows and columns. Returns the index of the grid, for use in texturing.
-	//TODO: Remove offset once transforms are implemented.
-	unsigned int GenerateGrid(const unsigned int a_rows, const unsigned int a_columns, const glm::vec3& a_offset);
+	unsigned int GenerateGrid(const unsigned int a_rows, const unsigned int a_columns);
 
 	//Method for creating a particle emitter. Note that the emit rate variable will not be used if gpu-based particles are created.
 	unsigned int CreateEmitter(const unsigned int a_maxParticles, const unsigned int a_emitRate, const float a_lifespanMin, const float a_lifespanMax,

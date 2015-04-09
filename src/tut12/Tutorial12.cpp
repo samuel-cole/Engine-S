@@ -35,7 +35,7 @@ int Tutorial12::Init()
 	
 
 	//Ground
-	unsigned int location = m_renderer->GenerateGrid(100, 100, glm::vec3(-50, 0, -50));
+	unsigned int location = m_renderer->GenerateGrid(100, 100);
 	m_renderer->LoadTexture("../data/crate.png", location);
 	m_renderer->GeneratePerlinNoiseMap(100, 100, 6, 20.0f, 0.3f, location);
 	//

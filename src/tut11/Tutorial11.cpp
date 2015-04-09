@@ -54,7 +54,7 @@ int Tutorial11::Init()
 	//m_renderer->LoadSpecularMap("../data/Enemyelite/EnemyElite_S.tga", location);
 	
 	//Ground
-	location = m_renderer->GenerateGrid(100, 100, glm::vec3(-50, 0, -50));
+	location = m_renderer->GenerateGrid(100, 100);
 	m_renderer->LoadTexture("../data/crate.png", location);
 	//m_renderer->LoadNormalMap("../data/rock_normal.tga", location);
 	//m_renderer->LoadSpecularMap("../data/Enemyelite/EnemyElite_S.tga", location);

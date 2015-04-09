@@ -17,13 +17,14 @@ out vec2 vTexCoord;
 uniform mat4 ProjectionView;
 uniform mat4 LightMatrix;
 uniform mat4 Global;
+uniform mat4 TransposeInverseGlobal;
 
 uniform sampler2D PerlinMap;
 
 void main() {
 	vColour = Colour.xyz;
-	vNormal = Normal.xyz;
-	vPosition = (Position * Global).xyz;
+	vNormal = (TransposeInverseGlobal * Normal).xyz;
+	vPosition = (Global * Position).xyz;
 	vPosition += vNormal * texture(PerlinMap, TexCoord).r;
 	vTangent = Tangent.xyz;
 	vBiTangent = cross(vNormal, vTangent);

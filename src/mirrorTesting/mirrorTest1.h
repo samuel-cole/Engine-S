@@ -20,10 +20,11 @@ private:
 	float m_timer;
 
 	FlyCamera* m_camera;
-	std::vector<StaticCamera*> m_staticCamera;
+	StaticCamera* m_staticCamera;
 	Renderer* m_renderer;
 
 	unsigned int m_model;
+	unsigned int m_mirror;
 };
 
 #endif

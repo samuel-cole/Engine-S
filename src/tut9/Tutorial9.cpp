@@ -23,7 +23,8 @@ int Tutorial9::Init()
 
 	m_renderer = new Renderer(m_camera, m_debugBar);
 
-	unsigned int texture = m_renderer->LoadFrameBuffer(m_camera, vec4(0.0f, 0.0f, 512.0f, 512.0f), vec3(1.0f, 1.0f, 1.0f));
+	unsigned int buffer;
+	unsigned int texture = m_renderer->LoadFrameBuffer(m_camera, vec4(0.0f, 0.0f, 512.0f, 512.0f), vec3(1.0f, 1.0f, 1.0f), buffer);
 
 	std::vector<std::string> textures;
 	std::vector<std::string> normalMaps;
@@ -41,7 +42,7 @@ int Tutorial9::Init()
 	
 	m_model = m_renderer->LoadFBX("../data/Enemyelite/EnemyElite.fbx", &textures, &normalMaps, &specularMaps);
 
-	unsigned int grid = m_renderer->GenerateGrid(1000, 1000, glm::vec3(0, 0, 0));
+	unsigned int grid = m_renderer->GenerateGrid(1000, 1000);
 	m_renderer->LoadTexture(texture, grid);
 	m_renderer->LoadNormalMap("../data/rock_normal.tga", grid);
 

@@ -20,7 +20,7 @@ void main()
 	P += Bones[index.z] * Position * Weights.z;
 	P += Bones[index.w] * Position * Weights.w;
 	
-	vShadowCoord = (LightMatrix * Global * P).xyz;
+	vShadowCoord = (LightMatrix * (Global * P)).xyz;
 
-	gl_Position = LightMatrix * Global * P;
+	gl_Position = LightMatrix * (Global * P);
 }

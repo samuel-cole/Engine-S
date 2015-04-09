@@ -24,7 +24,7 @@ int Tutorial5::Init()
 
 	m_renderer = new Renderer(m_camera, m_debugBar);
 	
-	unsigned int grid = m_renderer->GenerateGrid(10, 10, glm::vec3(0, 0, 0));
+	unsigned int grid = m_renderer->GenerateGrid(10, 10);
 
 	m_renderer->LoadTexture("../data/rock_diffuse.tga", grid);
 

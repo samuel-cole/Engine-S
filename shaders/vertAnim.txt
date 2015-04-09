@@ -19,6 +19,7 @@ out vec2 vTexCoord;
 uniform mat4 ProjectionView;
 uniform mat4 LightMatrix;
 uniform mat4 Global;
+uniform mat4 TransposeInverseGlobal;
 
 const int MAX_BONES = 128;
 uniform mat4 Bones[MAX_BONES];
@@ -26,10 +27,10 @@ uniform mat4 Bones[MAX_BONES];
 void main() {
 	
 	vColour = Colour.xyz;
-	vNormal = Normal.xyz;
-	vPosition = (Global * Position).xyz;
+	//I should multiply by the TransposeInverseGlobal here, but it isn't working, and multiplying by the global looks so good!
+	vNormal = (Global * Normal).xyz;
 	vTangent = Tangent.xyz;
-	vBiTangent = cross(vNormal, vTangent);
+	vBiTangent = cross(-vNormal, vTangent);
 	vTexCoord = TexCoord;
 
 	
@@ -39,8 +40,10 @@ void main() {
 	P += Bones[index.y] * Position * Weights.y;
 	P += Bones[index.z] * Position * Weights.z;
 	P += Bones[index.w] * Position * Weights.w;
+
+	vPosition = (Global * P).xyz;
 	
 	vShadowCoord = (LightMatrix * P).xyz;
 	
-	gl_Position = ProjectionView * Global * P;
+	gl_Position = ProjectionView * vec4(vPosition, 1);
 };
