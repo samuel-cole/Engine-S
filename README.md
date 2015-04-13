@@ -1,2 +1,2 @@
 # IntroToOpenGL
-Project with my AIE OpenGL tutorial work in it.
+Project with my AIE OpenGL engine in it.
