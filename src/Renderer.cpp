@@ -467,12 +467,12 @@ unsigned int Renderer::GenerateGrid(const unsigned int a_rows, const unsigned in
 	return m_numOfIndices.size() - 1;
 }
 
-unsigned int Renderer::CreateEmitter(const unsigned int a_maxParticles, const unsigned int a_emitRate, const float a_lifespanMin, const float a_lifespanMax,
-									 const float a_velocityMin, const float a_velocityMax, const float a_startSize, const float a_endSize, const vec4& a_startColour, const vec4& a_endColour, const bool a_gpuBased)
+unsigned int Renderer::CreateEmitter(const unsigned int a_maxParticles, const unsigned int a_emitRate, const float a_lifespanMin, const float a_lifespanMax, const float a_velocityMin, const float a_velocityMax,
+									 const float a_startSize, const float a_endSize, const vec4& a_startColour, const vec4& a_endColour, const vec3& a_direction, const float a_directionVariance, const bool a_gpuBased)
 {
 	if (a_gpuBased)
 	{
-		GPUParticleEmitter* emitter = new GPUParticleEmitter(a_maxParticles, a_lifespanMin, a_lifespanMax, a_velocityMin, a_velocityMax, a_startSize, a_endSize, a_startColour, a_endColour);
+		GPUParticleEmitter* emitter = new GPUParticleEmitter(a_maxParticles, a_lifespanMin, a_lifespanMax, a_velocityMin, a_velocityMax, a_startSize, a_endSize, a_startColour, a_endColour, a_direction, a_directionVariance);
 
 		std::vector<GPUParticleEmitter*>::iterator i = m_gpuEmitters.begin();
 		while (i != m_gpuEmitters.end())
@@ -513,12 +513,12 @@ unsigned int Renderer::CreateEmitter(const unsigned int a_maxParticles, const un
 	}
 }
 
-unsigned int Renderer::CreateEmitter(const unsigned int a_maxParticles, const float a_lifespanMin, const float a_lifespanMax,
-	const float a_velocityMin, const float a_velocityMax, const float a_startSize, const float a_endSize, const vec4& a_startColour, const vec4& a_endColour, const bool a_gpuBased)
+unsigned int Renderer::CreateEmitter(const unsigned int a_maxParticles, const float a_lifespanMin, const float a_lifespanMax, const float a_velocityMin, const float a_velocityMax,
+									 const float a_startSize, const float a_endSize, const vec4& a_startColour, const vec4& a_endColour, const vec3& a_direction, const float a_directionVariance, const bool a_gpuBased)
 {
 	if (a_gpuBased)
 	{
-		GPUParticleEmitter* emitter = new GPUParticleEmitter(a_maxParticles, a_lifespanMin, a_lifespanMax, a_velocityMin, a_velocityMax, a_startSize, a_endSize, a_startColour, a_endColour);
+		GPUParticleEmitter* emitter = new GPUParticleEmitter(a_maxParticles, a_lifespanMin, a_lifespanMax, a_velocityMin, a_velocityMax, a_startSize, a_endSize, a_startColour, a_endColour, a_direction, a_directionVariance);
 
 		std::vector<GPUParticleEmitter*>::iterator i = m_gpuEmitters.begin();
 		while (i != m_gpuEmitters.end())

@@ -16,9 +16,12 @@ uniform float LifeMin;
 uniform float LifeMax;
 uniform float VelocityMin;
 uniform float VelocityMax;
+uniform float DirectionVariance;
 uniform vec3 EmitterPosition;
+uniform vec3 EmitterDirection;
 
 const float INVERSE_MAX_UINT = 1.0f / 4294967295.0f;
+const float PI = 3.14159265358979f;
 
 //Random number code by Robert Bridson, co-author of "Fluid Simulation for Computer Graphics"
 float rand(uint seed, float range) 
@@ -40,9 +43,27 @@ void main()
 	if (vLifeTime > vLifeSpan)
 	{
 		uint seed = uint(Time * 1000) + uint(gl_VertexID);
-		vVelocity.x = rand(seed++, 2) - 1;
-		vVelocity.y = rand(seed++, 2) - 1;
-		vVelocity.z = rand(seed++, 2) - 1;
+
+		//I'm almost certain that my code for finding a random angle in the correct direction is a horribly innefficent way of doing this, but it's a way I understand.
+		//Calculating random direction in unit sphere (note: this is not uniformly distributed)
+		float randTheta = rand(seed++, DirectionVariance);
+		float randPhi = rand(seed++, 2 * PI);
+		//Calculating the polar form of the direction vector. Something is wrong somewhere below this point- the direction vector is not being properly taken into account.
+		float dirPhi = atan(EmitterDirection.y, EmitterDirection.x);
+		float dirTheta = acos(EmitterDirection.z);
+		//Add angles together.
+		float phi = randPhi + dirPhi;
+		float theta = randTheta + dirTheta;
+		//Now, convert back to cartesian coordinates.
+		vVelocity = vec3(cos(phi) * sin(theta), sin(phi) * sin(theta), cos(theta));
+
+
+
+		////NEED TO CHANGE THE BELOW LINES TO INCLUDE DIRECTIONVARIANCE
+		//vVelocity.x = rand(seed++, 2) - 1;
+		//vVelocity.y = rand(seed++, 2) - 1;
+		//vVelocity.z = rand(seed++, 2) - 1;
+
 		vVelocity = (rand(seed++, VelocityMax - VelocityMin) + VelocityMin) * normalize(vVelocity);
 		vPosition = EmitterPosition;
 		vLifeTime = 0;

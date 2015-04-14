@@ -46,7 +46,7 @@ int Tutorial9::Init()
 	m_renderer->LoadTexture(texture, grid);
 	m_renderer->LoadNormalMap("../data/rock_normal.tga", grid);
 
-	m_emitter = m_renderer->CreateEmitter(100000, 0.0f, 500.0f, 5.0f, 5.0f, 1.0f, 1.0f, vec4(1, 0, 0, 1), vec4(1, 1, 0, 1), true);
+	m_emitter = m_renderer->CreateEmitter(100000, 0.0f, 500.0f, 5.0f, 5.0f, 1.0f, 1.0f, vec4(1, 0, 0, 1), vec4(1, 1, 0, 1), vec3(1, 0, 0), 3.14159265358979f, true);
 
 	m_timer = 0;
 

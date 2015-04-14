@@ -2,7 +2,8 @@
 #include "gl_core_4_4.h"
 #include <fstream>
 
-GPUParticleEmitter::GPUParticleEmitter() : m_particles(nullptr), m_maxParticles(0), m_position(0, 0, 0), m_drawProgram(0), m_updateProgram(0), m_lastDrawTime(0), m_deltaTimeUniformLocation(-1), m_emitterPositionUniformLocation(-1), m_timeUniformLocation(-1)
+GPUParticleEmitter::GPUParticleEmitter() : m_particles(nullptr), m_maxParticles(0), m_position(0, 0, 0), m_drawProgram(0), m_updateProgram(0), m_lastDrawTime(0), 
+										   m_deltaTimeUniformLocation(-1), m_emitterPositionUniformLocation(-1), m_timeUniformLocation(-1), m_directionUniformLocation(-1)
 {
 	m_vao[0] = 0;
 	m_vao[1] = 0;
@@ -12,7 +13,8 @@ GPUParticleEmitter::GPUParticleEmitter() : m_particles(nullptr), m_maxParticles(
 
 GPUParticleEmitter::GPUParticleEmitter(const unsigned int a_maxParticles, const float a_lifeSpanMin, const float a_lifeSpanMax,
 									   const float a_velocityMin, const float a_velocityMax, const float a_startSize, const float a_endSize,
-									   const  vec4& a_startColour, const vec4& a_endColour) : m_deltaTimeUniformLocation(-1), m_emitterPositionUniformLocation(-1), m_timeUniformLocation(-1)
+									   const  vec4& a_startColour, const vec4& a_endColour, const vec3& a_direction, const float a_directionVariance) 
+									   : m_deltaTimeUniformLocation(-1), m_emitterPositionUniformLocation(-1), m_timeUniformLocation(-1), m_directionUniformLocation(-1)
 
 {
 	m_startColour = a_startColour;
@@ -24,6 +26,8 @@ GPUParticleEmitter::GPUParticleEmitter(const unsigned int a_maxParticles, const 
 	m_lifeSpanMin = a_lifeSpanMin;
 	m_lifeSpanMax = a_lifeSpanMax;
 	m_maxParticles = a_maxParticles;
+	m_direction = a_direction;
+	m_directionVariation = a_directionVariance;
 
 	m_particles = new GPUParticle[a_maxParticles];
 
@@ -101,7 +105,7 @@ void GPUParticleEmitter::CreateUpdateProgram()
 		glGetShaderiv(m_drawProgram, GL_INFO_LOG_LENGTH, &infoLogLength);
 		char* infoLog = new char[infoLogLength];
 
-		glGetShaderInfoLog(m_drawProgram, infoLogLength, 0, infoLog);
+		glGetProgramInfoLog(m_drawProgram, infoLogLength, 0, infoLog);
 		printf("Error: Failed to link shader program!\n");
 		printf("%s\n", infoLog);
 		delete[] infoLog;
@@ -120,11 +124,14 @@ void GPUParticleEmitter::CreateUpdateProgram()
 	glUniform1f(location, m_velocityMin);
 	location = glGetUniformLocation(m_updateProgram, "VelocityMax");
 	glUniform1f(location, m_velocityMax);
+	location = glGetUniformLocation(m_updateProgram, "DirectionVariance");
+	glUniform1f(location, m_directionVariation);
 
 	//Set the location of uniforms that will change.
 	m_timeUniformLocation = glGetUniformLocation(m_updateProgram, "Time");
 	m_deltaTimeUniformLocation = glGetUniformLocation(m_updateProgram, "DeltaTime");
 	m_emitterPositionUniformLocation = glGetUniformLocation(m_updateProgram, "EmitterPosition");
+	m_directionUniformLocation = glGetUniformLocation(m_updateProgram, "EmitterDirection");
 }
 
 void GPUParticleEmitter::CreateDrawProgram()
@@ -218,6 +225,7 @@ void GPUParticleEmitter::Draw(const float a_time, const glm::mat4& a_cameraTrans
 	glUniform1f(m_timeUniformLocation, a_time);
 	glUniform1f(m_deltaTimeUniformLocation, deltaTime);
 	glUniform3fv(m_emitterPositionUniformLocation, 1, &m_position[0]);
+	glUniform3fv(m_directionUniformLocation, 1, &m_direction[0]);
 
 	//Don't use the rasterizer, go to the buffer instead.
 	glEnable(GL_RASTERIZER_DISCARD);

@@ -26,49 +26,57 @@ int Tutorial8::Init()
 
 	particleDirection = true;
 
-	//m_emitter = m_renderer->CreateEmitter(100000,			//Max particles
-	//									  0.1f,				//Lifespan minimum 
-	//									  100.0f,			//Lifespan maximum
-	//									  5.0f,				//Velocity minimum
-	//									  5.0f,				//Velocity maximum
-	//									  1.0f,				//Start size
-	//									  0.1f,				//End size
-	//									  vec4(1, 0, 0, 1), //Start colour
-	//									  vec4(1, 1, 0, 1), //End colour
-	//									  true);			//GPU based
-   
-	m_emitter = m_renderer->CreateEmitter(1000000,			//Max particles
+	m_emitter = m_renderer->CreateEmitter(100000,			//Max particles
 										  0.1f,				//Lifespan minimum 
-										  10.0f,			//Lifespan maximum
-										  0.0f,				//Velocity minimum
-										  1.0f,				//Velocity maximum
-										  0.1f,				//Start size
+										  100.0f,			//Lifespan maximum
+										  5.0f,				//Velocity minimum
+										  5.0f,				//Velocity maximum
+										  1.0f,				//Start size
 										  0.1f,				//End size
 										  vec4(1, 0, 0, 1), //Start colour
 										  vec4(1, 1, 0, 1), //End colour
+										  vec3(1, 1, 0),	//Direction
+										  3.14159265358979f / 10.0f,//Direction variance
 										  true);			//GPU based
-
-	m_emitter2 = m_renderer->CreateEmitter(1000000,			 //Max particles
-										   0.1f,			 //Lifespan minimum 
-										   10.0f,			 //Lifespan maximum
-										   0.0f,			 //Velocity minimum
-										   1.0f,			 //Velocity maximum
-										   0.1f,			 //Start size
-										   0.1f,			 //End size
-										   vec4(0, 0, 1, 1), //Start colour
-										   vec4(0, 1, 1, 1), //End colour
-										   true);			 //GPU based
-
-	m_emitter3 = m_renderer->CreateEmitter(100000,			 //Max particles
-										   0.1f,			 //Lifespan minimum 
-										   10.0f,			 //Lifespan maximum
-										   0.0f,			 //Velocity minimum
-										   0.0f,			 //Velocity maximum
-										   0.1f,			 //Start size
-										   0.1f,			 //End size
-										   vec4(1, 1, 1, 1), //Start colour
-										   vec4(1, 1, 1, 1), //End colour
-										   true);			 //GPU based
+   
+	//m_emitter = m_renderer->CreateEmitter(1000000,			//Max particles
+	//									  0.1f,				//Lifespan minimum 
+	//									  10.0f,			//Lifespan maximum
+	//									  0.0f,				//Velocity minimum
+	//									  1.0f,				//Velocity maximum
+	//									  0.1f,				//Start size
+	//									  0.1f,				//End size
+	//									  vec4(1, 0, 0, 1), //Start colour
+	//									  vec4(1, 1, 0, 1), //End colour
+	//									  vec3(1, 0, 0),	//Direction
+	//									  3.14159265358979f,//Direction variance
+	//									  true);			//GPU based
+	//
+	//m_emitter2 = m_renderer->CreateEmitter(1000000,			 //Max particles
+	//									   0.1f,			 //Lifespan minimum 
+	//									   10.0f,			 //Lifespan maximum
+	//									   0.0f,			 //Velocity minimum
+	//									   1.0f,			 //Velocity maximum
+	//									   0.1f,			 //Start size
+	//									   0.1f,			 //End size
+	//									   vec4(0, 0, 1, 1), //Start colour
+	//									   vec4(0, 1, 1, 1), //End colour
+	//									   vec3(1, 0, 0),	 //Direction
+	//									   3.14159265358979f,//Direction variance
+	//									   true);			 //GPU based
+	//
+	//m_emitter3 = m_renderer->CreateEmitter(100000,			 //Max particles
+	//									   0.1f,			 //Lifespan minimum 
+	//									   10.0f,			 //Lifespan maximum
+	//									   0.0f,			 //Velocity minimum
+	//									   0.0f,			 //Velocity maximum
+	//									   0.1f,			 //Start size
+	//									   0.1f,			 //End size
+	//									   vec4(1, 1, 1, 1), //Start colour
+	//									   vec4(1, 1, 1, 1), //End colour
+	//									   vec3(1, 0, 0),	//Direction
+	//									   3.14159265358979f,//Direction variance
+	//									   true);			 //GPU based
 
 	m_timer = 0;
 
@@ -81,17 +89,14 @@ void Tutorial8::Update(float a_deltaTime)
 
 	m_camera->Update(a_deltaTime);
 
-	//m_renderer->SetEmitterPosition(m_emitter, true, m_renderer->GetEmitterPosition(m_emitter, true) + vec3((float)rand() / (float)RAND_MAX, (float)rand() / (float)RAND_MAX, (float)rand() / (float)RAND_MAX) * 2 - vec3(1, 1, 1));
-	//m_renderer->SetEmitterPosition(m_emitter, true, m_renderer->GetEmitterPosition(m_emitter, true) + vec3(1, 0, 0));
-
-	if (m_renderer->GetEmitterPosition(m_emitter, true).y > 40.0f)
-		particleDirection = false;
-	else if (m_renderer->GetEmitterPosition(m_emitter, true).y < -40.0f)
-		particleDirection = true;
-
-	m_renderer->SetEmitterPosition(m_emitter,  true, vec3(cosf(m_timer),				 m_renderer->GetEmitterPosition(m_emitter,  true).y + ((particleDirection) ? 0.1f : -0.1f), sinf(m_timer)));
-	m_renderer->SetEmitterPosition(m_emitter2, true, vec3(cosf(m_timer + 3.1415926535f), m_renderer->GetEmitterPosition(m_emitter2, true).y + ((particleDirection) ? 0.1f : -0.1f), sinf(m_timer + 3.1415926535f)));
-	m_renderer->SetEmitterPosition(m_emitter3, true, vec3(0, m_renderer->GetEmitterPosition(m_emitter3, true).y + ((particleDirection) ? 0.1f : -0.1f), 0));
+	//if (m_renderer->GetEmitterPosition(m_emitter, true).y > 40.0f)
+	//	particleDirection = false;
+	//else if (m_renderer->GetEmitterPosition(m_emitter, true).y < -40.0f)
+	//	particleDirection = true;
+	//
+	//m_renderer->SetEmitterPosition(m_emitter,  true, vec3(cosf(m_timer),				 m_renderer->GetEmitterPosition(m_emitter,  true).y + ((particleDirection) ? 0.1f : -0.1f), sinf(m_timer)));
+	//m_renderer->SetEmitterPosition(m_emitter2, true, vec3(cosf(m_timer + 3.1415926535f), m_renderer->GetEmitterPosition(m_emitter2, true).y + ((particleDirection) ? 0.1f : -0.1f), sinf(m_timer + 3.1415926535f)));
+	//m_renderer->SetEmitterPosition(m_emitter3, true, vec3(0, m_renderer->GetEmitterPosition(m_emitter3, true).y + ((particleDirection) ? 0.1f : -0.1f), 0));
 }
 
 void Tutorial8::Draw()

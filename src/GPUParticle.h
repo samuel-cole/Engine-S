@@ -24,7 +24,7 @@ public:
 	GPUParticleEmitter();
 	GPUParticleEmitter(const unsigned int a_maxParticles, const float a_lifeSpanMin, const float a_lifeSpanMax,
 					   const float a_velocityMin, const float a_velocityMax, const float a_startSize, const float a_endSize,
-					   const vec4& a_startColour, const vec4& a_endColour);
+					   const vec4& a_startColour, const vec4& a_endColour, const vec3& a_direction, const float a_directionVariance);
 	~GPUParticleEmitter();
 
 	void Draw(const float a_time, const glm::mat4& a_cameraTransform, const glm::mat4& a_projectionView);
@@ -36,6 +36,14 @@ public:
 	inline void SetPosition(const vec3& a_position)
 	{
 		m_position = a_position;
+	}
+	inline const vec3& GetDirection()
+	{
+		return m_direction;
+	}
+	inline void SetDirection(const vec3& a_direction)
+	{
+		m_direction = a_direction;
 	}
 
 private:
@@ -49,7 +57,10 @@ private:
 
 	unsigned int m_maxParticles;
 
+	float m_directionVariation;
+
 	vec3 m_position;
+	vec3 m_direction;
 
 	float m_lifeSpanMin, m_lifeSpanMax;
 	float m_velocityMin, m_velocityMax;
@@ -63,7 +74,7 @@ private:
 	unsigned int m_drawProgram, m_updateProgram;
 
 	//Update program uniform locations
-	unsigned int m_timeUniformLocation, m_deltaTimeUniformLocation, m_emitterPositionUniformLocation;
+	unsigned int m_timeUniformLocation, m_deltaTimeUniformLocation, m_emitterPositionUniformLocation, m_directionUniformLocation;
 	//Draw program uniform locations
 	unsigned int m_projectionViewUniformLocation, m_cameraTransformUniformLocation;
 

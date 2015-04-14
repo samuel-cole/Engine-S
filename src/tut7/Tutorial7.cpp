@@ -26,8 +26,8 @@ int Tutorial7::Init()
 	m_renderer = new Renderer(m_camera, m_debugBar);
 
 
-	m_emitter = m_renderer->CreateEmitter(1000, 500, 0.1f, 1.0f, 1, 5, 1, 0.1f, vec4(1, 0, 0, 1), vec4(1, 1, 0, 1), false);
-	m_emitter2 = m_renderer->CreateEmitter(1000, 500, 0.1f, 2.0f, 1, 5, 1, 0.1f, vec4(0, 0, 1, 1), vec4(1, 1, 1, 1), false);
+	m_emitter = m_renderer->CreateEmitter(1000, 500, 0.1f, 1.0f, 1, 5, 1, 0.1f, vec4(1, 0, 0, 1), vec4(1, 1, 0, 1), vec3(1, 0, 0), 3.14159265358979f, false);
+	m_emitter2 = m_renderer->CreateEmitter(1000, 500, 0.1f, 2.0f, 1, 5, 1, 0.1f, vec4(0, 0, 1, 1), vec4(1, 1, 1, 1), vec3(1, 0, 0), 3.14159265358979f, false);
 
 	return 0;
 }

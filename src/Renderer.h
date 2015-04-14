@@ -225,12 +225,12 @@ public:
 	//Generates a grid of vertices on the x-z plane with the specified number of rows and columns. Returns the index of the grid, for use in texturing.
 	unsigned int GenerateGrid(const unsigned int a_rows, const unsigned int a_columns);
 
-	//Method for creating a particle emitter. Note that the emit rate variable will not be used if gpu-based particles are created.
-	unsigned int CreateEmitter(const unsigned int a_maxParticles, const unsigned int a_emitRate, const float a_lifespanMin, const float a_lifespanMax,
-							   const  float a_velocityMin, const float a_velocityMax, const float a_startSize, const float a_endSize, const vec4& a_startColour, const vec4& a_endColour, const bool a_gpuBased);
+	//Method for creating a particle emitter. Note that the emit rate variable will not be used if gpu-based particles are created, and that the direction and directionvariance variables will not be used for cpu particles.
+	unsigned int CreateEmitter(const unsigned int a_maxParticles, const unsigned int a_emitRate, const float a_lifespanMin, const float a_lifespanMax, const  float a_velocityMin, const float a_velocityMax, 
+							   const float a_startSize, const float a_endSize, const vec4& a_startColour, const vec4& a_endColour, const vec3& a_direction, const float a_directionVariance, const bool a_gpuBased);
 	//Method for creating GPU-based particles only. Still has a bool to check gpu-based just to make sure that the correct function is being called.
-	unsigned int CreateEmitter(const unsigned int a_maxParticles, const float a_lifespanMin, const float a_lifespanMax,
-							   const  float a_velocityMin, const float a_velocityMax, const float a_startSize, const float a_endSize, const vec4& a_startColour, const vec4& a_endColour, const bool a_gpuBased);
+	unsigned int CreateEmitter(const unsigned int a_maxParticles, const float a_lifespanMin, const float a_lifespanMax, const  float a_velocityMin, const float a_velocityMax,
+							   const float a_startSize, const float a_endSize, const vec4& a_startColour, const vec4& a_endColour, const vec3& a_direction, const float a_directionVariance, const bool a_gpuBased);
 
 	//Sets the position of the emitter at the specified index to the position indicated.
 	void SetEmitterPosition(const unsigned int a_index, const bool a_gpuBased, const vec3& a_position);
