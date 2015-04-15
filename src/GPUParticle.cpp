@@ -102,10 +102,10 @@ void GPUParticleEmitter::CreateUpdateProgram()
 	if (success == GL_FALSE)
 	{
 		int infoLogLength = 0;
-		glGetShaderiv(m_drawProgram, GL_INFO_LOG_LENGTH, &infoLogLength);
+		glGetProgramiv(m_updateProgram, GL_INFO_LOG_LENGTH, &infoLogLength);
 		char* infoLog = new char[infoLogLength];
 
-		glGetProgramInfoLog(m_drawProgram, infoLogLength, 0, infoLog);
+		glGetProgramInfoLog(m_updateProgram, infoLogLength, 0, infoLog);
 		printf("Error: Failed to link shader program!\n");
 		printf("%s\n", infoLog);
 		delete[] infoLog;
@@ -156,7 +156,7 @@ void GPUParticleEmitter::CreateDrawProgram()
 	if (success == GL_FALSE)
 	{
 		int infoLogLength = 0;
-		glGetShaderiv(m_drawProgram, GL_INFO_LOG_LENGTH, &infoLogLength);
+		glGetProgramiv(m_drawProgram, GL_INFO_LOG_LENGTH, &infoLogLength);
 		char* infoLog = new char[infoLogLength];
 
 		glGetShaderInfoLog(m_drawProgram, infoLogLength, 0, infoLog);

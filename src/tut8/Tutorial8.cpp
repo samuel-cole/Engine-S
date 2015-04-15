@@ -1,11 +1,8 @@
 #include "Tutorial8.h"
 #include "glm\glm.hpp"
 #include "glm\ext.hpp"
-#include "gl_core_4_4.h"
-#include "GLFW\glfw3.h"
 #include "FlyCamera.h"
 #include "Renderer.h"
-#include "glm\glm.hpp"
 
 int Tutorial8::Init()
 {
@@ -16,11 +13,6 @@ int Tutorial8::Init()
 	m_camera = new FlyCamera(m_debugBar);
 	m_camera->SetPerspective(glm::pi<float>() * 0.25f, 16.0f / 9.0f, 0.1f, 10000.0f);
 	m_camera->SetLookAt(vec3(10, 10, 10), vec3(0), vec3(0, 1, 0));
-
-
-	auto major = ogl_GetMajorVersion();
-	auto minor = ogl_GetMinorVersion();
-	printf("GL: %i.%i\n", major, minor);
 
 	m_renderer = new Renderer(m_camera, m_debugBar);
 
@@ -35,8 +27,8 @@ int Tutorial8::Init()
 										  0.1f,				//End size
 										  vec4(1, 0, 0, 1), //Start colour
 										  vec4(1, 1, 0, 1), //End colour
-										  vec3(1, 1, 0),	//Direction
-										  3.14159265358979f / 10.0f,//Direction variance
+										  vec3(0, 0, 1),	//Direction
+										  3.14159265358979f/10.0f,//Direction variance
 										  true);			//GPU based
    
 	//m_emitter = m_renderer->CreateEmitter(1000000,			//Max particles

@@ -44,19 +44,35 @@ void main()
 	{
 		uint seed = uint(Time * 1000) + uint(gl_VertexID);
 
-		//I'm almost certain that my code for finding a random angle in the correct direction is a horribly innefficent way of doing this, but it's a way I understand.
-		//Calculating random direction in unit sphere (note: this is not uniformly distributed)
-		float randTheta = rand(seed++, DirectionVariance);
-		float randPhi = rand(seed++, 2 * PI);
-		//Calculating the polar form of the direction vector. Something is wrong somewhere below this point- the direction vector is not being properly taken into account.
+		//Here I calculate the direction the particle is emitted at.
+
+		//First, pick a random point on a disk. See here: http://mathworld.wolfram.com/DiskPointPicking.html
+		float randAngle = rand(seed++, 2 * PI);
+		float randMagnitude = rand(seed++, DirectionVariance);
+		float randX = randMagnitude * cos(randAngle);
+		float randY = randMagnitude * sin(randAngle);
+
+		//Now calculate the direction in polar form. TODO: Change this to be passed in in polar form, don't need to do this for every particle. 
+		//Something is wrong somewhere below this point- the direction vector is not being properly taken into account.
+		//The 'z' component of the direction vector seems to have no effect at all- this is clearest when creating a direction vector parallel to the z-axis. This produces the same result as a zero vector (a single particle).
 		float dirPhi = atan(EmitterDirection.y, EmitterDirection.x);
 		float dirTheta = acos(EmitterDirection.z);
-		//Add angles together.
-		float phi = randPhi + dirPhi;
-		float theta = randTheta + dirTheta;
+		//float dirTheta = atan(EmitterDirection.x, EmitterDirection.z);	//These two lines give an alternate spherical coordinate system (and it's the one that makes the most sense to me), 
+		//float dirPhi = asin(EmitterDirection.y);							//however the above two lines are being used instead because they work for the x and y axis (easier to differentiate than x and z).
+		//Now put the disk into direction space.
+		//Here is the issue- I shouldn't just add randX and Y to phi and theta- randX and randY should be added to the vectors orthogonal to direction.
+		float phi = dirPhi + randX;
+		float theta = dirTheta + randY;
 		//Now, convert back to cartesian coordinates.
 		vVelocity = vec3(cos(phi) * sin(theta), sin(phi) * sin(theta), cos(theta));
-
+		
+		////Instead of the commented out polar form code above, find the vectors orthonormal with direction.
+		//vec3 right = cross(vec3(0, 1, 0), EmitterDirection);
+		//vec3 up = cross(EmitterDirection, right);
+		////Renormalize for incase warping has occured.
+		//right = normalize(right);
+		//up = normalize(up);
+		//vVelocity = EmitterDirection + randX * right + randY * up;
 
 
 		////NEED TO CHANGE THE BELOW LINES TO INCLUDE DIRECTIONVARIANCE
