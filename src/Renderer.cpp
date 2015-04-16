@@ -541,6 +541,34 @@ unsigned int Renderer::CreateEmitter(const unsigned int a_maxParticles, const fl
 	}
 }
 
+unsigned int Renderer::CreateEmitter(const unsigned int a_maxParticles, const float a_lifespanMin, const float a_lifespanMax, const  float a_velocityMin, const float a_velocityMax,
+	const float a_startSize, const float a_endSize, const vec4& a_startColour, const vec4& a_endColour, const vec3& a_direction, const float a_directionVariance, const bool a_gpuBased, TwBar* a_bar)
+{
+	if (a_gpuBased)
+	{
+		GPUParticleEmitter* emitter = new GPUParticleEmitter(a_maxParticles, a_lifespanMin, a_lifespanMax, a_velocityMin, a_velocityMax, a_startSize, a_endSize, a_startColour, a_endColour, a_direction, a_directionVariance, a_bar);
+
+		std::vector<GPUParticleEmitter*>::iterator i = m_gpuEmitters.begin();
+		while (i != m_gpuEmitters.end())
+		{
+			if (*i == nullptr)
+			{
+				*i = emitter;
+				return i - m_gpuEmitters.begin();
+			}
+			++i;
+		}
+
+		m_gpuEmitters.push_back(emitter);
+		return m_gpuEmitters.size() - 1;
+	}
+	else
+	{
+		std::cout << "Error: incorrect CreateEmitter overload called. For CPU-based particles, use the CreateEmitter function which specifies emit rate.";
+		return -1;
+	}
+}
+
 void Renderer::SetEmitterPosition(const unsigned int a_index, const bool a_gpuBased, const vec3& a_position)
 {
 	if (a_gpuBased)

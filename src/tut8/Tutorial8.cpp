@@ -20,16 +20,30 @@ int Tutorial8::Init()
 
 	m_emitter = m_renderer->CreateEmitter(100000,			//Max particles
 										  0.1f,				//Lifespan minimum 
-										  100.0f,			//Lifespan maximum
-										  5.0f,				//Velocity minimum
-										  5.0f,				//Velocity maximum
+										  1.0f,			//Lifespan maximum
+										  100.0f,			//Velocity minimum
+										  100.0f,			//Velocity maximum
 										  1.0f,				//Start size
 										  0.1f,				//End size
 										  vec4(1, 0, 0, 1), //Start colour
 										  vec4(1, 1, 0, 1), //End colour
-										  vec3(0, 0, 1),	//Direction
+										  vec3(1, 0, 0),	//Direction
 										  3.14159265358979f/10.0f,//Direction variance
-										  true);			//GPU based
+										  true,
+										  m_debugBar);			//GPU based
+
+	//m_emitter = m_renderer->CreateEmitter(100000,			//Max particles
+	//									  0.1f,				//Lifespan minimum 
+	//									  100.0f,			//Lifespan maximum
+	//									  5.0f,				//Velocity minimum
+	//									  5.0f,				//Velocity maximum
+	//									  1.0f,				//Start size
+	//									  0.1f,				//End size
+	//									  vec4(1, 0, 0, 1), //Start colour
+	//									  vec4(1, 1, 0, 1), //End colour
+	//									  vec3(1, 0, 0),	//Direction
+	//									  3.14159265358979f,//Direction variance
+	//									  true);			//GPU based
    
 	//m_emitter = m_renderer->CreateEmitter(1000000,			//Max particles
 	//									  0.1f,				//Lifespan minimum 

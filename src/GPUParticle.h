@@ -3,6 +3,7 @@
 
 #include <string>
 #include "glm\glm.hpp"
+#include "AntTweakBar.h"
 
 using glm::vec3;
 using glm::vec4;
@@ -25,6 +26,9 @@ public:
 	GPUParticleEmitter(const unsigned int a_maxParticles, const float a_lifeSpanMin, const float a_lifeSpanMax,
 					   const float a_velocityMin, const float a_velocityMax, const float a_startSize, const float a_endSize,
 					   const vec4& a_startColour, const vec4& a_endColour, const vec3& a_direction, const float a_directionVariance);
+	GPUParticleEmitter(const unsigned int a_maxParticles, const float a_lifeSpanMin, const float a_lifeSpanMax,
+					   const float a_velocityMin, const float a_velocityMax, const float a_startSize, const float a_endSize,
+					   const vec4& a_startColour, const vec4& a_endColour, const vec3& a_direction, const float a_directionVariance, TwBar* const a_bar);
 	~GPUParticleEmitter();
 
 	void Draw(const float a_time, const glm::mat4& a_cameraTransform, const glm::mat4& a_projectionView);
@@ -44,6 +48,12 @@ public:
 	inline void SetDirection(const vec3& a_direction)
 	{
 		m_direction = a_direction;
+		if (m_direction.x == 0)
+			m_direction.x += 0.000001f;
+		if (m_direction.y == 0)
+			m_direction.y += 0.000001f;
+		if (m_direction.z == 0)
+			m_direction.z += 0.000001f;
 	}
 
 private:

@@ -27,6 +27,54 @@ GPUParticleEmitter::GPUParticleEmitter(const unsigned int a_maxParticles, const 
 	m_lifeSpanMax = a_lifeSpanMax;
 	m_maxParticles = a_maxParticles;
 	m_direction = a_direction;
+	if (m_direction.x == 0)
+		m_direction.x += 0.000001f;
+	if (m_direction.y == 0)
+		m_direction.y += 0.000001f;
+	if (m_direction.z == 0)
+		m_direction.z += 0.000001f;
+	m_directionVariation = a_directionVariance;
+
+	m_particles = new GPUParticle[a_maxParticles];
+
+	m_activeBuffer = 0;
+
+
+	glGenVertexArrays(2, m_vao);
+	glGenBuffers(2, m_vbo);
+
+	SetupBuffer(0);
+	SetupBuffer(1);
+
+	CreateUpdateProgram();
+
+	CreateDrawProgram();
+}
+
+GPUParticleEmitter::GPUParticleEmitter(const unsigned int a_maxParticles, const float a_lifeSpanMin, const float a_lifeSpanMax,
+									   const float a_velocityMin, const float a_velocityMax, const float a_startSize, const float a_endSize,
+									   const  vec4& a_startColour, const vec4& a_endColour, const vec3& a_direction, const float a_directionVariance, TwBar* const a_bar)
+									   : m_deltaTimeUniformLocation(-1), m_emitterPositionUniformLocation(-1), m_timeUniformLocation(-1), m_directionUniformLocation(-1)
+
+{
+	m_startColour = a_startColour;
+	m_endColour = a_endColour;
+	m_startSize = a_startSize;
+	m_endSize = a_endSize;
+	m_velocityMin = a_velocityMin;
+	m_velocityMax = a_velocityMax;
+	m_lifeSpanMin = a_lifeSpanMin;
+	m_lifeSpanMax = a_lifeSpanMax;
+	m_maxParticles = a_maxParticles;
+	m_direction = a_direction;
+	if (m_direction.x == 0)
+		m_direction.x += 0.000001f;
+	if (m_direction.y == 0)
+		m_direction.y += 0.000001f;
+	if (m_direction.z == 0)
+		m_direction.z += 0.000001f;
+
+	TwAddVarRW(a_bar, "Particle Direction", TW_TYPE_DIR3F, &m_direction[0], "");
 	m_directionVariation = a_directionVariance;
 
 	m_particles = new GPUParticle[a_maxParticles];
