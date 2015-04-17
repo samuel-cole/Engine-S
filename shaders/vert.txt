@@ -29,6 +29,6 @@ void main() {
 	vTangent = Tangent.xyz;
 	vBiTangent = cross(vNormal, vTangent);
 	vTexCoord = TexCoord;
-	vShadowCoord = (LightMatrix * Position).xyz;
+	vShadowCoord = (LightMatrix * vec4(vPosition, 1)).xyz;
 	gl_Position = ProjectionView * vec4(vPosition, 1);
 };

@@ -99,7 +99,7 @@ void main()
 		float randX = randMagnitude * cos(randAngle);
 		float randY = randMagnitude * sin(randAngle);
 		//Possibly change this line, not sure if correct.
-		vec3 randDir = vec3(cos(randY), 0, sin(randY)) + vec3(cos(randX), sin(randX), 0);
+		vec3 randDir = vec3(cos(randX), 0, sin(randX)) + vec3(cos(randY), sin(randY), 0);
 		
 		//Instead of the commented out polar form code above, find the vectors orthonormal with direction.
 		vec3 right = cross(vec3(0, 1, 0), EmitterDirection);

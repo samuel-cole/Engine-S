@@ -4,7 +4,7 @@
 int main ()
 {
 	//MirrorTest1* game = new MirrorTest1;
-	Tutorial8* game = new Tutorial8;
+	MirrorTest1* game = new MirrorTest1();
 
 	return game->Run();
 }

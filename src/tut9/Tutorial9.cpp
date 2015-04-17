@@ -23,8 +23,7 @@ int Tutorial9::Init()
 
 	m_renderer = new Renderer(m_camera, m_debugBar);
 
-	unsigned int buffer;
-	unsigned int texture = m_renderer->LoadFrameBuffer(m_camera, vec4(0.0f, 0.0f, 512.0f, 512.0f), vec3(1.0f, 1.0f, 1.0f), buffer);
+	unsigned int texture = m_renderer->LoadFrameBuffer(m_camera, vec4(0.0f, 0.0f, 512.0f, 512.0f), vec3(1.0f, 1.0f, 1.0f));
 
 	std::vector<std::string> textures;
 	std::vector<std::string> normalMaps;

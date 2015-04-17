@@ -3,6 +3,7 @@
 #include "GLFW\glfw3.h"
 #include "glm\ext.hpp"
 #include "Camera.h"
+#include "StaticCamera.h"
 #include "FBXFile.h"
 #include "Particle.h"
 #include "GPUParticle.h"
@@ -36,8 +37,7 @@ m_standardProgram(-1), m_particleProgram(-1), m_animatedProgram(-1), m_postProce
 	//m_frameBufferColours.push_back(vec3(0.25f, 0.25f, 0.75f));
 
 	//Set up the framebuffer that everything will be ran through- used for post processing effects.
-	unsigned int buffer;
-	unsigned int texture = LoadFrameBuffer(a_camera, vec4(0, 0, 1280, 720), vec3(0.25f, 0.25f, 0.75f), buffer);
+	unsigned int texture = LoadFrameBuffer(a_camera, vec4(0, 0, 1280, 720), vec3(0.25f, 0.25f, 0.75f));
 
 	//Make a fullscreen quad to render the post processing framebuffer stuff through.
 	glm::vec2 halfTexel = 1.0f / glm::vec2(1280, 720) * 0.5f;
@@ -122,6 +122,7 @@ unsigned int Renderer::CreateProgram(const string& a_vertPath, const string& a_f
 	m_uniformLocations[programID].push_back(glGetUniformLocation(programID, "ShadowMap"));
 	m_uniformLocations[programID].push_back(glGetUniformLocation(programID, "ShadowBias"));
 	m_uniformLocations[programID].push_back(glGetUniformLocation(programID, "PerlinMap"));
+	m_uniformLocations[programID].push_back(glGetUniformLocation(programID, "MirrorMatrix"));
 
 	return programID;
 }
@@ -156,7 +157,7 @@ unsigned int Renderer::LoadShader(const string& a_path, const unsigned int a_typ
 	return shader;
 }
 
-unsigned int Renderer::LoadFrameBuffer(Camera* const a_camera, const vec4& a_dimensions, const vec3& a_backgroundColour, unsigned int& a_frameBufferNo)
+unsigned int Renderer::LoadFrameBuffer(Camera* const a_camera, const vec4& a_dimensions, const vec3& a_backgroundColour)
 {
 	//Create frame buffer
 	unsigned int FBO;
@@ -205,26 +206,7 @@ unsigned int Renderer::LoadFrameBuffer(Camera* const a_camera, const vec4& a_dim
 	
 	m_cameras.push_back(a_camera);
 
-	a_frameBufferNo = m_frameBuffers.size() - 1;
-
 	return FBOTexture;
-}
-
-unsigned int Renderer::AddFrameBufferIgnore(const unsigned int a_frameBuffer, const unsigned int a_object)
-{
-	m_frameBufferIgnores.push_back(std::make_pair(a_frameBuffer, a_object));
-	return m_frameBufferIgnores.size() - 1;
-}
-
-void Renderer::RemoveFrameBufferIgnore(const unsigned int a_ignoreIndex)
-{
-	if (m_frameBufferIgnores.size() > a_ignoreIndex)
-	{
-		if (a_ignoreIndex == m_frameBufferIgnores.size() - 1)
-			m_frameBufferIgnores.pop_back();
-		else
-			m_frameBufferIgnores[a_ignoreIndex].first = -1;
-	}
 }
 
 void Renderer::GenerateShadowMap(const float a_lightWidth)
@@ -820,6 +802,73 @@ unsigned int Renderer::LoadOBJ(const string& a_filePath)
 	return m_numOfIndices.size() - 1;
 }
 
+unsigned int Renderer::MakeMirror(const unsigned int a_width, const unsigned int a_length, const vec4& a_dimensions, const vec3& a_backgroundColour)
+{
+	//Make reflection camera.
+	StaticCamera* camera = new StaticCamera();
+	camera->SetPerspective(glm::pi<float>() * 0.25f, 16.0f / 9.0f, 0.1f, 10000.0f);
+	//camera->SetPerspectiveOrtho(-1024, 1024, -1024, 1024, 0.1f, 100000.0f);
+	camera->SetLookAt(vec3(0, 0, 0), vec3(0, 0, 5), vec3(0, 1, 0));
+
+	m_cameras.push_back(camera);
+
+	//Create frame buffer
+	unsigned int FBO;
+	glGenFramebuffers(1, &FBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+
+	//Create texture
+	unsigned int FBOTexture;
+	glGenTextures(1, &FBOTexture);
+	glBindTexture(GL_TEXTURE_2D, FBOTexture);
+
+	//Specify texture format
+	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, (GLsizei)a_dimensions.z, (GLsizei)a_dimensions.w);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	//Attach to the Frame Buffer as first colour attachment.
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, FBOTexture, 0);
+
+	//Create depth buffer.
+	unsigned int fboDepth;
+	glGenRenderbuffers(1, &fboDepth);
+	glBindRenderbuffer(GL_RENDERBUFFER, fboDepth);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, (GLsizei)a_dimensions.z, (GLsizei)a_dimensions.w);
+
+	//Attach the depth buffer to the FBO.
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, fboDepth);
+
+	//Tell OpenGL how many colour attachments we have assigned and what they are.
+	GLenum drawBuffers[] = { GL_COLOR_ATTACHMENT0 };
+	glDrawBuffers(1, drawBuffers);
+
+	GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+	if (status != GL_FRAMEBUFFER_COMPLETE)
+		std::cout << "Error: mirror creation failed" << std::endl;
+
+	//Unbind framebuffer so that we can render back to the back buffer.
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	m_frameBuffers.push_back(FBO);
+	m_frameBufferDimensions.push_back(a_dimensions);
+	m_frameBufferColours.push_back(a_backgroundColour);
+	
+	//Make mirror
+	unsigned int mirror = GenerateGrid(a_width, a_length);
+	LoadTexture(FBOTexture, mirror);
+	//Add mirror to ignore list for mirror's framebuffer.
+	m_frameBufferIgnores.push_back(std::make_pair(m_frameBuffers.size() - 1, mirror));	
+
+	while (mirror >= m_mirrors.size())
+	{
+		m_mirrors.push_back(-1);
+	}
+	m_mirrors[mirror] = m_cameras.size() - 1;
+
+	return mirror;
+}
+
 void Renderer::Draw()
 {
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -927,7 +976,6 @@ void Renderer::DrawModels(unsigned int j)
 				glUniform1f((m_uniformLocations[m_standardProgram])[SHADOW_BIAS], 0.01f);
 			else
 				glUniform1f((m_uniformLocations[m_standardProgram])[SHADOW_BIAS], 1000.0f);
-
 
 			for (unsigned int i = notAnimatedCheck; i < m_numOfIndices.size(); ++i)
 			{
@@ -1066,8 +1114,7 @@ void Renderer::DrawModels(unsigned int j)
 		}
 	}
 		
-
-	//Particles are seperate from the huge mess of nested 'if' statements above because they are not dependant on any types of models being created.
+	//CPU Particles
 	if (m_particleProgram != -1)
 	{
 		glUseProgram(m_particleProgram);
@@ -1081,6 +1128,7 @@ void Renderer::DrawModels(unsigned int j)
 		}
 	}
 
+	//GPU Particles
 	for (unsigned int i = 0; i < m_gpuEmitters.size(); ++i)
 	{
 		if (m_gpuEmitters[i] != nullptr)
@@ -1111,6 +1159,26 @@ void Renderer::UpdateEmitters(const float a_deltaTime)
 	{
 		if (m_emitters[i] != nullptr)
 			m_emitters[i]->Update(a_deltaTime, m_cameras[0]->GetWorldTransform());
+	}
+}
+
+void Renderer::UpdateMirrors()
+{
+	for (unsigned int i = 0; i < m_mirrors.size(); ++i)
+	{
+		if (m_mirrors[i] != -1)
+		{
+			vec3 cameraPosition = vec3(m_cameras[0]->GetWorldTransform()[3]);
+			vec3 mirrorPosition = vec3(m_globals[i][3]);
+			vec3 incident = glm::normalize(mirrorPosition - cameraPosition);
+			vec3 normal = glm::normalize(vec3(m_globals[i] * vec4(0, 1, 0, 0)));
+			//The reflected vector is equal to Incident - 2 * (Incident.Normal) * Normal, http://www.cosinekitty.com/raytrace/chapter10_reflection.html has a good explanation of how this is derived.
+			vec3 reflected = glm::normalize(incident - 2 * glm::dot(incident, normal) * normal);
+			vec3 newCameraPos = reflected * -glm::length(mirrorPosition - cameraPosition);
+			m_cameras[m_mirrors[i]]->SetLookAt(newCameraPos, mirrorPosition, vec3(0, 1, 0));
+			//m_cameras[m_mirrors[i]]->SetLookAt(mirrorPosition, mirrorPosition + reflected, vec3(0, 1, 0));
+
+		}
 	}
 }
 
@@ -1264,9 +1332,10 @@ void Renderer::LoadIntoOpenGL(const Vertex* const a_verticesArray, const unsigne
 		m_speculars.push_back(-1);
 	if (m_perlins.size() < m_numOfIndices.size())
 		m_perlins.push_back(-1);
-
+	if (m_mirrors.size() < m_numOfIndices.size())
+		m_mirrors.push_back(-1);
 	if (m_globals.size() < m_numOfIndices.size())
-		m_globals.push_back(mat4());
+		m_globals.push_back(glm::mat4());
 
 	//Add new buffer variables to the vectors.
 	m_VAO.push_back(-1);
@@ -1353,5 +1422,11 @@ void Renderer::CleanupBuffers()
 	{
 		if (m_textures[i] != -1)
 			glDeleteTextures(1, &m_textures[i]);
+	}
+
+	for (unsigned int i = 0; i < m_mirrors.size(); ++i)
+	{
+		if (m_mirrors[i] != -1)
+			delete m_cameras[m_mirrors[i]];
 	}
 }

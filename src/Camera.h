@@ -26,6 +26,8 @@ public:
 	//Mutator functions
 	//Sets the perspective matrix to have the field of view, aspect ration, and near and far planes passed in as arguments.
 	void SetPerspective(const float a_fieldOfView, const float a_aspectRatio, const float a_near, const float a_far);
+	
+	void SetPerspectiveOrtho(float a_left, float a_right, float a_top, float a_bottom, float a_near, float a_far);
 	//Sets the camera to look at a position- takes as arguments the position the camera should be at, the position the camera should be facing and a vector in the up direction.
 	void SetLookAt( const vec3& a_from, const vec3& a_to, const vec3& a_up );
 	//Sets the position of the camera.

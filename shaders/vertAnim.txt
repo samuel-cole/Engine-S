@@ -43,7 +43,7 @@ void main() {
 
 	vPosition = (Global * P).xyz;
 	
-	vShadowCoord = (LightMatrix * P).xyz;
+	vShadowCoord = (LightMatrix * Global * P).xyz;
 	
 	gl_Position = ProjectionView * vec4(vPosition, 1);
 };

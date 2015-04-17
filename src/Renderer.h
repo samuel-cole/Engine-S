@@ -32,7 +32,8 @@ enum UniformTypes
 	LIGHT_MATRIX,
 	SHADOW_MAP,
 	SHADOW_BIAS,
-	PERLIN_MAP
+	PERLIN_MAP,
+	MIRROR_MATRIX
 };
 
 struct Vertex
@@ -102,6 +103,8 @@ private:
 	std::vector<unsigned int> m_speculars;
 	//Vector containing all of the perlin maps associated with this renderer.
 	std::vector<unsigned int> m_perlins;
+	//Vector containing the camera that each mirror uses for rendering.
+	std::vector<unsigned int> m_mirrors;
 
 	//Default black diffuse used for objects without a diffuse map.
 	unsigned int m_defaultDiffuse;
@@ -195,12 +198,8 @@ public:
 	//Constructor for creating a new renderer.
 	Renderer(Camera* const a_camera, TwBar* const a_bar);
 
-	//Creates a new frame buffer. Returns the texture that is generated. Use a_frameBufferNo to access the number of the frame buffer- this is only needed for frame buffer ignores.
-	unsigned int LoadFrameBuffer(Camera* const a_camera, const vec4& a_dimensions, const vec3& a_backgroundColour, unsigned int& a_frameBufferNo);
-	//Causes a_object to not be rendered within a_framebuffer. Returns the index of the ignore used, use this to remove the ignore if necessary.
-	unsigned int AddFrameBufferIgnore(const unsigned int a_frameBuffer, const unsigned int a_object);
-	//Removes the object/framebuffer pair at the specified index from the ignore list.
-	void RemoveFrameBufferIgnore(const unsigned int a_ignoreIndex);
+	//Creates a new frame buffer. Returns the texture that is generated. Dimensions sets the size of the texture that is ouputted.
+	unsigned int LoadFrameBuffer(Camera* const a_camera, const vec4& a_dimensions, const vec3& a_backgroundColour);
 
 	//Creates a shadow map. Setting light width to a high number gives a large area that shadows can be created within, while setting it to a low number generates higher quality shadow maps.
 	void GenerateShadowMap(const float a_lightWidth);
@@ -248,6 +247,9 @@ public:
 	
 	//Method for loading an OBJ model. Returns the index of the model, for use in texturing.
 	unsigned int LoadOBJ(const std::string& a_filePath);
+
+	//Creates a new frame buffer. Returns the texture that is generated. Dimensions sets the size of the texture that is ouputted.
+	unsigned int MakeMirror(const unsigned int a_width, const unsigned int a_length, const vec4& a_dimensions, const vec3& a_backgroundColour);
 	
 	//Draw method- does all drawing for all models and particles to all framebuffers.
 	void Draw();
@@ -256,6 +258,8 @@ public:
 	void UpdateAnimation(const float a_time, const unsigned int a_index);
 	//Updates all CPU-based particle emitters (and, by extension, all CPU-based particles).
 	void UpdateEmitters(const float a_deltaTime);
+	//Updates all mirrors to properly reflect.
+	void UpdateMirrors();
 
 	//Cleans up by deleting all OpenGL buffers and programs currently in use.
 	void CleanupBuffers();

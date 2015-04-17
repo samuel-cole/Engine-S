@@ -26,7 +26,7 @@ int Tutorial10::Init()
 
 		frameTextures.push_back(-1);
 		unsigned int buffer;
-		frameTextures[i] = m_renderer->LoadFrameBuffer(m_staticCamera[i], vec4(0.0f, 0.0f, 512.0f, 512.0f), vec3(1.0f, 1.0f, 1.0f), buffer);
+		frameTextures[i] = m_renderer->LoadFrameBuffer(m_staticCamera[i], vec4(0.0f, 0.0f, 512.0f, 512.0f), vec3(1.0f, 1.0f, 1.0f));
 	}
 
 	std::vector<std::string> textures;
