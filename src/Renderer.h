@@ -204,7 +204,7 @@ public:
 	//Creates a shadow map. Setting light width to a high number gives a large area that shadows can be created within, while setting it to a low number generates higher quality shadow maps.
 	void GenerateShadowMap(const float a_lightWidth);
 	//Generates a perlin noise map. Pass the index of the model to be perlined into a_index. Note that perlin maps are currently not supported for animated models. a_octaves determines how bumpy the map will be.
-	//TODO: Generate normals for the perlin map.
+	//TODO: Generate normals for the perlin map. Good info here http://stackoverflow.com/questions/10922752/calculate-normals-for-procedural-shape
 	void GeneratePerlinNoiseMap(const unsigned int a_rows, const unsigned int a_columns, const unsigned int a_octaves, const float a_amplitude, const float a_persistence, const unsigned int a_index, const unsigned int a_seed);
 
 	//Method for loading in a texture. Pass the index of the model to be textured into a_index.
