@@ -247,7 +247,7 @@ void Renderer::GenerateShadowMap(const float a_lightWidth)
 	m_lightProjection = glm::ortho<float>(-a_lightWidth, a_lightWidth, -a_lightWidth, a_lightWidth, -a_lightWidth, a_lightWidth);
 }
 
-void Renderer::GeneratePerlinNoiseMap(const unsigned int a_rows, const unsigned int a_columns, const unsigned int a_octaves, const float a_amplitude, const float a_persistence, const unsigned int a_index)
+void Renderer::GeneratePerlinNoiseMap(const unsigned int a_rows, const unsigned int a_columns, const unsigned int a_octaves, const float a_amplitude, const float a_persistence, const unsigned int a_index, const unsigned int a_seed)
 {
 	float *perlinData = new float[a_rows * a_columns];
 	
@@ -264,18 +264,17 @@ void Renderer::GeneratePerlinNoiseMap(const unsigned int a_rows, const unsigned 
 			{
 				float frequency = powf(2, (float)o);
 				glm::vec2 test = glm::vec2((float)i, (float)j) * (1.0f / glm::max(a_rows, a_columns)) * 3 * frequency;
-				float perlinSample = glm::perlin(test);
+				float perlinSample = glm::perlin(test + glm::vec2(a_seed));
 				perlinSample *= 0.5f + 0.5f;
 				perlinData[i * a_columns + j] += perlinSample * amplitude;
 				amplitude *= a_persistence;
-				std::cout << perlinData[i * a_columns + j] << std::endl;
 			}
 		}
 	}
 
-	while (a_index >= m_textures.size())
+	while (a_index >= m_perlins.size())
 	{
-		m_textures.push_back(-1);
+		m_perlins.push_back(-1);
 	}
 	 
 	glGenTextures(1, &m_perlins[a_index]);

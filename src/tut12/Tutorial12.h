@@ -9,6 +9,14 @@ class Renderer;
 
 #include <vector>
 
+struct ButtonInfo {
+	Renderer* renderer;
+	float amplitude;
+	float persistence;
+	unsigned int seed;
+	unsigned int object;
+};
+
 class Tutorial12 : public Application
 {
 private:
@@ -18,7 +26,9 @@ private:
 	void Draw();
 
 	FlyCamera* m_camera;
-	Renderer* m_renderer;
+
+	ButtonInfo m_buttonInfo;
+
 };
 
 #endif

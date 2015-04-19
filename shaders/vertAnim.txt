@@ -28,6 +28,7 @@ void main() {
 	
 	vColour = Colour.xyz;
 	//I should multiply by the TransposeInverseGlobal here, but it isn't working, and multiplying by the global looks so good!
+	//Normals are negative here as a hack to fix lighting issues on animated models.
 	vNormal = (Global * Normal).xyz;
 	vTangent = Tangent.xyz;
 	vBiTangent = cross(-vNormal, vTangent);

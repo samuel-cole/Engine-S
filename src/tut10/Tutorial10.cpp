@@ -25,7 +25,6 @@ int Tutorial10::Init()
 		m_staticCamera[i]->SetLookAt(vec3((rand()/(float)RAND_MAX) * 20.0f - 10.0f, (rand()/(float)RAND_MAX) * 20.0f - 10.0f, (rand()/(float)RAND_MAX) * 20.0f - 10.0f), vec3(0, 10, 0), vec3(0, 1, 0));
 
 		frameTextures.push_back(-1);
-		unsigned int buffer;
 		frameTextures[i] = m_renderer->LoadFrameBuffer(m_staticCamera[i], vec4(0.0f, 0.0f, 512.0f, 512.0f), vec3(1.0f, 1.0f, 1.0f));
 	}
 
