@@ -29,6 +29,8 @@ private:
 
 	ButtonInfo m_buttonInfo;
 
+	float m_test;
+
 };
 
 #endif

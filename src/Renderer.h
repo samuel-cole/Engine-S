@@ -32,7 +32,6 @@ enum UniformTypes
 	LIGHT_MATRIX,
 	SHADOW_MAP,
 	SHADOW_BIAS,
-	PERLIN_MAP,
 	MIRROR_MATRIX
 };
 
@@ -101,8 +100,6 @@ private:
 	std::vector<unsigned int> m_normals;
 	//Vector containing all of the specular maps associated with this renderer.
 	std::vector<unsigned int> m_speculars;
-	//Vector containing all of the perlin maps associated with this renderer.
-	std::vector<unsigned int> m_perlins;
 	//Vector containing the camera that each mirror uses for rendering.
 	std::vector<unsigned int> m_mirrors;
 
@@ -114,8 +111,6 @@ private:
 	unsigned int m_defaultSpec;
 	//Default shadow map used for situations in which a shadow map hasn't been generated.
 	unsigned int m_defaultShadow;
-	//Default perlin map used for situations in which a perlin map hasn't been generated.
-	unsigned int m_defaultPerlin;
 
 	//Vector containing all of the framebuffers associated with this renderer.
 	std::vector<unsigned int> m_frameBuffers;
@@ -191,8 +186,10 @@ private:
 	unsigned int CreateProgram(const std::string& a_vertPath, const std::string& a_fragPath);
 
 	//Method called by draw for drawing models. Pass in the index of the camera from which the models should be viewed.
-	//TODO: Refactor to use a series of enum types to determine which types (normals, textures, shadows, etc.) are turned on.
-	void DrawModels(unsigned int a_cameraIndex);
+	void DrawModels(const unsigned int a_cameraIndex);
+
+	//Generates the normals for the model at the index passed in.
+	void GenerateNormals(const unsigned int a_index);
 
 public:
 	//Constructor for creating a new renderer.
@@ -203,8 +200,7 @@ public:
 
 	//Creates a shadow map. Setting light width to a high number gives a large area that shadows can be created within, while setting it to a low number generates higher quality shadow maps.
 	void GenerateShadowMap(const float a_lightWidth);
-	//Generates a perlin noise map. Pass the index of the model to be perlined into a_index. Note that perlin maps are currently not supported for animated models. a_octaves determines how bumpy the map will be.
-	//TODO: Generate normals for the perlin map. Good info here http://stackoverflow.com/questions/10922752/calculate-normals-for-procedural-shape
+	//Generates a perlin noise map. Pass the index of the model to have a perlin-based transform added to it into a_index. Note that perlin maps are not supported for animated models. a_octaves determines how bumpy the map will be.
 	void GeneratePerlinNoiseMap(const unsigned int a_rows, const unsigned int a_columns, const unsigned int a_octaves, const float a_amplitude, const float a_persistence, const unsigned int a_index, const unsigned int a_seed);
 
 	//Method for loading in a texture. Pass the index of the model to be textured into a_index.

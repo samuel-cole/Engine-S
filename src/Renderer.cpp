@@ -68,7 +68,6 @@ m_standardProgram(-1), m_particleProgram(-1), m_animatedProgram(-1), m_postProce
 	m_defaultNormal = LoadTexture("../data/default/normal.png");
 	m_defaultSpec = LoadTexture("../data/default/specular.png");
 	m_defaultShadow = LoadTexture("../data/default/shadow.png");
-	m_defaultPerlin = LoadTexture("../data/default/specular.png");
 
 
 	//glEnable(GL_BLEND);
@@ -121,7 +120,6 @@ unsigned int Renderer::CreateProgram(const string& a_vertPath, const string& a_f
 	m_uniformLocations[programID].push_back(glGetUniformLocation(programID, "LightMatrix"));
 	m_uniformLocations[programID].push_back(glGetUniformLocation(programID, "ShadowMap"));
 	m_uniformLocations[programID].push_back(glGetUniformLocation(programID, "ShadowBias"));
-	m_uniformLocations[programID].push_back(glGetUniformLocation(programID, "PerlinMap"));
 	m_uniformLocations[programID].push_back(glGetUniformLocation(programID, "MirrorMatrix"));
 
 	return programID;
@@ -264,7 +262,7 @@ void Renderer::GeneratePerlinNoiseMap(const unsigned int a_rows, const unsigned 
 			{
 				float frequency = powf(2, (float)o);
 				glm::vec2 test = glm::vec2((float)i, (float)j) * (1.0f / glm::max(a_rows, a_columns)) * 3 * frequency;
-				float perlinSample = glm::perlin(test + glm::vec2(a_seed));
+				float perlinSample = glm::perlin(test + glm::vec2((float)a_seed));
 				perlinSample *= 0.5f + 0.5f;
 				perlinData[i * a_columns + j] += perlinSample * amplitude;
 				amplitude *= a_persistence;
@@ -272,20 +270,80 @@ void Renderer::GeneratePerlinNoiseMap(const unsigned int a_rows, const unsigned 
 		}
 	}
 
-	while (a_index >= m_perlins.size())
+	//Here I am going to change the positions of the vertices within the object by the amounts specified by the Perlin Noise results.
+	//Get the vertex data out of the vbo.
+	glBindBuffer(GL_ARRAY_BUFFER, m_VBO[a_index]);
+	Vertex* const vertices = (Vertex* const)glMapBuffer(GL_ARRAY_BUFFER, GL_READ_WRITE);
+	//Get the number of vertices from the vbo.
+	int verticesSize;
+	glGetBufferParameteriv(GL_ARRAY_BUFFER, GL_BUFFER_SIZE, &verticesSize);
+	verticesSize /= sizeof(Vertex);
+	
+	for (int i = 0; i < verticesSize; ++i)
 	{
-		m_perlins.push_back(-1);
+		vertices[i].position += vertices[i].normal * perlinData[(unsigned int)(vertices[i].uv.x * (a_rows - 1)) * a_columns + (unsigned int)(vertices[i].uv.y * (a_columns - 1))];
 	}
-	 
-	glGenTextures(1, &m_perlins[a_index]);
-	glBindTexture(GL_TEXTURE_2D, m_perlins[a_index]);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, a_rows, a_columns, 0, GL_RED, GL_FLOAT, perlinData);
+	
+	//Cleanup the vertex buffer.
+	glUnmapBuffer(GL_ARRAY_BUFFER);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	
+	GenerateNormals(a_index);
+}
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+void Renderer::GenerateNormals(const unsigned int a_index)
+{
+	if (a_index >= m_numOfIndices.size())
+	{
+		std::cout << "Error: Generation of normal vectors failed!" << std::endl;
+		return;
+	}
 
+	//Need to use glMapBuffer to get data from the vbo and ibo, then modify it.
+
+	//First, bind the buffers necessary.
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_IBO[a_index]);
+	//glBindBuffer(GL_ARRAY_BUFFER, m_VBO[a_index]);
+	////Next, map the buffers.
+	//const unsigned int* const INDICES = (const unsigned int* const)glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_READ_ONLY);
+	//Vertex* const vertices = (Vertex* const)glMapBuffer(GL_ARRAY_BUFFER, GL_READ_WRITE);
+	//
+	///////////////Here is where I calculate the new normals.
+	//
+	////First up, get the size of the vertex buffer for use in for loops.
+	//int verticesSize;
+	//glGetBufferParameteriv(GL_ARRAY_BUFFER, GL_BUFFER_SIZE, &verticesSize);
+	//verticesSize /= sizeof(Vertex);
+	//
+	////Now set all of the normals to the zero vector.
+	//for (int i = 0; i < verticesSize; ++i)
+	//{
+	//	vertices[i].normal = vec4(0, 0, 0, 0);
+	//}
+	//
+	////Here I create a new normal for each face and add its value to each vertex in it.
+	//for (unsigned int i = 0; i < m_numOfIndices[a_index]; i += 3)
+	//{
+	//	vec4 faceNormal = vec4(glm::cross(vec3(vertices[INDICES[i + 1]].position) - vec3(vertices[INDICES[i]].position), vec3(vertices[INDICES[i + 2]].position) - vec3(vertices[INDICES[i]].position)), 0);
+	//	vertices[INDICES[i]].normal += faceNormal;
+	//	vertices[INDICES[i + 1]].normal += faceNormal;
+	//	vertices[INDICES[i + 2]].normal += faceNormal;
+	//}
+	//
+	////Finally, I normalize all of the normals.
+	//for (int i = 0; i < verticesSize; ++i)
+	//{
+	//	vertices[i].normal = glm::normalize(vertices[i].normal);
+	//}
+	//
+	///////////////End of new normals calculation.
+	//
+	////Cleanup time now- unmap the buffers...
+	//glUnmapBuffer(GL_ARRAY_BUFFER);
+	//glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
+	////... and then unbind them.
+	//glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
 unsigned int Renderer::LoadTexture(const std::string& a_path)
@@ -940,10 +998,9 @@ void Renderer::Draw()
 
 	glBindVertexArray(m_VAO[0]);
 	glDrawElements(GL_TRIANGLES, m_numOfIndices[0], GL_UNSIGNED_INT, nullptr);
-
 }
 
-void Renderer::DrawModels(unsigned int j)
+void Renderer::DrawModels(const unsigned int j)
 {
 	if (m_standardProgram != -1)
 	{
@@ -1013,11 +1070,6 @@ void Renderer::DrawModels(unsigned int j)
 				glActiveTexture(GL_TEXTURE3);
 				glBindTexture(GL_TEXTURE_2D, ((m_shadowDepth == -1) ? m_defaultShadow : m_shadowDepth));
 				glUniform1i((m_uniformLocations[m_standardProgram])[SHADOW_MAP], 3);
-
-				// Set Perlin Noise Map
-				glActiveTexture(GL_TEXTURE4);
-				glBindTexture(GL_TEXTURE_2D, ((m_perlins[i] == -1) ? m_defaultPerlin : m_perlins[i]));
-				glUniform1i((m_uniformLocations[m_standardProgram])[PERLIN_MAP], 4);
 
 				// Set Transform
 				glUniformMatrix4fv((m_uniformLocations[m_standardProgram])[GLOBAL], 1, GL_FALSE, &((m_globals[i])[0][0]));
@@ -1329,8 +1381,6 @@ void Renderer::LoadIntoOpenGL(const Vertex* const a_verticesArray, const unsigne
 		m_normals.push_back(-1);
 	if (m_speculars.size() < m_numOfIndices.size())
 		m_speculars.push_back(-1);
-	if (m_perlins.size() < m_numOfIndices.size())
-		m_perlins.push_back(-1);
 	if (m_mirrors.size() < m_numOfIndices.size())
 		m_mirrors.push_back(-1);
 	if (m_globals.size() < m_numOfIndices.size())

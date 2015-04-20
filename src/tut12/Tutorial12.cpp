@@ -41,21 +41,23 @@ int Tutorial12::Init()
 	
 
 	//Ground
-	//m_buttonInfo.amplitude = 20.0f;
-	//m_buttonInfo.persistence = 0.3f;
-	//m_buttonInfo.seed = 0;
-	//m_buttonInfo.object = m_buttonInfo.renderer->GenerateGrid(100, 100);
-	//m_buttonInfo.renderer->LoadTexture("../data/crate.png", m_buttonInfo.object);
-	//m_buttonInfo.renderer->GeneratePerlinNoiseMap(100, 100, 6, m_buttonInfo.amplitude, m_buttonInfo.persistence, m_buttonInfo.object, m_buttonInfo.seed);
+	m_buttonInfo.amplitude = 20.0f;
+	m_buttonInfo.persistence = 0.3f;
+	m_buttonInfo.seed = 0;
+	m_buttonInfo.object = m_buttonInfo.renderer->GenerateGrid(100, 100);
+	m_buttonInfo.renderer->LoadTexture("../data/crate.png", m_buttonInfo.object);
+	m_buttonInfo.renderer->GeneratePerlinNoiseMap(100, 100, 6, m_buttonInfo.amplitude, m_buttonInfo.persistence, m_buttonInfo.object, m_buttonInfo.seed);
+
+	m_test = 0;
 
 	//Planet
-	m_buttonInfo.amplitude = 0.01f;
-	m_buttonInfo.persistence = 1.5f;
-	m_buttonInfo.seed = 0;
-	m_buttonInfo.object = m_buttonInfo.renderer->LoadOBJ("../data/sphere/sphere.obj");
-	m_buttonInfo.renderer->LoadTexture("../data/vanquish/upper_d.tga", m_buttonInfo.object);
-	m_buttonInfo.renderer->LoadNormalMap("../data/vanquish/upper_n.tga", m_buttonInfo.object);
-	m_buttonInfo.renderer->GeneratePerlinNoiseMap(100, 100, 6, m_buttonInfo.amplitude, m_buttonInfo.persistence, m_buttonInfo.object, m_buttonInfo.seed);
+	//m_buttonInfo.amplitude = 0.01f;
+	//m_buttonInfo.persistence = 1.5f;
+	//m_buttonInfo.seed = 0;
+	//m_buttonInfo.object = m_buttonInfo.renderer->LoadOBJ("../data/sphere/sphere.obj");
+	//m_buttonInfo.renderer->LoadTexture("../data/vanquish/upper_d.tga", m_buttonInfo.object);
+	//m_buttonInfo.renderer->LoadNormalMap("../data/vanquish/upper_n.tga", m_buttonInfo.object);
+	//m_buttonInfo.renderer->GeneratePerlinNoiseMap(100, 100, 6, m_buttonInfo.amplitude, m_buttonInfo.persistence, m_buttonInfo.object, m_buttonInfo.seed);
 	
 	//Lower suit
 	//location = m_renderer->LoadOBJ("../data/vanquish/lower.obj");
@@ -103,6 +105,15 @@ int Tutorial12::Init()
 void Tutorial12::Update(float a_deltaTime)
 {
 	m_camera->Update(a_deltaTime);
+
+	m_test += a_deltaTime;
+
+	if (m_test > 10.0f)
+	{
+		m_buttonInfo.renderer->GeneratePerlinNoiseMap(100, 100, 6, m_buttonInfo.amplitude, m_buttonInfo.persistence, m_buttonInfo.object, m_buttonInfo.seed);
+		m_test = 0;
+	}
+
 }
 
 void Tutorial12::Draw()
