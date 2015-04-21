@@ -15,6 +15,11 @@ struct ButtonInfo {
 	float persistence;
 	unsigned int seed;
 	unsigned int object;
+	unsigned int rows;
+	unsigned int columns;
+	unsigned int perlinRows;
+	unsigned int perlinColumns;
+	float height;
 };
 
 class Tutorial12 : public Application
@@ -28,8 +33,7 @@ private:
 	FlyCamera* m_camera;
 
 	ButtonInfo m_buttonInfo;
-
-	float m_test;
+	ButtonInfo m_buttonInfo2;
 
 };
 

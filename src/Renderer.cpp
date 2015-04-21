@@ -66,7 +66,7 @@ m_standardProgram(-1), m_particleProgram(-1), m_animatedProgram(-1), m_postProce
 
 	m_defaultDiffuse = LoadTexture("../data/default/specular.png");
 	m_defaultNormal = LoadTexture("../data/default/normal.png");
-	m_defaultSpec = LoadTexture("../data/default/specular.png");
+	m_defaultSpec = m_defaultDiffuse;
 	m_defaultShadow = LoadTexture("../data/default/shadow.png");
 
 
@@ -199,6 +199,7 @@ unsigned int Renderer::LoadFrameBuffer(Camera* const a_camera, const vec4& a_dim
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	m_frameBuffers.push_back(FBO);
+	m_renderBuffers.push_back(fboDepth);
 	m_frameBufferDimensions.push_back(a_dimensions);
 	m_frameBufferColours.push_back(a_backgroundColour);
 	
@@ -247,6 +248,13 @@ void Renderer::GenerateShadowMap(const float a_lightWidth)
 
 void Renderer::GeneratePerlinNoiseMap(const unsigned int a_rows, const unsigned int a_columns, const unsigned int a_octaves, const float a_amplitude, const float a_persistence, const unsigned int a_index, const unsigned int a_seed)
 {
+	if (a_index >= m_numOfIndices.size() || m_numOfIndices[a_index] == -1)
+	{
+		std::cout << "Error: Generating Perlin Map for invalid object!" << std::endl;
+		return;
+	}
+
+
 	float *perlinData = new float[a_rows * a_columns];
 	
 	for (unsigned int i = 0; i < a_rows; ++i)
@@ -293,56 +301,59 @@ void Renderer::GeneratePerlinNoiseMap(const unsigned int a_rows, const unsigned 
 
 void Renderer::GenerateNormals(const unsigned int a_index)
 {
-	if (a_index >= m_numOfIndices.size())
+	if (a_index >= m_numOfIndices.size() || m_numOfIndices[a_index] == -1)
 	{
-		std::cout << "Error: Generation of normal vectors failed!" << std::endl;
+		std::cout << "Error: Generating normals for invalid object!" << std::endl;
 		return;
 	}
 
 	//Need to use glMapBuffer to get data from the vbo and ibo, then modify it.
 
 	//First, bind the buffers necessary.
+
+	glBindVertexArray(m_VAO[a_index]);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_IBO[a_index]);
-	//glBindBuffer(GL_ARRAY_BUFFER, m_VBO[a_index]);
-	////Next, map the buffers.
-	//const unsigned int* const INDICES = (const unsigned int* const)glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_READ_ONLY);
-	//Vertex* const vertices = (Vertex* const)glMapBuffer(GL_ARRAY_BUFFER, GL_READ_WRITE);
-	//
-	///////////////Here is where I calculate the new normals.
-	//
-	////First up, get the size of the vertex buffer for use in for loops.
-	//int verticesSize;
-	//glGetBufferParameteriv(GL_ARRAY_BUFFER, GL_BUFFER_SIZE, &verticesSize);
-	//verticesSize /= sizeof(Vertex);
-	//
-	////Now set all of the normals to the zero vector.
-	//for (int i = 0; i < verticesSize; ++i)
-	//{
-	//	vertices[i].normal = vec4(0, 0, 0, 0);
-	//}
-	//
-	////Here I create a new normal for each face and add its value to each vertex in it.
-	//for (unsigned int i = 0; i < m_numOfIndices[a_index]; i += 3)
-	//{
-	//	vec4 faceNormal = vec4(glm::cross(vec3(vertices[INDICES[i + 1]].position) - vec3(vertices[INDICES[i]].position), vec3(vertices[INDICES[i + 2]].position) - vec3(vertices[INDICES[i]].position)), 0);
-	//	vertices[INDICES[i]].normal += faceNormal;
-	//	vertices[INDICES[i + 1]].normal += faceNormal;
-	//	vertices[INDICES[i + 2]].normal += faceNormal;
-	//}
-	//
-	////Finally, I normalize all of the normals.
-	//for (int i = 0; i < verticesSize; ++i)
-	//{
-	//	vertices[i].normal = glm::normalize(vertices[i].normal);
-	//}
-	//
-	///////////////End of new normals calculation.
-	//
-	////Cleanup time now- unmap the buffers...
-	//glUnmapBuffer(GL_ARRAY_BUFFER);
-	//glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
-	////... and then unbind them.
-	//glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindBuffer(GL_ARRAY_BUFFER, m_VBO[a_index]);
+	//Next, map the buffers.
+	const unsigned int* const INDICES = (const unsigned int* const)glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_READ_ONLY);
+	Vertex* const vertices = (Vertex* const)glMapBuffer(GL_ARRAY_BUFFER, GL_READ_WRITE);
+	
+	/////////////Here is where I calculate the new normals.
+	
+	//First up, get the size of the vertex buffer for use in for loops.
+	int verticesSize;
+	glGetBufferParameteriv(GL_ARRAY_BUFFER, GL_BUFFER_SIZE, &verticesSize);
+	verticesSize /= sizeof(Vertex);
+	
+	//Now set all of the normals to the zero vector.
+	for (int i = 0; i < verticesSize; ++i)
+	{
+		vertices[i].normal = vec4(0, 0, 0, 0);
+	}
+	
+	//Here I create a new normal for each face and add its value to each vertex in it.
+	for (unsigned int i = 0; i < m_numOfIndices[a_index]; i += 3)
+	{
+		vec4 faceNormal = vec4(glm::cross(vec3(vertices[INDICES[i + 1]].position) - vec3(vertices[INDICES[i]].position), vec3(vertices[INDICES[i + 2]].position) - vec3(vertices[INDICES[i]].position)), 0);
+		vertices[INDICES[i]].normal += faceNormal;
+		vertices[INDICES[i + 1]].normal += faceNormal;
+		vertices[INDICES[i + 2]].normal += faceNormal;
+	}
+	
+	//Finally, I normalize all of the normals.
+	for (int i = 0; i < verticesSize; ++i)
+	{
+		vertices[i].normal = glm::normalize(vertices[i].normal);
+	}
+	
+	/////////////End of new normals calculation.
+	
+	//Cleanup time now- unmap the buffers...
+	glUnmapBuffer(GL_ARRAY_BUFFER);
+	glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
+	//... and then unbind them.
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
@@ -366,9 +377,15 @@ unsigned int Renderer::LoadTexture(const std::string& a_path)
 
 void Renderer::LoadTexture(const string& a_filePath, const unsigned int a_index)
 {
-	while (a_index >= m_textures.size())
+	//while (a_index >= m_textures.size())
+	//{
+	//	m_textures.push_back(-1);
+	//}
+
+	if (a_index >= m_numOfIndices.size() || m_numOfIndices[a_index] == -1)
 	{
-		m_textures.push_back(-1);
+		std::cout << "Error: Loading texture for invalid object!" << std::endl;
+		return;
 	}
 
 	int imageWidth = 0, imageHeight = 0, imageFormat = 0;
@@ -385,9 +402,15 @@ void Renderer::LoadTexture(const string& a_filePath, const unsigned int a_index)
 
 void Renderer::LoadTexture(const unsigned int a_textureIndex, const unsigned int a_index)
 {
-	while (a_index >= m_textures.size())
+	//while (a_index >= m_textures.size())
+	//{
+	//	m_textures.push_back(-1);
+	//}
+
+	if (a_index >= m_numOfIndices.size() || m_numOfIndices[a_index] == -1)
 	{
-		m_textures.push_back(-1);
+		std::cout << "Error: Loading texture for invalid object!" << std::endl;
+		return;
 	}
 
 	m_textures[a_index] = a_textureIndex;
@@ -395,9 +418,15 @@ void Renderer::LoadTexture(const unsigned int a_textureIndex, const unsigned int
 
 void Renderer::LoadNormalMap(const string& a_filePath, const unsigned int a_index)
 {
-	while (a_index >= m_normals.size())
+	//while (a_index >= m_normals.size())
+	//{
+	//	m_normals.push_back(-1);
+	//}
+
+	if (a_index >= m_numOfIndices.size() || m_numOfIndices[a_index] == -1)
 	{
-		m_normals.push_back(-1);
+		std::cout << "Error: Loading normal map for invalid object!" << std::endl;
+		return;
 	}
 
 	int imageWidth = 0, imageHeight = 0, imageFormat = 0;
@@ -414,9 +443,15 @@ void Renderer::LoadNormalMap(const string& a_filePath, const unsigned int a_inde
 
 void Renderer::LoadSpecularMap(const string& a_filePath, const unsigned int a_index)
 {
-	while (a_index >= m_speculars.size())
+	//while (a_index >= m_speculars.size())
+	//{
+	//	m_speculars.push_back(-1);
+	//}
+
+	if (a_index >= m_numOfIndices.size() || m_numOfIndices[a_index] == -1)
 	{
-		m_speculars.push_back(-1);
+		std::cout << "Error: Loading specular map for invalid object!" << std::endl;
+		return;
 	}
 
 	int imageWidth = 0, imageHeight = 0, imageFormat = 0;
@@ -433,19 +468,25 @@ void Renderer::LoadSpecularMap(const string& a_filePath, const unsigned int a_in
 
 void Renderer::SetTransform(const mat4& a_transform, const unsigned int a_index)
 {
-	while (a_index >= m_globals.size())
+	//while (a_index >= m_globals.size())
+	//{
+	//	m_globals.push_back(mat4());
+	//}
+
+	if (a_index >= m_numOfIndices.size() || m_numOfIndices[a_index] == -1)
 	{
-		m_globals.push_back(mat4());
+		std::cout << "Error: Loading texture for invalid object!" << std::endl;
+		return;
 	}
+
 	m_globals[a_index] = a_transform;
 }
 
 const mat4& Renderer::GetTransform(const unsigned int a_index)
 {
-	if (a_index >= m_globals.size())
+	if (a_index >= m_globals.size() || m_numOfIndices[a_index] == -1)
 	{
-		std::cout << "Error: GetTransform() index greater than vector size used.";
-		//Crash the program
+		std::cout << "Error: Getting transform for invalid object.";
 		return m_globals[a_index];
 	}
 	else
@@ -467,12 +508,7 @@ unsigned int Renderer::GenerateGrid(const unsigned int a_rows, const unsigned in
 		for (unsigned int c = 0; c < columns; ++c)
 		{
 			aoVertices[ r * columns + c].position = vec4((float)c - a_columns/2, 0, (float)r - a_rows/2, 1);
-	
-			//Creating an arbitrary colour.
-			//vec3 colour(sinf( (c / (float)(columns - 1)) * (r / (float)(rows - 1))));
-			vec3 colour(1,1,1);
-	
-			aoVertices[r * columns + c].colour = vec4(colour, 1);
+			aoVertices[r * columns + c].colour = vec4(1, 1, 1, 1);
 			aoVertices[r * columns + c].normal = glm::vec4(0, 1, 0, 0);
 			aoVertices[r * columns + c].tangent = glm::vec4(1, 0, 1, 1);
 			aoVertices[r * columns + c].uv = glm::vec2((float)(r + 1)/rows, (float)(c + 1)/columns);
@@ -944,7 +980,7 @@ void Renderer::Draw()
 
 		for (unsigned int i = 1; i < m_numOfIndices.size(); ++i)
 		{
-			if (m_skeletons[i] == nullptr)
+			if (m_skeletons[i] == nullptr && m_numOfIndices[i] != -1)
 			{
 				glUniformMatrix4fv((m_uniformLocations[m_shadowGenProgram])[GLOBAL], 1, GL_FALSE, &((m_globals[i])[0][0]));
 
@@ -961,6 +997,7 @@ void Renderer::Draw()
 
 			for (unsigned int i = 1; i < m_numOfIndices.size(); ++i)
 			{
+				//Don't need to check if this object is valid, as deleted objects have their skeleton set to nullptr, so this is already doing the check.
 				if (m_skeletons[i] != nullptr)
 				{
 					glUniformMatrix4fv((m_uniformLocations[m_animShadowGenProgram])[BONES], m_skeletons[i]->m_boneCount, GL_FALSE, (float*)m_skeletons[i]->m_bones);
@@ -1009,7 +1046,7 @@ void Renderer::DrawModels(const unsigned int j)
 		unsigned int notAnimatedCheck = -1;
 		for (unsigned int i = 1; i < m_numOfIndices.size(); ++i)
 		{
-			if (m_skeletons[i] == nullptr)
+			if (m_skeletons[i] == nullptr && m_numOfIndices[i] != -1)
 			{
 				notAnimatedCheck = i;
 				break;
@@ -1035,7 +1072,7 @@ void Renderer::DrawModels(const unsigned int j)
 
 			for (unsigned int i = notAnimatedCheck; i < m_numOfIndices.size(); ++i)
 			{
-				if (m_skeletons[i] != nullptr)
+				if (m_skeletons[i] != nullptr || m_numOfIndices[i] == -1)
 					continue;
 
 				//Check to see if this model is on this frame buffer's ignore list.
@@ -1088,6 +1125,7 @@ void Renderer::DrawModels(const unsigned int j)
 			unsigned int animatedCheck = -1;
 			for (unsigned int i = 1; i < m_numOfIndices.size(); ++i)
 			{
+				//Much like the Draw() function, I don't do checks to see if animated objects are invalid because I automatically set deleted objects m_skeleton entry to nullptr, hence this is already checked.
 				if (m_skeletons[i] != nullptr)
 				{
 					animatedCheck = i;
@@ -1430,6 +1468,29 @@ void Renderer::LoadIntoOpenGL(const Vertex* const a_verticesArray, const unsigne
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
+void Renderer::DestroyObject(const unsigned int a_index)
+{
+	glDeleteVertexArrays(1, &m_VAO[a_index]);
+	m_VAO[a_index] = -1;
+	glDeleteBuffers(1, &m_VBO[a_index]);
+	m_VBO[a_index] = -1;
+	glDeleteBuffers(1, &m_IBO[a_index]);
+	m_IBO[a_index] = -1;
+
+	glDeleteTextures(1, &m_textures[a_index]);
+	m_textures[a_index] = -1;
+	glDeleteTextures(1, &m_normals[a_index]);
+	m_normals[a_index] = -1;
+	glDeleteTextures(1, &m_speculars[a_index]);
+	m_speculars[a_index] = -1;
+
+	m_skeletons[a_index] = nullptr;
+	m_animations[a_index] = nullptr;
+	m_globals[a_index] = mat4();
+
+	m_numOfIndices[a_index] = -1;
+}
+
 void Renderer::CleanupBuffers()
 {
 	for (unsigned int i = 0; i < m_VAO.size(); ++i)
@@ -1438,13 +1499,18 @@ void Renderer::CleanupBuffers()
 	}
 	for (unsigned int i = 0; i < m_VBO.size(); ++i)
 	{
-		glDeleteBuffers(1, &m_VAO[i]);
+		glDeleteBuffers(1, &m_VBO[i]);
 	}
 	for (unsigned int i = 0; i < m_IBO.size(); ++i)
 	{
 		glDeleteBuffers(1, &m_IBO[i]);
 	}
 
+
+	for (unsigned int i = 0; i < m_renderBuffers.size(); ++i)
+	{
+		glDeleteRenderbuffers(1, &m_renderBuffers[i]);
+	}
 	for (unsigned int i = 0; i < m_frameBuffers.size(); ++i)
 	{
 		glDeleteFramebuffers(1, &m_frameBuffers[i]);
@@ -1472,6 +1538,20 @@ void Renderer::CleanupBuffers()
 		if (m_textures[i] != -1)
 			glDeleteTextures(1, &m_textures[i]);
 	}
+	for (unsigned int i = 0; i < m_normals.size(); ++i)
+	{
+		if (m_normals[i] != -1)
+			glDeleteTextures(1, &m_normals[i]);
+	}
+	for (unsigned int i = 0; i < m_speculars.size(); ++i)
+	{
+		if (m_speculars[i] != -1)
+			glDeleteTextures(1, &m_speculars[i]);
+	}
+
+	glDeleteTextures(1, &m_defaultDiffuse);
+	glDeleteTextures(1, &m_defaultNormal);
+	glDeleteTextures(1, &m_defaultShadow);
 
 	for (unsigned int i = 0; i < m_mirrors.size(); ++i)
 	{

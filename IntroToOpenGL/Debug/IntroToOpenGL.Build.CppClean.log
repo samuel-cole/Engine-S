@@ -6,6 +6,7 @@ e:\my documents\visual studio 2013\introtoopengl\introtoopengl\debug\inputmanage
 e:\my documents\visual studio 2013\introtoopengl\introtoopengl\debug\main.obj
 e:\my documents\visual studio 2013\introtoopengl\introtoopengl\debug\mirrortest1.obj
 e:\my documents\visual studio 2013\introtoopengl\introtoopengl\debug\particle.obj
+e:\my documents\visual studio 2013\introtoopengl\introtoopengl\debug\renderer.obj
 e:\my documents\visual studio 2013\introtoopengl\introtoopengl\debug\staticcamera.obj
 e:\my documents\visual studio 2013\introtoopengl\introtoopengl\debug\tutorial10.obj
 e:\my documents\visual studio 2013\introtoopengl\introtoopengl\debug\tutorial11.obj
@@ -22,11 +23,10 @@ e:\my documents\visual studio 2013\introtoopengl\introtoopengl\debug\tutorial1.o
 e:\my documents\visual studio 2013\introtoopengl\introtoopengl\debug\gizmos.obj
 e:\my documents\visual studio 2013\introtoopengl\introtoopengl\debug\application.obj
 e:\my documents\visual studio 2013\introtoopengl\introtoopengl\debug\camera.obj
-e:\my documents\visual studio 2013\introtoopengl\introtoopengl\debug\renderer.obj
 e:\my documents\visual studio 2013\introtoopengl\introtoopengl\debug\gl_core_4_4.obj
-e:\my documents\visual studio 2013\introtoopengl\debug\introtoopengl.ilk
-e:\my documents\visual studio 2013\introtoopengl\debug\introtoopengl.exe
 e:\my documents\visual studio 2013\introtoopengl\debug\introtoopengl.pdb
+e:\my documents\visual studio 2013\introtoopengl\debug\introtoopengl.exe
+e:\my documents\visual studio 2013\introtoopengl\debug\introtoopengl.ilk
 e:\my documents\visual studio 2013\introtoopengl\introtoopengl\debug\introtoopengl.tlog\cl.command.1.tlog
 e:\my documents\visual studio 2013\introtoopengl\introtoopengl\debug\introtoopengl.tlog\cl.read.1.tlog
 e:\my documents\visual studio 2013\introtoopengl\introtoopengl\debug\introtoopengl.tlog\cl.write.1.tlog

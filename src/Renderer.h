@@ -114,6 +114,8 @@ private:
 
 	//Vector containing all of the framebuffers associated with this renderer.
 	std::vector<unsigned int> m_frameBuffers;
+	//Vector containing all of the render buffors used for storing depth- this vector is only used for cleaning up purposes at the moment.
+	std::vector<unsigned int> m_renderBuffers;
 	//Vector containing the positions and sizes of all of the frame buffers associated with this renderer.
 	std::vector<vec4> m_frameBufferDimensions;
 	//Vector containing the background colours of each frame buffer. 
@@ -203,6 +205,7 @@ public:
 	//Generates a perlin noise map. Pass the index of the model to have a perlin-based transform added to it into a_index. Note that perlin maps are not supported for animated models. a_octaves determines how bumpy the map will be.
 	void GeneratePerlinNoiseMap(const unsigned int a_rows, const unsigned int a_columns, const unsigned int a_octaves, const float a_amplitude, const float a_persistence, const unsigned int a_index, const unsigned int a_seed);
 
+	//TODO: Allow users to use an already loaded-in diffuse, normal or specular map, instead of having to load it in a second time.
 	//Method for loading in a texture. Pass the index of the model to be textured into a_index.
 	void LoadTexture(const std::string& a_filePath, const unsigned int a_index);
 	//Method for loading in a texture that has already been created (used in conjunction with LoadFrameBuffer to create render targets).
@@ -256,6 +259,9 @@ public:
 	void UpdateEmitters(const float a_deltaTime);
 	//Updates all mirrors to properly reflect.
 	void UpdateMirrors();
+
+	//Destroys the object at the specified index. TODO: Make new objects check for -1 values within the buffer vectors and place themselves there, instead of pushing back new values to the vector.
+	void DestroyObject(const unsigned int a_index);
 
 	//Cleans up by deleting all OpenGL buffers and programs currently in use.
 	void CleanupBuffers();
