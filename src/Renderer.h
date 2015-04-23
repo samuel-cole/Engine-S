@@ -77,7 +77,6 @@ private:
 	std::vector<glm::mat4> m_globals;
 
 	//TODO: change these programs to use an enum. 
-	//TODO: add additional programs for different combinations of shadows and maps.
 	//Program used for animated models.
 	unsigned int m_animatedProgram;
 	//Program used for standard models.
@@ -203,7 +202,7 @@ public:
 	//Creates a shadow map. Setting light width to a high number gives a large area that shadows can be created within, while setting it to a low number generates higher quality shadow maps.
 	void GenerateShadowMap(const float a_lightWidth);
 	//Generates a perlin noise map. Pass the index of the model to have a perlin-based transform added to it into a_index. Note that perlin maps are not supported for animated models. a_octaves determines how bumpy the map will be.
-	void GeneratePerlinNoiseMap(const unsigned int a_rows, const unsigned int a_columns, const unsigned int a_octaves, const float a_amplitude, const float a_persistence, const unsigned int a_index, const unsigned int a_seed);
+	void GeneratePerlinNoiseMap(const unsigned int a_rows, const unsigned int a_columns, const unsigned int a_octaves, const float a_amplitude, const float a_persistence, const unsigned int a_index, const unsigned int a_seed, const bool a_tileable);
 
 	//TODO: Allow users to use an already loaded-in diffuse, normal or specular map, instead of having to load it in a second time.
 	//Method for loading in a texture. Pass the index of the model to be textured into a_index.

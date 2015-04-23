@@ -246,7 +246,7 @@ void Renderer::GenerateShadowMap(const float a_lightWidth)
 	m_lightProjection = glm::ortho<float>(-a_lightWidth, a_lightWidth, -a_lightWidth, a_lightWidth, -a_lightWidth, a_lightWidth);
 }
 
-void Renderer::GeneratePerlinNoiseMap(const unsigned int a_rows, const unsigned int a_columns, const unsigned int a_octaves, const float a_amplitude, const float a_persistence, const unsigned int a_index, const unsigned int a_seed)
+void Renderer::GeneratePerlinNoiseMap(const unsigned int a_rows, const unsigned int a_columns, const unsigned int a_octaves, const float a_amplitude, const float a_persistence, const unsigned int a_index, const unsigned int a_seed, const bool a_tileable)
 {
 	if (a_index >= m_numOfIndices.size() || m_numOfIndices[a_index] == -1)
 	{
@@ -269,8 +269,26 @@ void Renderer::GeneratePerlinNoiseMap(const unsigned int a_rows, const unsigned 
 			for (unsigned int o = 0; o < a_octaves; ++o)
 			{
 				float frequency = powf(2, (float)o);
-				glm::vec2 test = glm::vec2((float)i, (float)j) * (1.0f / glm::max(a_rows, a_columns)) * 3 * frequency;
-				float perlinSample = glm::perlin(test + glm::vec2((float)a_seed));
+
+				float perlinSample;
+				if (!a_tileable)
+				{
+					glm::vec2 perlinInput = glm::vec2((float)i, (float)j) * (1.0f / glm::max(a_rows, a_columns)) * 3 * frequency;
+					perlinSample = glm::perlin(perlinInput + glm::vec2((float)a_seed));
+				}
+				else
+				{
+					//This is the condition for flipping (i > (a_rows  - 1) / 2)
+					glm::vec2 perlinInput = glm::vec2((float)(i % 2), (float)(j % 2))  * (1.0f / glm::max(a_rows, a_columns)) * 3 * frequency;
+
+					if (i > (a_rows - 1) / 2)
+						perlinInput.x = 1 - perlinInput.x;
+					if (j > (a_columns - 1) / 2)
+						perlinInput.y = 1 - perlinInput.y;
+
+					//At the moment, repeating textures do not use a seed- fix this later.
+					perlinSample = glm::perlin(perlinInput);
+				}
 				perlinSample *= 0.5f + 0.5f;
 				perlinData[i * a_columns + j] += perlinSample * amplitude;
 				amplitude *= a_persistence;

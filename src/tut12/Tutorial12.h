@@ -19,7 +19,6 @@ struct ButtonInfo {
 	unsigned int columns;
 	unsigned int perlinRows;
 	unsigned int perlinColumns;
-	float height;
 };
 
 class Tutorial12 : public Application
