@@ -32,6 +32,14 @@ private:
 	FlyCamera* m_camera;
 
 	InfoForBar m_infoForBar;
+
+	std::vector<unsigned int> m_emitters;
+
+	float m_tileWidth;
+
+	//Checkers ideas:
+	//Framebuffers as one side's pieces.
+	//More particles.
 };
 
 #endif
