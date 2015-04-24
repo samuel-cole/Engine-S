@@ -96,8 +96,8 @@ int Tutorial12::Init()
 	m_buttonInfo.amplitude = 0.01f;
 	m_buttonInfo.persistence = 1.5f;
 	m_buttonInfo.seed = 0;
-	m_buttonInfo.perlinRows = 100;
-	m_buttonInfo.perlinColumns = 100;
+	m_buttonInfo.perlinRows = 20;
+	m_buttonInfo.perlinColumns = 20;
 	m_buttonInfo.object = m_buttonInfo.renderer->LoadOBJ("../data/sphere/sphere.obj");
 	m_buttonInfo.renderer->LoadTexture("../data/vanquish/upper_d.tga", m_buttonInfo.object);
 	m_buttonInfo.renderer->LoadNormalMap("../data/vanquish/upper_n.tga", m_buttonInfo.object);

@@ -278,13 +278,28 @@ void Renderer::GeneratePerlinNoiseMap(const unsigned int a_rows, const unsigned 
 				}
 				else
 				{
-					//This is the condition for flipping (i > (a_rows  - 1) / 2)
-					glm::vec2 perlinInput = glm::vec2((float)(i % 2), (float)(j % 2))  * (1.0f / glm::max(a_rows, a_columns)) * 3 * frequency;
+					float xPerlin;
+					if (i > ((float)a_rows - 1.0f) / 2.0f)
+					{
+						xPerlin = (a_rows - 1 - i) % 2;
+					}
+					else
+					{
+						xPerlin = i % 2;
+					}
 
-					if (i > (a_rows - 1) / 2)
-						perlinInput.x = 1 - perlinInput.x;
-					if (j > (a_columns - 1) / 2)
-						perlinInput.y = 1 - perlinInput.y;
+					float yPerlin;
+					if (j > ((float)a_rows - 1.0f) / 2.0f)
+					{
+						yPerlin = (a_columns - 1 - j) % 2;
+					}
+					else
+					{
+						yPerlin = j % 2;
+					}
+					 
+
+					glm::vec2 perlinInput = glm::vec2(xPerlin, yPerlin)  * (1.0f / glm::max(a_rows, a_columns)) * 3 * frequency;
 
 					//At the moment, repeating textures do not use a seed- fix this later.
 					perlinSample = glm::perlin(perlinInput);

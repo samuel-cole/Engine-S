@@ -1,5 +1,5 @@
-#ifndef TUTORIAL_12
-#define TUTORIAL_12
+#ifndef TUTORIAL_12_H
+#define TUTORIAL_12_H
 
 #include "Application.h"
 
