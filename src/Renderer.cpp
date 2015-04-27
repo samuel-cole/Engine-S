@@ -281,21 +281,21 @@ void Renderer::GeneratePerlinNoiseMap(const unsigned int a_rows, const unsigned 
 					float xPerlin;
 					if (i > ((float)a_rows - 1.0f) / 2.0f)
 					{
-						xPerlin = (a_rows - 1 - i) % 2;
+						xPerlin = (float)((a_rows - 1 - i) % 2);
 					}
 					else
 					{
-						xPerlin = i % 2;
+						xPerlin = (float)(i % 2);
 					}
 
 					float yPerlin;
 					if (j > ((float)a_rows - 1.0f) / 2.0f)
 					{
-						yPerlin = (a_columns - 1 - j) % 2;
+						yPerlin = (float)((a_columns - 1 - j) % 2);
 					}
 					else
 					{
-						yPerlin = j % 2;
+						yPerlin = (float)(j % 2);
 					}
 					 
 
@@ -654,7 +654,7 @@ unsigned int Renderer::CreateEmitter(const unsigned int a_maxParticles, const fl
 {
 	if (a_gpuBased)
 	{
-		GPUParticleEmitter* emitter = new GPUParticleEmitter(a_maxParticles, a_lifespanMin, a_lifespanMax, a_velocityMin, a_velocityMax, a_startSize, a_endSize, a_startColour, a_endColour, a_direction, a_directionVariance, a_bar);
+		GPUParticleEmitter* emitter = new GPUParticleEmitter(a_maxParticles, a_lifespanMin, a_lifespanMax, a_velocityMin, a_velocityMax, a_startSize, a_endSize, a_startColour, a_endColour, a_direction, a_directionVariance, a_bar, m_gpuEmitters.size());
 
 		std::vector<GPUParticleEmitter*>::iterator i = m_gpuEmitters.begin();
 		while (i != m_gpuEmitters.end())

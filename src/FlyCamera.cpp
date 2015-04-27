@@ -19,13 +19,13 @@ void FlyCamera::Update(float a_deltaTime)
 	vec3 forwardVec = (vec3)GetWorldTransform()[2];
 
 	vec3 moveDir(0.0f);
-	if (InputManager::GetKey(Keys::UP) || InputManager::GetKey(Keys::W))
+	if (/*InputManager::GetKey(Keys::UP) || */InputManager::GetKey(Keys::W))
 		moveDir -= forwardVec;
-	if (InputManager::GetKey(Keys::DOWN) || InputManager::GetKey(Keys::S))
+	if (/*InputManager::GetKey(Keys::DOWN) || */InputManager::GetKey(Keys::S))
 		moveDir += forwardVec;
-	if (InputManager::GetKey(Keys::LEFT) || InputManager::GetKey(Keys::A))
+	if (/*InputManager::GetKey(Keys::LEFT) || */InputManager::GetKey(Keys::A))
 		moveDir -= rightVec;
-	if (InputManager::GetKey(Keys::RIGHT) || InputManager::GetKey(Keys::D))
+	if (/*InputManager::GetKey(Keys::RIGHT) || */InputManager::GetKey(Keys::D))
 		moveDir += rightVec;
 	
 	if (InputManager::GetKey(Keys::SPACE))

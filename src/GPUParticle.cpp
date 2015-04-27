@@ -53,7 +53,7 @@ GPUParticleEmitter::GPUParticleEmitter(const unsigned int a_maxParticles, const 
 
 GPUParticleEmitter::GPUParticleEmitter(const unsigned int a_maxParticles, const float a_lifeSpanMin, const float a_lifeSpanMax,
 									   const float a_velocityMin, const float a_velocityMax, const float a_startSize, const float a_endSize,
-									   const  vec4& a_startColour, const vec4& a_endColour, const vec3& a_direction, const float a_directionVariance, TwBar* const a_bar)
+									   const  vec4& a_startColour, const vec4& a_endColour, const vec3& a_direction, const float a_directionVariance, TwBar* const a_bar, const unsigned int a_emitterID)
 									   : m_deltaTimeUniformLocation(-1), m_emitterPositionUniformLocation(-1), m_timeUniformLocation(-1), m_directionUniformLocation(-1)
 
 {
@@ -74,7 +74,11 @@ GPUParticleEmitter::GPUParticleEmitter(const unsigned int a_maxParticles, const 
 	if (m_direction.z == 0)
 		m_direction.z += 0.000001f;
 
-	TwAddVarRW(a_bar, "Particle Direction", TW_TYPE_DIR3F, &m_direction[0], "");
+	//This will only work for particle emitters with an id of less than 30 or so digits, but if I have more than 100000000000000000000000000000 emitters then I think I have bigger problems.
+	char name [50];
+	sprintf_s(name, "Particle Direction %u\0", a_emitterID);
+
+	TwAddVarRW(a_bar, name, TW_TYPE_DIR3F, &m_direction[0], "");
 	m_directionVariation = a_directionVariance;
 
 	m_particles = new GPUParticle[a_maxParticles];

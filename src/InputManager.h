@@ -7,15 +7,19 @@
 
 struct GLFWwindow;
 
-enum Keys { UP = 265,
-			DOWN = 264,
-			LEFT = 263, 
-			RIGHT = 262,
-			SPACE = 32,
-			W = 87,
-			A = 65,
-			S = 83,
-			D = 68};
+enum Keys 
+{ 
+	UP = GLFW_KEY_UP,
+	DOWN = GLFW_KEY_DOWN,
+	LEFT = GLFW_KEY_LEFT,
+	RIGHT = GLFW_KEY_RIGHT,
+	SPACE = GLFW_KEY_SPACE,
+	ENTER = GLFW_KEY_ENTER,
+	W = GLFW_KEY_W,
+	A = GLFW_KEY_A,
+	S = GLFW_KEY_S,
+	D = GLFW_KEY_D 
+};
 
 class InputManager
 {

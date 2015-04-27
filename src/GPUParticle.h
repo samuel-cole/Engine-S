@@ -28,7 +28,7 @@ public:
 					   const vec4& a_startColour, const vec4& a_endColour, const vec3& a_direction, const float a_directionVariance);
 	GPUParticleEmitter(const unsigned int a_maxParticles, const float a_lifeSpanMin, const float a_lifeSpanMax,
 					   const float a_velocityMin, const float a_velocityMax, const float a_startSize, const float a_endSize,
-					   const vec4& a_startColour, const vec4& a_endColour, const vec3& a_direction, const float a_directionVariance, TwBar* const a_bar);
+					   const vec4& a_startColour, const vec4& a_endColour, const vec3& a_direction, const float a_directionVariance, TwBar* const a_bar, const unsigned int a_emitterID);
 	~GPUParticleEmitter();
 
 	void Draw(const float a_time, const glm::mat4& a_cameraTransform, const glm::mat4& a_projectionView);
