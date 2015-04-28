@@ -101,14 +101,15 @@ void main()
 		//Possibly change this line, not sure if correct.
 		vec3 randDir = vec3(cos(randX), 0, sin(randX)) + vec3(cos(randY), sin(randY), 0);
 		
-		//Instead of the commented out polar form code above, find the vectors orthonormal with direction.
 		vec3 right = cross(vec3(0, 1, 0), EmitterDirection);
 		vec3 up = cross(EmitterDirection, right);
 		//Renormalize for incase warping has occured.
 		right = normalize(right);
 		up = normalize(up);
 		mat3 transformMatrix = mat3(right, up, EmitterDirection);
-		vVelocity = transformMatrix * randDir;
+		vVelocity = vec3(transformMatrix * randDir);
+
+		//Maybe I could fix this by multiplying by another matrix after transformMatrix.
 
 
 		vVelocity = (rand(seed++, VelocityMax - VelocityMin) + VelocityMin) * normalize(vVelocity);

@@ -26,6 +26,7 @@ private:
 	void Draw();
 
 	void HandleEnter();
+	bool ValidMove();
 
 	FlyCamera* m_camera;
 
@@ -36,16 +37,21 @@ private:
 	const float M_TILE_WIDTH = 12.5f;
 
 	//The unsigned int at each location on the board represents which emitter is at that location.
-	unsigned int m_board[8][8];
+	int m_board[8][8];
 			
 	unsigned int m_currentX;
 	unsigned int m_currentY;
+
+	unsigned int m_previousX;
+	unsigned int m_previousY;
 
 	unsigned int m_positionMarker;
 
 	float m_inputTimer;
 
 	unsigned int m_pieceSelected;
+
+	bool m_turn;
 };
 
 #endif
