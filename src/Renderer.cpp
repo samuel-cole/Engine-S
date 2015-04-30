@@ -508,7 +508,7 @@ void Renderer::SetTransform(const mat4& a_transform, const unsigned int a_index)
 
 	if (a_index >= m_numOfIndices.size() || m_numOfIndices[a_index] == -1)
 	{
-		std::cout << "Error: Loading texture for invalid object!" << std::endl;
+		std::cout << "Error: setting transform for invalid object!" << std::endl;
 		return;
 	}
 
@@ -774,9 +774,9 @@ unsigned int Renderer::LoadFBX(const string& a_filePath, const std::vector<strin
 			indices[i] = mesh->m_indices[i];
 		}		
 
-		SetTransform(mesh->m_globalTransform, m_numOfIndices.size());
-
 		LoadIntoOpenGL(vertices, mesh->m_vertices.size(), indices, mesh->m_indices.size());
+
+		SetTransform(mesh->m_globalTransform, m_numOfIndices.size() - 1);
 
 		delete[] vertices;
 		delete[] indices;

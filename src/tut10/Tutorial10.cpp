@@ -44,12 +44,13 @@ int Tutorial10::Init()
 
 	m_model = m_renderer->LoadFBX("../data/Enemyelite/EnemyElite.fbx", &textures, &normalMaps, &specularMaps);
 
-	for (unsigned int i = 0; i < 10; ++i)
+	for (unsigned int i = 0; i < 5; ++i)
 	{
-		for (unsigned int j = 0; j < 10; ++j)
+		for (unsigned int j = 0; j < 5; ++j)
 		{
 			//This is currently broken- I need to add an offset to each one (I had this originally, then changed how offsets work).
 			unsigned int grid = m_renderer->GenerateGrid(1, 1);
+			m_renderer->SetTransform(glm::translate(vec3(i, 0, j)), grid);
 			m_renderer->LoadTexture(frameTextures[i* 10 + j], grid);
 		}
 	}
