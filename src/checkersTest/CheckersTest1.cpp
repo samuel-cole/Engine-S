@@ -133,6 +133,7 @@ void CheckersTest::Update(float a_deltaTime)
 	Provide options, eg: must take if you can on/off, etc.
 	Show which pieces can be taken
 	Don't select a piece at all it cannot make a move
+	For kings, could just +number of pieces 
 	*/
 
 	m_inputTimer -= a_deltaTime;

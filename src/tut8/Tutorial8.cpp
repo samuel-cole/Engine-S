@@ -32,6 +32,8 @@ int Tutorial8::Init()
 										  true,
 										  m_debugBar);			//GPU based
 
+	m_renderer->GenerateGrid(10, 10);
+
 	//m_emitter = m_renderer->CreateEmitter(100000,			//Max particles
 	//									  0.1f,				//Lifespan minimum 
 	//									  100.0f,			//Lifespan maximum
