@@ -1,5 +1,6 @@
 #include "tut8\Tutorial8.h"
 #include "checkersTest\CheckersTest1.h"
+#include "mirrorTesting\mirrorTest1.h"
 
 int main ()
 {

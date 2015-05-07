@@ -28,7 +28,7 @@ int Tutorial8::Init()
 										  vec4(1, 0, 0, 1), //Start colour
 										  vec4(1, 1, 0, 1), //End colour
 										  vec3(1, 0, 0),	//Direction
-										  3.14159265358979f/10.0f,//Direction variance
+										  3.14159265358979f/2.0f,//Direction variance
 										  true,
 										  m_debugBar);			//GPU based
 

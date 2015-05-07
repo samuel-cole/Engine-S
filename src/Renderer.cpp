@@ -1296,7 +1296,7 @@ void Renderer::UpdateMirrors()
 			vec3 normal = glm::normalize(vec3(m_globals[i] * vec4(0, 1, 0, 0)));
 			//The reflected vector is equal to Incident - 2 * (Incident.Normal) * Normal, http://www.cosinekitty.com/raytrace/chapter10_reflection.html has a good explanation of how this is derived.
 			vec3 reflected = glm::normalize(incident - 2 * glm::dot(incident, normal) * normal);
-			vec3 newCameraPos = reflected * -glm::length(mirrorPosition - cameraPosition);
+			vec3 newCameraPos = reflected * -glm::length(mirrorPosition - cameraPosition) + mirrorPosition;
 			m_cameras[m_mirrors[i]]->SetLookAt(newCameraPos, mirrorPosition, vec3(0, 1, 0));
 			//m_cameras[m_mirrors[i]]->SetLookAt(mirrorPosition, mirrorPosition + reflected, vec3(0, 1, 0));
 

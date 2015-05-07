@@ -1,4 +1,4 @@
-﻿Build started 1/05/2015 5:20:55 PM.
+﻿Build started 7/05/2015 11:21:09 AM.
      1>Project "C:\Users\samuel.cole\Documents\IntroToOpenGL\IntroToOpenGL\IntroToOpenGL.vcxproj" on node 2 (Build target(s)).
      1>ClCompile:
          C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /IC:\Users\samuel.cole\Documents\IntroToOpenGL\dep\stb /IC:\Users\samuel.cole\Documents\IntroToOpenGL\src /IC:\Users\samuel.cole\Documents\IntroToOpenGL\dep\glm /IC:\Users\samuel.cole\Documents\IntroToOpenGL\dep\aieutilities /I"C:\Users\samuel.cole\Documents\IntroToOpenGL\dep\glfw-3.1.bin.WIN32\include" /IC:\Users\samuel.cole\Documents\IntroToOpenGL\dep\AntTweakBar\include /IC:\Users\samuel.cole\Documents\IntroToOpenGL\dep\fbx /ZI /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _CONSOLE /D GLM_FORCE_PURE /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt ..\src\tut8\Tutorial8.cpp
@@ -29,9 +29,11 @@
          Debug\Tutorial8.obj
          Debug\Tutorial9.obj
          Debug\Tutorial1.obj
+     1>LINK : warning LNK4098: defaultlib 'MSVCRT' conflicts with use of other libs; use /NODEFAULTLIB:library
+     1>FBXLoader_d.lib(FBXFile.obj) : warning LNK4099: PDB 'vc120.pdb' was not found with 'FBXLoader_d.lib(FBXFile.obj)' or at 'C:\Users\samuel.cole\Documents\IntroToOpenGL\Debug\vc120.pdb'; linking object as if no debug info
          IntroToOpenGL.vcxproj -> C:\Users\samuel.cole\Documents\IntroToOpenGL\Debug\IntroToOpenGL.exe
      1>Done Building Project "C:\Users\samuel.cole\Documents\IntroToOpenGL\IntroToOpenGL\IntroToOpenGL.vcxproj" (Build target(s)).
 
 Build succeeded.
 
-Time Elapsed 00:00:01.25
+Time Elapsed 00:00:02.01
