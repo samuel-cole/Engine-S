@@ -69,9 +69,88 @@ m_standardProgram(-1), m_particleProgram(-1), m_animatedProgram(-1), m_postProce
 	m_defaultSpec = m_defaultDiffuse;
 	m_defaultShadow = LoadTexture("../data/default/shadow.png");
 
+	/////////Deferred Rendering Stuff//////////
+	SetupGpass();
+	SetupLightBuffer();
+	m_dirLightProgram = CreateProgram("../data/shaders/vertPostProcessing.txt", "../data/shaders/fragLightDir.txt");
+	m_compositeProgram = CreateProgram("../data/shaders/vertPostProcessing.txt", "../data/shaders/fragComposite.txt");
+	/////////End of Deferred Rendering Stuff///
 
 	//glEnable(GL_BLEND);
 	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+}
+
+void Renderer::SetupGpass()
+{
+	//Frame buffer stuff.
+	glGenFramebuffers(1, &m_gpassFBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, m_gpassFBO);
+
+	//Set up albedo.
+	glGenTextures(1, &m_albedoTexture);
+	glBindTexture(GL_TEXTURE_2D, m_albedoTexture);
+	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB8, 1280, 720);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+	//Set up position texture.
+	glGenTextures(1, &m_positionTexture);
+	glBindTexture(GL_TEXTURE_2D, m_positionTexture);
+	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB32F, 1280, 720);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+	//Set up normal texture.
+	glGenTextures(1, &m_normalTexture);
+	glBindTexture(GL_TEXTURE_2D, m_normalTexture);
+	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB32F, 1280, 720);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+	//Render buffer stuff.
+	glGenRenderbuffers(1, &m_gpassDepth);
+	glBindRenderbuffer(GL_RENDERBUFFER, m_gpassDepth);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, 1280, 720);
+
+	
+	//In case I forget : a frame buffer is essentially just a collection of pointers to render buffers and textures.Render buffers are actual collections of pixels.
+	//Set textures for the frame buffer.
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, m_albedoTexture, 0);
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, m_positionTexture, 0);
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, m_normalTexture, 0);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_gpassDepth);
+
+	GLenum gpassTargets[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
+
+	glDrawBuffers(3, gpassTargets);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	m_gpassProgram = CreateProgram("../data/shaders/vertGbuffer.txt", "../data/shaders/fragGbuffer.txt");
+}
+
+void Renderer::SetupLightBuffer()
+{
+	//Light framebuffer
+	glGenFramebuffers(1, &m_lightFBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, m_lightFBO);
+
+	//Light texture
+	glGenTextures(1, &m_lightTexture);
+	glBindTexture(GL_TEXTURE_2D, m_lightTexture);
+	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB8, 1280, 720);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_lightTexture, 0);
+
+	GLenum lightTargets[] = { GL_COLOR_ATTACHMENT0 };
+	glDrawBuffers(1, lightTargets);
+
+	unsigned int status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+	if (status != GL_FRAMEBUFFER_COMPLETE)
+		std::cout << "Error: Light Framebuffer generation failed!" << std::endl;
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 unsigned int Renderer::CreateProgram(const string& a_vertPath, const string& a_fragPath)
@@ -121,6 +200,9 @@ unsigned int Renderer::CreateProgram(const string& a_vertPath, const string& a_f
 	m_uniformLocations[programID].push_back(glGetUniformLocation(programID, "ShadowMap"));
 	m_uniformLocations[programID].push_back(glGetUniformLocation(programID, "ShadowBias"));
 	m_uniformLocations[programID].push_back(glGetUniformLocation(programID, "MirrorMatrix"));
+	m_uniformLocations[programID].push_back(glGetUniformLocation(programID, "View"));
+	m_uniformLocations[programID].push_back(glGetUniformLocation(programID, "AlbedoTexture"));
+	m_uniformLocations[programID].push_back(glGetUniformLocation(programID, "LightTexture"));
 
 	return programID;
 }
@@ -996,7 +1078,7 @@ unsigned int Renderer::MakeMirror(const unsigned int a_width, const unsigned int
 }
 
 void Renderer::Draw()
-{
+/*{
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 	if (m_shadowGenProgram != -1)
@@ -1065,6 +1147,119 @@ void Renderer::Draw()
 	
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, m_textures[0]);
+
+	glBindVertexArray(m_VAO[0]);
+	glDrawElements(GL_TRIANGLES, m_numOfIndices[0], GL_UNSIGNED_INT, nullptr);
+}*/
+{
+	///////////////////////////G-Pass\\\\\\\\\\\\\\\\\\\\\\\\
+	//G-Pass: render out the albedo, position and normal.
+	glEnable(GL_DEPTH_TEST);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, m_gpassFBO);
+	glClearColor(0, 0, 0, 0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	
+	glUseProgram(m_gpassProgram);
+
+	glUniformMatrix4fv((m_uniformLocations[m_gpassProgram])[PROJECTION_VIEW], 1, GL_FALSE, &(m_cameras[0]->GetProjectionView()[0][0]));
+	glUniformMatrix4fv((m_uniformLocations[m_gpassProgram])[VIEW], 1, GL_FALSE, &(m_cameras[0]->GetView()[0][0]));
+
+	for (unsigned int i = 1; i < m_numOfIndices.size(); ++i)
+	{
+		glUniformMatrix4fv((m_uniformLocations[m_gpassProgram])[GLOBAL], 1, GL_FALSE, &((m_globals[i])[0][0]));
+
+		// Set Texture/Diffuse Slot
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, ((m_textures[i] == -1) ? m_defaultDiffuse : m_textures[i]));
+		glUniform1i((m_uniformLocations[m_gpassProgram])[DIFFUSE], 0);
+
+		// Set Normal Map Slot
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, ((m_normals[i] == -1) ? m_defaultNormal : m_normals[i]));
+		glUniform1i((m_uniformLocations[m_gpassProgram])[NORMAL], 1);
+
+		glBindVertexArray(m_VAO[i]);
+		glDrawElements(GL_TRIANGLES, m_numOfIndices[i], GL_UNSIGNED_INT, nullptr);
+	}
+
+
+	///////////////////////////LIGHT\\\\\\\\\\\\\\\\\\\\\\\\
+	//Light Pass: render lights as geometry, sampling position and normals.
+	glBindFramebuffer(GL_FRAMEBUFFER, m_lightFBO);
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	//Disable depth testing and enable additive blending.
+	glDisable(GL_DEPTH_TEST);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_ONE, GL_ONE);
+
+	glUseProgram(m_dirLightProgram);
+
+	//Pass in normals
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, m_normalTexture);
+	glUniform1i((m_uniformLocations[m_dirLightProgram])[NORMAL], 0);
+
+
+	//Draw lights as fullscreen quads.
+	DrawDirectionalLight(m_lightDir, m_lightColour);
+
+	glDisable(GL_BLEND);
+
+	///////////////////////////COMPOSITE\\\\\\\\\\\\\\\\\\\\\\\\
+	//Composite Pass: render a quad and combine albedo and light.
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	glUseProgram(m_compositeProgram);
+
+	//Albedo
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, m_albedoTexture);
+	glUniform1i((m_uniformLocations[m_compositeProgram])[ALBEDO], 0);
+
+	//Light
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, m_lightTexture);
+	glUniform1i((m_uniformLocations[m_compositeProgram])[LIGHT], 1);
+
+	//Draw
+	glBindVertexArray(m_VAO[0]);
+	glDrawElements(GL_TRIANGLES, m_numOfIndices[0], GL_UNSIGNED_INT, nullptr);
+
+
+
+	//CPU Particles
+	if (m_particleProgram != -1)
+	{
+		glUseProgram(m_particleProgram);
+
+		glUniformMatrix4fv((m_uniformLocations[m_particleProgram])[PROJECTION_VIEW], 1, GL_FALSE, &(m_cameras[0]->GetProjectionView()[0][0]));
+
+		for (unsigned int i = 0; i < m_emitters.size(); ++i)
+		{
+			if (m_emitters[i] != nullptr)
+				m_emitters[i]->Draw();
+		}
+	}
+
+	//GPU Particles
+	for (unsigned int i = 0; i < m_gpuEmitters.size(); ++i)
+	{
+		if (m_gpuEmitters[i] != nullptr)
+		{
+			m_gpuEmitters[i]->Draw((float)glfwGetTime(), m_cameras[0]->GetWorldTransform(), m_cameras[0]->GetProjectionView());
+		}
+	}
+}
+
+void Renderer::DrawDirectionalLight(const vec3& a_direction, const vec3& a_diffuse)
+{
+	vec4 viewSpaceLight = m_cameras[0]->GetView() * vec4(glm::normalize(a_direction), 0);
+	
+	glUniform3f((m_uniformLocations[m_dirLightProgram])[LIGHT_DIR], viewSpaceLight.x, viewSpaceLight.y, viewSpaceLight.z);
+	glUniform3f((m_uniformLocations[m_dirLightProgram])[LIGHT_COLOUR], a_diffuse.x, a_diffuse.y, a_diffuse.z);
 
 	glBindVertexArray(m_VAO[0]);
 	glDrawElements(GL_TRIANGLES, m_numOfIndices[0], GL_UNSIGNED_INT, nullptr);
@@ -1296,7 +1491,7 @@ void Renderer::UpdateMirrors()
 			vec3 normal = glm::normalize(vec3(m_globals[i] * vec4(0, 1, 0, 0)));
 			//The reflected vector is equal to Incident - 2 * (Incident.Normal) * Normal, http://www.cosinekitty.com/raytrace/chapter10_reflection.html has a good explanation of how this is derived.
 			vec3 reflected = glm::normalize(incident - 2 * glm::dot(incident, normal) * normal);
-			vec3 newCameraPos = reflected * -glm::length(mirrorPosition - cameraPosition) + mirrorPosition;
+			vec3 newCameraPos = reflected * -glm::length(mirrorPosition - cameraPosition);
 			m_cameras[m_mirrors[i]]->SetLookAt(newCameraPos, mirrorPosition, vec3(0, 1, 0));
 			//m_cameras[m_mirrors[i]]->SetLookAt(mirrorPosition, mirrorPosition + reflected, vec3(0, 1, 0));
 

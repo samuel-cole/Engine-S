@@ -28,11 +28,9 @@ int Tutorial8::Init()
 										  vec4(1, 0, 0, 1), //Start colour
 										  vec4(1, 1, 0, 1), //End colour
 										  vec3(1, 0, 0),	//Direction
-										  3.14159265358979f/2.0f,//Direction variance
+										  3.14159265358979f/10.0f,//Direction variance
 										  true,
 										  m_debugBar);			//GPU based
-
-	m_renderer->GenerateGrid(10, 10);
 
 	//m_emitter = m_renderer->CreateEmitter(100000,			//Max particles
 	//									  0.1f,				//Lifespan minimum 

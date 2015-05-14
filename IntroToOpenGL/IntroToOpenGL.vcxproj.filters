@@ -205,5 +205,17 @@
     <Text Include="..\data\shaders\vertShadowMapAnimated.txt">
       <Filter>Resource Files</Filter>
     </Text>
+    <Text Include="..\data\shaders\vertGbuffer.txt">
+      <Filter>Resource Files</Filter>
+    </Text>
+    <Text Include="..\data\shaders\fragGbuffer.txt">
+      <Filter>Resource Files</Filter>
+    </Text>
+    <Text Include="..\data\shaders\fragComposite.txt">
+      <Filter>Resource Files</Filter>
+    </Text>
+    <Text Include="..\data\shaders\fragLightDir.txt">
+      <Filter>Resource Files</Filter>
+    </Text>
   </ItemGroup>
 </Project>

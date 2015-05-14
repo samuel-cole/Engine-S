@@ -32,7 +32,10 @@ enum UniformTypes
 	LIGHT_MATRIX,
 	SHADOW_MAP,
 	SHADOW_BIAS,
-	MIRROR_MATRIX
+	MIRROR_MATRIX,
+	VIEW,
+	ALBEDO,
+	LIGHT
 };
 
 struct Vertex
@@ -158,6 +161,19 @@ private:
 	vec3 m_lightColour;
 	//How powerful the specular component of the light should be.
 	float m_specPow;
+
+
+	//Variables below here are for the deferred rendering stuff- this may need to be refactored later.
+	unsigned int m_gpassFBO, m_albedoTexture, m_positionTexture, m_normalTexture, m_gpassDepth;
+	unsigned int m_lightFBO, m_lightTexture;
+	unsigned int m_gpassProgram, m_dirLightProgram, m_compositeProgram;
+
+	//Sets up a GPass framebuffer.
+	void SetupGpass();
+	void SetupLightBuffer();
+
+	//Used in drawing directional lights for deferred rendering.
+	void DrawDirectionalLight(const vec3& a_direction, const vec3& a_diffuse);
 
 	//Splits an OBJ face(index) line into its components, and uses those components to construct vertices which it pushes into the appropriate vectors.
 	void SplitIndex(const std::string& a_string,				std::vector<Vertex>* const a_vertices,

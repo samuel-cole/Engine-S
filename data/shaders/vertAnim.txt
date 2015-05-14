@@ -31,7 +31,7 @@ void main() {
 	//Normals are negative here as a hack to fix lighting issues on animated models.
 	vNormal = (Global * Normal).xyz;
 	vTangent = Tangent.xyz;
-	vBiTangent = cross(-vNormal, vTangent);
+	vBiTangent = cross(vNormal, vTangent);
 	vTexCoord = TexCoord;
 
 	

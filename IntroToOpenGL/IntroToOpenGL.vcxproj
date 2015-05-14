@@ -133,12 +133,16 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\data\shaders\frag.txt" />
+    <Text Include="..\data\shaders\fragComposite.txt" />
+    <Text Include="..\data\shaders\fragGbuffer.txt" />
+    <Text Include="..\data\shaders\fragLightDir.txt" />
     <Text Include="..\data\shaders\fragParticles.txt" />
     <Text Include="..\data\shaders\fragPostProcessing.txt" />
     <Text Include="..\data\shaders\fragShadowMap.txt" />
     <Text Include="..\data\shaders\geomGPUParticles.txt" />
     <Text Include="..\data\shaders\vert.txt" />
     <Text Include="..\data\shaders\vertAnim.txt" />
+    <Text Include="..\data\shaders\vertGbuffer.txt" />
     <Text Include="..\data\shaders\vertGPUParticles.txt" />
     <Text Include="..\data\shaders\vertGPUParticlesUpdate.txt" />
     <Text Include="..\data\shaders\vertParticles.txt" />

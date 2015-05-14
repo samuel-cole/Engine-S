@@ -1,0 +1,32 @@
+#version 410
+
+in vec3 vPosition;
+in vec3 vNormal;
+in vec3 vTangent;
+in vec3 vBiTangent;
+in vec2 vUV;
+
+uniform sampler2D Diffuse;
+uniform sampler2D Normal;
+
+uniform mat4 View;
+
+layout(location = 0) out vec3 gpassAlbedo;
+layout(location = 1) out vec3 gpassPosition;
+layout(location = 2) out vec3 gpassNormal;
+
+void main() 
+{
+	//we simply output the data
+
+	//Note: you could use a material colour, or sample a texture for albedo
+	gpassAlbedo = texture(Diffuse, vUV).xyz;
+
+	gpassPosition = vPosition.xyz;
+
+	mat3 TBN = mat3(normalize(vTangent), normalize(vBiTangent), normalize(vNormal));
+	vec3 N = mat3(View) * (texture(Normal, vUV).xyz * 2 - 1);
+	//gpassNormal = vNormal.xyz;
+	//gpassNormal = TBN * N;
+	gpassNormal = N;
+}

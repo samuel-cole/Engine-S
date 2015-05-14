@@ -24,25 +24,25 @@ int MirrorTest1::Init()
 	m_renderer->SetTransform(glm::rotate(m_renderer->GetTransform(m_mirror), 3.14159265358979f / 2.0f, vec3(0, 1.0f, 0)), m_mirror);
 
 	//Front wall
-	//m_mirror = m_renderer->MakeMirror(20, 20, vec4(0.0f, 0.0f, 512.0f, 512.0f), vec3(1.0f, 1.0f, 1.0f));
-	//m_renderer->SetTransform(glm::translate(m_renderer->GetTransform(m_mirror), vec3(0, 5, 10)), m_mirror);
-	//m_renderer->SetTransform(glm::rotate(m_renderer->GetTransform(m_mirror), 3.14159265358979f / 2.0f, vec3(1.0f, 0, 0)), m_mirror);
-	//
-	////Right wall
-	//m_mirror = m_renderer->MakeMirror(20, 20, vec4(0.0f, 0.0f, 512.0f, 512.0f), vec3(1.0f, 1.0f, 1.0f));
-	//m_renderer->SetTransform(glm::translate(m_renderer->GetTransform(m_mirror), vec3(10, 5, 0)), m_mirror);
-	//m_renderer->SetTransform(glm::rotate(m_renderer->GetTransform(m_mirror), 3.14159265358979f / 2.0f, vec3(1.0f, 0, 0)), m_mirror);
-	//m_renderer->SetTransform(glm::rotate(m_renderer->GetTransform(m_mirror), 3.14159265358979f / 2.0f, vec3(0, 0.0f, 1.0f)), m_mirror);
-	//
-	////Left wall
-	//m_mirror = m_renderer->MakeMirror(20, 20, vec4(0.0f, 0.0f, 512.0f, 512.0f), vec3(1.0f, 1.0f, 1.0f));
-	//m_renderer->SetTransform(glm::translate(m_renderer->GetTransform(m_mirror), vec3(-10, 5, 0)), m_mirror);
-	//m_renderer->SetTransform(glm::rotate(m_renderer->GetTransform(m_mirror), 3.14159265358979f / 2.0f, vec3(1.0f, 0, 0)), m_mirror);
-	//m_renderer->SetTransform(glm::rotate(m_renderer->GetTransform(m_mirror), -3.14159265358979f / 2.0f, vec3(0, 0.0f, 1.0f)), m_mirror);
-	//
-	////Floor
-	//m_mirror = m_renderer->MakeMirror(20, 20, vec4(0.0f, 0.0f, 512.0f, 512.0f), vec3(1.0f, 1.0f, 1.0f));
-	//m_renderer->SetTransform(glm::translate(m_renderer->GetTransform(m_mirror), vec3(0, 0, 0)), m_mirror);
+	m_mirror = m_renderer->MakeMirror(20, 20, vec4(0.0f, 0.0f, 512.0f, 512.0f), vec3(1.0f, 1.0f, 1.0f));
+	m_renderer->SetTransform(glm::translate(m_renderer->GetTransform(m_mirror), vec3(0, 5, 10)), m_mirror);
+	m_renderer->SetTransform(glm::rotate(m_renderer->GetTransform(m_mirror), 3.14159265358979f / 2.0f, vec3(1.0f, 0, 0)), m_mirror);
+
+	//Right wall
+	m_mirror = m_renderer->MakeMirror(20, 20, vec4(0.0f, 0.0f, 512.0f, 512.0f), vec3(1.0f, 1.0f, 1.0f));
+	m_renderer->SetTransform(glm::translate(m_renderer->GetTransform(m_mirror), vec3(10, 5, 0)), m_mirror);
+	m_renderer->SetTransform(glm::rotate(m_renderer->GetTransform(m_mirror), 3.14159265358979f / 2.0f, vec3(1.0f, 0, 0)), m_mirror);
+	m_renderer->SetTransform(glm::rotate(m_renderer->GetTransform(m_mirror), 3.14159265358979f / 2.0f, vec3(0, 0.0f, 1.0f)), m_mirror);
+
+	//Left wall
+	m_mirror = m_renderer->MakeMirror(20, 20, vec4(0.0f, 0.0f, 512.0f, 512.0f), vec3(1.0f, 1.0f, 1.0f));
+	m_renderer->SetTransform(glm::translate(m_renderer->GetTransform(m_mirror), vec3(-10, 5, 0)), m_mirror);
+	m_renderer->SetTransform(glm::rotate(m_renderer->GetTransform(m_mirror), 3.14159265358979f / 2.0f, vec3(1.0f, 0, 0)), m_mirror);
+	m_renderer->SetTransform(glm::rotate(m_renderer->GetTransform(m_mirror), -3.14159265358979f / 2.0f, vec3(0, 0.0f, 1.0f)), m_mirror);
+
+	//Floor
+	m_mirror = m_renderer->MakeMirror(20, 20, vec4(0.0f, 0.0f, 512.0f, 512.0f), vec3(1.0f, 1.0f, 1.0f));
+	m_renderer->SetTransform(glm::translate(m_renderer->GetTransform(m_mirror), vec3(0, 0, 0)), m_mirror);
 
 
 	std::vector<std::string> textures;
