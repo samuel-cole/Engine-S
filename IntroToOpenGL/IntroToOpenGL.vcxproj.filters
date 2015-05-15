@@ -217,5 +217,11 @@
     <Text Include="..\data\shaders\fragLightDir.txt">
       <Filter>Resource Files</Filter>
     </Text>
+    <Text Include="..\..\GitHub\IntroToOpenGL\data\shaders\fragLightPoint.txt">
+      <Filter>Resource Files</Filter>
+    </Text>
+    <Text Include="..\..\GitHub\IntroToOpenGL\data\shaders\vertLightPoint.txt">
+      <Filter>Resource Files</Filter>
+    </Text>
   </ItemGroup>
 </Project>

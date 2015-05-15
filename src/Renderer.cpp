@@ -18,6 +18,12 @@
 using glm::vec3;
 using std::string;
 
+void TW_CALL ChangeDeferred(void* a_clientData)
+{
+	Renderer* renderer = (Renderer*)a_clientData;
+	renderer->SwitchDeferred();
+}
+
 Renderer::Renderer(Camera* const a_camera, TwBar* const a_bar) : m_bar(a_bar), m_shadowDepth(-1),
 m_standardProgram(-1), m_particleProgram(-1), m_animatedProgram(-1), m_postProcessingProgram(-1), m_shadowGenProgram(-1), m_animShadowGenProgram(-1)
 {
@@ -66,14 +72,17 @@ m_standardProgram(-1), m_particleProgram(-1), m_animatedProgram(-1), m_postProce
 
 	m_defaultDiffuse = LoadTexture("../data/default/specular.png");
 	m_defaultNormal = LoadTexture("../data/default/normal.png");
-	m_defaultSpec = m_defaultDiffuse;
 	m_defaultShadow = LoadTexture("../data/default/shadow.png");
+	m_defaultSpec = m_defaultShadow;
+	
+	m_deferredRenderMode = true;
 
 	/////////Deferred Rendering Stuff//////////
 	SetupGpass();
 	SetupLightBuffer();
 	m_dirLightProgram = CreateProgram("../data/shaders/vertPostProcessing.txt", "../data/shaders/fragLightDir.txt");
 	m_compositeProgram = CreateProgram("../data/shaders/vertPostProcessing.txt", "../data/shaders/fragComposite.txt");
+	TwAddButton(a_bar, "Switch Deferred/Forward Rendering", ChangeDeferred, (void*)this, "");
 	/////////End of Deferred Rendering Stuff///
 
 	//glEnable(GL_BLEND);
@@ -151,6 +160,11 @@ void Renderer::SetupLightBuffer()
 		std::cout << "Error: Light Framebuffer generation failed!" << std::endl;
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void Renderer::SwitchDeferred()
+{
+	m_deferredRenderMode = !m_deferredRenderMode;
 }
 
 unsigned int Renderer::CreateProgram(const string& a_vertPath, const string& a_fragPath)
@@ -657,6 +671,72 @@ unsigned int Renderer::GenerateGrid(const unsigned int a_rows, const unsigned in
 	return m_numOfIndices.size() - 1;
 }
 
+unsigned int Renderer::CreatePointLight(const vec3& a_colour, const vec3& a_position)
+{
+	float cubeVertexData[] = 
+	{
+		-1, -1, 1, 1,
+		1, -1, 1, 1,
+		1, -1, -1, 1,
+		-1, -1, -1, 1,
+		-1, 1, 1, 1,
+		1, 1, 1, 1,
+		1, 1, -1, 1,
+		-1, 1, -1, 1,
+	};
+	unsigned int cubeIndexData[] = 
+	{
+		0, 5, 4,
+		0, 1, 5,
+		1, 6, 5,
+		1, 2, 6,
+		2, 7, 6,
+		2, 3, 7,
+		3, 4, 7,
+		3, 0, 4,
+		4, 6, 7,
+		4, 5, 6,
+		3, 1, 0,
+		3, 2, 1
+	};
+
+	//Add the newest number of indices to the vector.
+	m_pointNumOfIndices.push_back(36);
+	
+	//Add new buffer variables to the vectors.
+	m_pointVAO.push_back(-1);
+	m_pointVBO.push_back(-1); 
+	m_pointIBO.push_back(-1);
+
+	//Generating buffers
+	glGenVertexArrays(1, &m_pointVAO[m_pointVAO.size() - 1]);
+	glGenBuffers(1, &m_pointVBO[m_pointVBO.size() - 1]);
+	glGenBuffers(1, &m_pointIBO[m_pointIBO.size() - 1]);
+
+	//Bind stuff
+	glBindVertexArray(m_pointVAO[m_pointVAO.size() - 1]);
+	glBindBuffer(GL_ARRAY_BUFFER, m_pointVBO[m_pointVBO.size() - 1]);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_pointIBO[m_pointIBO.size() - 1]);
+
+	//Enable positions only
+	glEnableVertexAttribArray(0);
+
+	//Tell opengl how the memory is formatted
+	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(vec4), (void*)0);
+
+
+	//Tell openGL what the vertices and indices are.
+	glBufferData(GL_ARRAY_BUFFER, 32 * sizeof(vec4), cubeVertexData, GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, 36 * sizeof(vec4), cubeIndexData, GL_STATIC_DRAW);
+
+	//Unloading stuff.
+	glBindVertexArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+	return m_pointNumOfIndices.size() - 1;
+}
+
 unsigned int Renderer::CreateEmitter(const unsigned int a_maxParticles, const unsigned int a_emitRate, const float a_lifespanMin, const float a_lifespanMax, const float a_velocityMin, const float a_velocityMax,
 									 const float a_startSize, const float a_endSize, const vec4& a_startColour, const vec4& a_endColour, const vec3& a_direction, const float a_directionVariance, const bool a_gpuBased)
 {
@@ -1078,179 +1158,192 @@ unsigned int Renderer::MakeMirror(const unsigned int a_width, const unsigned int
 }
 
 void Renderer::Draw()
-/*{
-	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+{
 
-	if (m_shadowGenProgram != -1)
+	if (!m_deferredRenderMode)
 	{
-		//Render to the shadow map for non-animated objects.
-		glBindFramebuffer(GL_FRAMEBUFFER, m_shadowMap);
-		glViewport(0, 0, 4096, 4096);
-		glClear(GL_DEPTH_BUFFER_BIT);
+#pragma region NOT_DEFERRED_CODE
+		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-		glUseProgram(m_shadowGenProgram);
-		//TODO: change this so that the light is coming from the camera position.
-		m_lightProjView = m_lightProjection * glm::lookAt(-m_lightDir, vec3(0, 0, 0), vec3(0, 1, 0));
-		glUniformMatrix4fv((m_uniformLocations[m_shadowGenProgram])[LIGHT_MATRIX], 1, GL_FALSE, &(m_lightProjView[0][0]));
-
-		for (unsigned int i = 1; i < m_numOfIndices.size(); ++i)
+		if (m_shadowGenProgram != -1)
 		{
-			if (m_skeletons[i] == nullptr && m_numOfIndices[i] != -1)
-			{
-				glUniformMatrix4fv((m_uniformLocations[m_shadowGenProgram])[GLOBAL], 1, GL_FALSE, &((m_globals[i])[0][0]));
+			//Render to the shadow map for non-animated objects.
+			glBindFramebuffer(GL_FRAMEBUFFER, m_shadowMap);
+			glViewport(0, 0, 4096, 4096);
+			glClear(GL_DEPTH_BUFFER_BIT);
 
-				glBindVertexArray(m_VAO[i]);
-				glDrawElements(GL_TRIANGLES, m_numOfIndices[i], GL_UNSIGNED_INT, nullptr);
-			}
-		}
-
-		//Render to the shadow map for animated objects.
-		if (m_animatedProgram != -1)
-		{
-			glUseProgram(m_animShadowGenProgram);
-			glUniformMatrix4fv((m_uniformLocations[m_animShadowGenProgram])[LIGHT_MATRIX], 1, GL_FALSE, &(m_lightProjView[0][0]));
+			glUseProgram(m_shadowGenProgram);
+			//TODO: change this so that the light is coming from the camera position.
+			m_lightProjView = m_lightProjection * glm::lookAt(-m_lightDir, vec3(0, 0, 0), vec3(0, 1, 0));
+			glUniformMatrix4fv((m_uniformLocations[m_shadowGenProgram])[LIGHT_MATRIX], 1, GL_FALSE, &(m_lightProjView[0][0]));
 
 			for (unsigned int i = 1; i < m_numOfIndices.size(); ++i)
 			{
-				//Don't need to check if this object is valid, as deleted objects have their skeleton set to nullptr, so this is already doing the check.
-				if (m_skeletons[i] != nullptr)
+				if (m_skeletons[i] == nullptr && m_numOfIndices[i] != -1)
 				{
-					glUniformMatrix4fv((m_uniformLocations[m_animShadowGenProgram])[BONES], m_skeletons[i]->m_boneCount, GL_FALSE, (float*)m_skeletons[i]->m_bones);
-					glUniformMatrix4fv((m_uniformLocations[m_animShadowGenProgram])[GLOBAL], 1, GL_FALSE, &((m_globals[i])[0][0]));
+					glUniformMatrix4fv((m_uniformLocations[m_shadowGenProgram])[GLOBAL], 1, GL_FALSE, &((m_globals[i])[0][0]));
 
 					glBindVertexArray(m_VAO[i]);
 					glDrawElements(GL_TRIANGLES, m_numOfIndices[i], GL_UNSIGNED_INT, nullptr);
 				}
 			}
+
+			//Render to the shadow map for animated objects.
+			if (m_animatedProgram != -1)
+			{
+				glUseProgram(m_animShadowGenProgram);
+				glUniformMatrix4fv((m_uniformLocations[m_animShadowGenProgram])[LIGHT_MATRIX], 1, GL_FALSE, &(m_lightProjView[0][0]));
+
+				for (unsigned int i = 1; i < m_numOfIndices.size(); ++i)
+				{
+					//Don't need to check if this object is valid, as deleted objects have their skeleton set to nullptr, so this is already doing the check.
+					if (m_skeletons[i] != nullptr)
+					{
+						glUniformMatrix4fv((m_uniformLocations[m_animShadowGenProgram])[BONES], m_skeletons[i]->m_boneCount, GL_FALSE, (float*)m_skeletons[i]->m_bones);
+						glUniformMatrix4fv((m_uniformLocations[m_animShadowGenProgram])[GLOBAL], 1, GL_FALSE, &((m_globals[i])[0][0]));
+
+						glBindVertexArray(m_VAO[i]);
+						glDrawElements(GL_TRIANGLES, m_numOfIndices[i], GL_UNSIGNED_INT, nullptr);
+					}
+				}
+			}
 		}
+
+		//Render everything to any framebuffers.
+		for (int j = m_frameBuffers.size() - 1; j >= 0; --j)
+		{
+			glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffers[j]);
+			glViewport((GLint)m_frameBufferDimensions[j].x, (GLint)m_frameBufferDimensions[j].y, (GLint)m_frameBufferDimensions[j].z, (GLint)m_frameBufferDimensions[j].w);
+			glClearColor(m_frameBufferColours[j].x, m_frameBufferColours[j].y, m_frameBufferColours[j].z, 1);
+
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+			DrawModels(j);
+		}
+
+		//Do stuff to render the framebuffer used for post processing.
+
+		//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glViewport(0, 0, 1280, 720);
+		glClear(GL_DEPTH_BUFFER_BIT);
+		glUseProgram(m_postProcessingProgram);
+
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, m_textures[0]);
+
+		glBindVertexArray(m_VAO[0]);
+		glDrawElements(GL_TRIANGLES, m_numOfIndices[0], GL_UNSIGNED_INT, nullptr);
+#pragma endregion
 	}
-
-	//Render everything to any framebuffers.
-	for (int j = m_frameBuffers.size() - 1; j >= 0; --j)
+	else
 	{
-		glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffers[j]);
-		glViewport((GLint)m_frameBufferDimensions[j].x, (GLint)m_frameBufferDimensions[j].y, (GLint)m_frameBufferDimensions[j].z, (GLint)m_frameBufferDimensions[j].w);
-		glClearColor(m_frameBufferColours[j].x, m_frameBufferColours[j].y, m_frameBufferColours[j].z, 1);
+#pragma region DEFERRED_CODE
+		///////////////////////////G-Pass\\\\\\\\\\\\\\\\\\\\\\\\
+			//G-Pass: render out the albedo, position and normal.
+		glEnable(GL_DEPTH_TEST);
 
+		glBindFramebuffer(GL_FRAMEBUFFER, m_gpassFBO);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		DrawModels(j);
-	}
+		glUseProgram(m_gpassProgram);
 
-	//Do stuff to render the framebuffer used for post processing.
+		glUniformMatrix4fv((m_uniformLocations[m_gpassProgram])[PROJECTION_VIEW], 1, GL_FALSE, &(m_cameras[0]->GetProjectionView()[0][0]));
+		glUniformMatrix4fv((m_uniformLocations[m_gpassProgram])[VIEW], 1, GL_FALSE, &(m_cameras[0]->GetView()[0][0]));
 
-	//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	glViewport(0, 0, 1280, 720);
-	glClear(GL_DEPTH_BUFFER_BIT);
-	glUseProgram(m_postProcessingProgram);
-	
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, m_textures[0]);
+		for (unsigned int i = 1; i < m_numOfIndices.size(); ++i)
+		{
+			glUniformMatrix4fv((m_uniformLocations[m_gpassProgram])[GLOBAL], 1, GL_FALSE, &((m_globals[i])[0][0]));
 
-	glBindVertexArray(m_VAO[0]);
-	glDrawElements(GL_TRIANGLES, m_numOfIndices[0], GL_UNSIGNED_INT, nullptr);
-}*/
-{
-	///////////////////////////G-Pass\\\\\\\\\\\\\\\\\\\\\\\\
-	//G-Pass: render out the albedo, position and normal.
-	glEnable(GL_DEPTH_TEST);
+			// Set Texture/Diffuse Slot
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, ((m_textures[i] == -1) ? m_defaultDiffuse : m_textures[i]));
+			glUniform1i((m_uniformLocations[m_gpassProgram])[DIFFUSE], 0);
 
-	glBindFramebuffer(GL_FRAMEBUFFER, m_gpassFBO);
-	glClearColor(0, 0, 0, 0);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	
-	glUseProgram(m_gpassProgram);
+			// Set Normal Map Slot
+			glActiveTexture(GL_TEXTURE1);
+			glBindTexture(GL_TEXTURE_2D, ((m_normals[i] == -1) ? m_defaultNormal : m_normals[i]));
+			glUniform1i((m_uniformLocations[m_gpassProgram])[NORMAL], 1);
 
-	glUniformMatrix4fv((m_uniformLocations[m_gpassProgram])[PROJECTION_VIEW], 1, GL_FALSE, &(m_cameras[0]->GetProjectionView()[0][0]));
-	glUniformMatrix4fv((m_uniformLocations[m_gpassProgram])[VIEW], 1, GL_FALSE, &(m_cameras[0]->GetView()[0][0]));
+			glBindVertexArray(m_VAO[i]);
+			glDrawElements(GL_TRIANGLES, m_numOfIndices[i], GL_UNSIGNED_INT, nullptr);
+		}
 
-	for (unsigned int i = 1; i < m_numOfIndices.size(); ++i)
-	{
-		glUniformMatrix4fv((m_uniformLocations[m_gpassProgram])[GLOBAL], 1, GL_FALSE, &((m_globals[i])[0][0]));
 
-		// Set Texture/Diffuse Slot
+		///////////////////////////LIGHT\\\\\\\\\\\\\\\\\\\\\\\\
+			//Light Pass: render lights as geometry, sampling position and normals.
+		glBindFramebuffer(GL_FRAMEBUFFER, m_lightFBO);
+		glClear(GL_COLOR_BUFFER_BIT);
+
+		//Disable depth testing and enable additive blending.
+		glDisable(GL_DEPTH_TEST);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_ONE, GL_ONE);
+
+		glUseProgram(m_dirLightProgram);
+
+		//Pass in normals
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, ((m_textures[i] == -1) ? m_defaultDiffuse : m_textures[i]));
-		glUniform1i((m_uniformLocations[m_gpassProgram])[DIFFUSE], 0);
+		glBindTexture(GL_TEXTURE_2D, m_normalTexture);
+		glUniform1i((m_uniformLocations[m_dirLightProgram])[NORMAL], 0);
 
-		// Set Normal Map Slot
+		//Pass in positions
 		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, ((m_normals[i] == -1) ? m_defaultNormal : m_normals[i]));
-		glUniform1i((m_uniformLocations[m_gpassProgram])[NORMAL], 1);
-
-		glBindVertexArray(m_VAO[i]);
-		glDrawElements(GL_TRIANGLES, m_numOfIndices[i], GL_UNSIGNED_INT, nullptr);
-	}
+		glBindTexture(GL_TEXTURE_2D, m_positionTexture);
+		glUniform1i((m_uniformLocations[m_dirLightProgram])[GLOBAL], 1);
 
 
-	///////////////////////////LIGHT\\\\\\\\\\\\\\\\\\\\\\\\
-	//Light Pass: render lights as geometry, sampling position and normals.
-	glBindFramebuffer(GL_FRAMEBUFFER, m_lightFBO);
-	glClear(GL_COLOR_BUFFER_BIT);
+		//Draw lights as fullscreen quads.
+		DrawDirectionalLight(m_lightDir, m_lightColour);
 
-	//Disable depth testing and enable additive blending.
-	glDisable(GL_DEPTH_TEST);
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_ONE, GL_ONE);
+		glDisable(GL_BLEND);
 
-	glUseProgram(m_dirLightProgram);
+		///////////////////////////COMPOSITE\\\\\\\\\\\\\\\\\\\\\\\\
+			//Composite Pass: render a quad and combine albedo and light.
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glClear(GL_COLOR_BUFFER_BIT);
 
-	//Pass in normals
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, m_normalTexture);
-	glUniform1i((m_uniformLocations[m_dirLightProgram])[NORMAL], 0);
+		glUseProgram(m_compositeProgram);
 
+		//Albedo
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, m_albedoTexture);
+		glUniform1i((m_uniformLocations[m_compositeProgram])[ALBEDO], 0);
 
-	//Draw lights as fullscreen quads.
-	DrawDirectionalLight(m_lightDir, m_lightColour);
+		//Light
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, m_lightTexture);
+		glUniform1i((m_uniformLocations[m_compositeProgram])[LIGHT], 1);
 
-	glDisable(GL_BLEND);
-
-	///////////////////////////COMPOSITE\\\\\\\\\\\\\\\\\\\\\\\\
-	//Composite Pass: render a quad and combine albedo and light.
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	glClear(GL_COLOR_BUFFER_BIT);
-
-	glUseProgram(m_compositeProgram);
-
-	//Albedo
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, m_albedoTexture);
-	glUniform1i((m_uniformLocations[m_compositeProgram])[ALBEDO], 0);
-
-	//Light
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, m_lightTexture);
-	glUniform1i((m_uniformLocations[m_compositeProgram])[LIGHT], 1);
-
-	//Draw
-	glBindVertexArray(m_VAO[0]);
-	glDrawElements(GL_TRIANGLES, m_numOfIndices[0], GL_UNSIGNED_INT, nullptr);
+		//Draw
+		glBindVertexArray(m_VAO[0]);
+		glDrawElements(GL_TRIANGLES, m_numOfIndices[0], GL_UNSIGNED_INT, nullptr);
 
 
 
-	//CPU Particles
-	if (m_particleProgram != -1)
-	{
-		glUseProgram(m_particleProgram);
-
-		glUniformMatrix4fv((m_uniformLocations[m_particleProgram])[PROJECTION_VIEW], 1, GL_FALSE, &(m_cameras[0]->GetProjectionView()[0][0]));
-
-		for (unsigned int i = 0; i < m_emitters.size(); ++i)
+		//CPU Particles
+		if (m_particleProgram != -1)
 		{
-			if (m_emitters[i] != nullptr)
-				m_emitters[i]->Draw();
-		}
-	}
+			glUseProgram(m_particleProgram);
 
-	//GPU Particles
-	for (unsigned int i = 0; i < m_gpuEmitters.size(); ++i)
-	{
-		if (m_gpuEmitters[i] != nullptr)
-		{
-			m_gpuEmitters[i]->Draw((float)glfwGetTime(), m_cameras[0]->GetWorldTransform(), m_cameras[0]->GetProjectionView());
+			glUniformMatrix4fv((m_uniformLocations[m_particleProgram])[PROJECTION_VIEW], 1, GL_FALSE, &(m_cameras[0]->GetProjectionView()[0][0]));
+
+			for (unsigned int i = 0; i < m_emitters.size(); ++i)
+			{
+				if (m_emitters[i] != nullptr)
+					m_emitters[i]->Draw();
+			}
 		}
+
+		//GPU Particles
+		for (unsigned int i = 0; i < m_gpuEmitters.size(); ++i)
+		{
+			if (m_gpuEmitters[i] != nullptr)
+			{
+				m_gpuEmitters[i]->Draw((float)glfwGetTime(), m_cameras[0]->GetWorldTransform(), m_cameras[0]->GetProjectionView());
+			}
+		}
+#pragma endregion
 	}
 }
 
@@ -1258,8 +1351,11 @@ void Renderer::DrawDirectionalLight(const vec3& a_direction, const vec3& a_diffu
 {
 	vec4 viewSpaceLight = m_cameras[0]->GetView() * vec4(glm::normalize(a_direction), 0);
 	
-	glUniform3f((m_uniformLocations[m_dirLightProgram])[LIGHT_DIR], viewSpaceLight.x, viewSpaceLight.y, viewSpaceLight.z);
+	//glUniform3f((m_uniformLocations[m_dirLightProgram])[LIGHT_DIR], viewSpaceLight.x, viewSpaceLight.y, viewSpaceLight.z);
+	glUniform3f((m_uniformLocations[m_dirLightProgram])[LIGHT_DIR], a_direction.x, a_direction.y, a_direction.z);
 	glUniform3f((m_uniformLocations[m_dirLightProgram])[LIGHT_COLOUR], a_diffuse.x, a_diffuse.y, a_diffuse.z);
+	glUniform3fv((m_uniformLocations[m_dirLightProgram])[CAMERA_POS], 1, &(m_cameras[0]->GetWorldTransform()[3][0]));
+	glUniform1f((m_uniformLocations[m_dirLightProgram])[SPEC_POW], m_specPow);
 
 	glBindVertexArray(m_VAO[0]);
 	glDrawElements(GL_TRIANGLES, m_numOfIndices[0], GL_UNSIGNED_INT, nullptr);
@@ -1639,8 +1735,7 @@ void Renderer::LoadIntoOpenGL(const Vertex* const a_verticesArray, const unsigne
 	m_skeletons.push_back(nullptr);
 	m_animations.push_back(nullptr);
 
-
-	//Add a new empty texture and normal map if they haven't already been created.
+	//Add a new empty entry into each of this objects appropriate vectors.
 	if (m_textures.size() < m_numOfIndices.size())
 		m_textures.push_back(-1);
 	if (m_normals.size() < m_numOfIndices.size())

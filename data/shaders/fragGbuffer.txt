@@ -22,11 +22,11 @@ void main()
 	//Note: you could use a material colour, or sample a texture for albedo
 	gpassAlbedo = texture(Diffuse, vUV).xyz;
 
-	gpassPosition = vPosition.xyz;
+	gpassPosition = vPosition;
 
 	mat3 TBN = mat3(normalize(vTangent), normalize(vBiTangent), normalize(vNormal));
-	vec3 N = mat3(View) * (texture(Normal, vUV).xyz * 2 - 1);
+	vec3 N = texture(Normal, vUV).xyz * 2 - 1;
 	//gpassNormal = vNormal.xyz;
-	//gpassNormal = TBN * N;
-	gpassNormal = N;
+	gpassNormal = TBN * N;
+
 }

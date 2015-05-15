@@ -18,9 +18,9 @@ uniform mat4 Global;
 
 void main() {
 
-	vPosition = (View * Global * Position).xyz;
-	vNormal = normalize(View * Normal).xyz;
-	vTangent = normalize(View * Tangent).xyz;
+	vPosition = (Global * Position).xyz;
+	vNormal = normalize(Normal).xyz;
+	vTangent = normalize(Tangent).xyz;
 	vBiTangent = cross(vNormal, vTangent);
 	vUV = UV;
 

@@ -132,6 +132,8 @@
     <ClInclude Include="..\src\Tutorial1.h" />
   </ItemGroup>
   <ItemGroup>
+    <Text Include="..\..\GitHub\IntroToOpenGL\data\shaders\fragLightPoint.txt" />
+    <Text Include="..\..\GitHub\IntroToOpenGL\data\shaders\vertLightPoint.txt" />
     <Text Include="..\data\shaders\frag.txt" />
     <Text Include="..\data\shaders\fragComposite.txt" />
     <Text Include="..\data\shaders\fragGbuffer.txt" />

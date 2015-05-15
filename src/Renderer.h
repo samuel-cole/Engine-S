@@ -162,14 +162,31 @@ private:
 	//How powerful the specular component of the light should be.
 	float m_specPow;
 
+	//Vector that stores all of the vertex buffer objects for the point lights.
+	std::vector<unsigned int> m_pointVBO;
+	//Vector that stores all of the index buffer objects for the point lights.
+	std::vector<unsigned int> m_pointIBO;
+	//Vector that stores all of the vertex array objects for the point lights.
+	std::vector<unsigned int> m_pointVAO;
+	//Vector that contains the number of indices that each point light has.
+	std::vector<unsigned int> m_pointNumOfIndices;
+	//Vector that stores all of the colours for the point lights.
+	std::vector<vec3> m_pointColour;
+	//Vector that stores the positions of all of the point lights.
+	std::vector<vec3> m_pointPositions;
 
-	//Variables below here are for the deferred rendering stuff- this may need to be refactored later.
+	//These variables are used to set up the G-Pass.
 	unsigned int m_gpassFBO, m_albedoTexture, m_positionTexture, m_normalTexture, m_gpassDepth;
+	//These variables are used to set up the light pass.
 	unsigned int m_lightFBO, m_lightTexture;
+	//These are the programs used for deferred rendering.
 	unsigned int m_gpassProgram, m_dirLightProgram, m_compositeProgram;
+	//Bool to store whether everything is currently being rendered with forwards rendering or deferred rendering. True for deferred.
+	bool m_deferredRenderMode;
 
 	//Sets up a GPass framebuffer.
 	void SetupGpass();
+	//Sets up everything required for the light pass of deferred rendering.
 	void SetupLightBuffer();
 
 	//Used in drawing directional lights for deferred rendering.
@@ -235,8 +252,11 @@ public:
 	//Accessor method for the global transform matrices of each model. a_index refers to the index of the model to get the transform of.
 	const glm::mat4& GetTransform(const unsigned int a_index);
 
-	//Generates a grid of vertices on the x-z plane with the specified number of rows and columns. Returns the index of the grid, for use in texturing.
+	//Generates a grid of vertices on the x-z plane with the specified number of rows and columns. Returns the index of the grid, for use in texturing/transform altering.
 	unsigned int GenerateGrid(const unsigned int a_rows, const unsigned int a_columns);
+
+	//Generates a point light. Returns an index to the point light.
+	unsigned int CreatePointLight(const vec3& a_colour, const vec3& a_position = vec3(0, 0, 0));
 
 	//Method for creating a particle emitter. Note that the emit rate variable will not be used if gpu-based particles are created, and that the direction and directionvariance variables will not be used for cpu particles.
 	unsigned int CreateEmitter(const unsigned int a_maxParticles, const unsigned int a_emitRate, const float a_lifespanMin, const float a_lifespanMax, const  float a_velocityMin, const float a_velocityMax, 
@@ -255,7 +275,7 @@ public:
 
 	//Method for destroying an emitter- takes in the index of the emitter, and whether it was GPU based or not.
 	void DestroyEmitter(const unsigned int a_emitterIndex, const bool a_gpuBased);
-	
+
 	//Function for loading an FBX model. Returns the index of the model.
 	unsigned int LoadFBX(const std::string& a_filePath, const std::vector<std::string>* const a_texturePaths, const std::vector<std::string>* const a_normalMapPaths, const std::vector<std::string>* const a_specularMapPaths);
 	
@@ -280,6 +300,9 @@ public:
 
 	//Cleans up by deleting all OpenGL buffers and programs currently in use.
 	void CleanupBuffers();
+
+	//Switches between deferred and forward rendering.
+	void SwitchDeferred();
 };
 
 #endif

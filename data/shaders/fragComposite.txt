@@ -9,9 +9,12 @@ uniform sampler2D LightTexture;
 
 void main()
 {
-	vec3 light = texture(LightTexture, vUV).rgb;
+	vec3 light = texture(LightTexture, vUV).rgb * 3;
 	vec3 albedo = texture(AlbedoTexture, vUV).rgb;
 
-	//FragColour = vec4(albedo * light, 1);
-	FragColour = vec4(light, 1);
+	bool ambient;
+	ambient = (length(albedo * light) > 0.1);
+
+	FragColour = float(ambient) * vec4(albedo * light, 1) + float(!ambient) * vec4(0.1, 0.1, 0.1, 1) * vec4(albedo, 1);
+	//FragColour = vec4(light, 1);
 } 
