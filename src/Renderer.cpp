@@ -82,7 +82,6 @@ m_standardProgram(-1), m_particleProgram(-1), m_animatedProgram(-1), m_postProce
 	SetupLightBuffer();
 	SetupPointLights();
 	m_dirLightProgram = CreateProgram("../data/shaders/vertPostProcessing.txt", "../data/shaders/fragLightDir.txt");
-	m_pointLightProgram = CreateProgram("../data/shaders/vertLightPoint.txt", "../data/shaders/fragLightPoint.txt");
 	m_compositeProgram = CreateProgram("../data/shaders/vertPostProcessing.txt", "../data/shaders/fragComposite.txt");
 	TwAddButton(a_bar, "Switch Deferred/Forward Rendering", ChangeDeferred, (void*)this, "");
 	/////////End of Deferred Rendering Stuff///
@@ -137,6 +136,7 @@ void Renderer::SetupGpass()
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	m_gpassProgram = CreateProgram("../data/shaders/vertGbuffer.txt", "../data/shaders/fragGbuffer.txt");
+	m_gpassAnimProgram = CreateProgram("../data/shaders/vertGbufferAnim.txt", "../data/shaders/fragGbuffer.txt");
 }
 
 void Renderer::SetupLightBuffer()
@@ -218,6 +218,8 @@ void Renderer::SetupPointLights()
 	glBindVertexArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+	m_pointLightProgram = CreateProgram("../data/shaders/vertLightPoint.txt", "../data/shaders/fragLightPoint.txt");
 
 }
 
@@ -1250,19 +1252,23 @@ void Renderer::Draw()
 	{
 #pragma region DEFERRED_CODE
 		///////////////////////////G-Pass\\\\\\\\\\\\\\\\\\\\\\\\
-			//G-Pass: render out the albedo, position and normal.
+		//G-Pass: render out the albedo, position and normal.
 		glEnable(GL_DEPTH_TEST);
 
 		glBindFramebuffer(GL_FRAMEBUFFER, m_gpassFBO);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+
+		//Non-animated G-Pass
 		glUseProgram(m_gpassProgram);
 
 		glUniformMatrix4fv((m_uniformLocations[m_gpassProgram])[PROJECTION_VIEW], 1, GL_FALSE, &(m_cameras[0]->GetProjectionView()[0][0]));
-		glUniformMatrix4fv((m_uniformLocations[m_gpassProgram])[VIEW], 1, GL_FALSE, &(m_cameras[0]->GetView()[0][0]));
 
 		for (unsigned int i = 1; i < m_numOfIndices.size(); ++i)
 		{
+			if (m_skeletons[i] != nullptr || m_numOfIndices[i] == -1)
+				continue;
+
 			glUniformMatrix4fv((m_uniformLocations[m_gpassProgram])[GLOBAL], 1, GL_FALSE, &((m_globals[i])[0][0]));
 
 			// Set Texture/Diffuse Slot
@@ -1275,6 +1281,33 @@ void Renderer::Draw()
 			glBindTexture(GL_TEXTURE_2D, ((m_normals[i] == -1) ? m_defaultNormal : m_normals[i]));
 			glUniform1i((m_uniformLocations[m_gpassProgram])[NORMAL], 1);
 
+			glBindVertexArray(m_VAO[i]);
+			glDrawElements(GL_TRIANGLES, m_numOfIndices[i], GL_UNSIGNED_INT, nullptr);
+		}
+
+		//Animated G-Pass
+		glUseProgram(m_gpassAnimProgram);
+		
+		glUniformMatrix4fv((m_uniformLocations[m_gpassAnimProgram])[PROJECTION_VIEW], 1, GL_FALSE, &(m_cameras[0]->GetProjectionView()[0][0]));
+		
+		for (unsigned int i = 1; i < m_numOfIndices.size(); ++i)
+		{
+			if (m_skeletons[i] == nullptr)
+				continue;
+		
+			glUniformMatrix4fv((m_uniformLocations[m_gpassAnimProgram])[GLOBAL], 1, GL_FALSE, &((m_globals[i])[0][0]));
+			glUniformMatrix4fv((m_uniformLocations[m_gpassAnimProgram])[BONES], m_skeletons[i]->m_boneCount, GL_FALSE, (float*)m_skeletons[i]->m_bones);
+		
+			// Set Texture/Diffuse Slot
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, ((m_textures[i] == -1) ? m_defaultDiffuse : m_textures[i]));
+			glUniform1i((m_uniformLocations[m_gpassAnimProgram])[DIFFUSE], 0);
+		
+			// Set Normal Map Slot
+			glActiveTexture(GL_TEXTURE1);
+			glBindTexture(GL_TEXTURE_2D, ((m_normals[i] == -1) ? m_defaultNormal : m_normals[i]));
+			glUniform1i((m_uniformLocations[m_gpassAnimProgram])[NORMAL], 1);
+		
 			glBindVertexArray(m_VAO[i]);
 			glDrawElements(GL_TRIANGLES, m_numOfIndices[i], GL_UNSIGNED_INT, nullptr);
 		}

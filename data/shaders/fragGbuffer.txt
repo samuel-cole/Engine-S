@@ -9,8 +9,6 @@ in vec2 vUV;
 uniform sampler2D Diffuse;
 uniform sampler2D Normal;
 
-uniform mat4 View;
-
 layout(location = 0) out vec3 gpassAlbedo;
 layout(location = 1) out vec3 gpassPosition;
 layout(location = 2) out vec3 gpassNormal;

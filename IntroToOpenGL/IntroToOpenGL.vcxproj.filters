@@ -229,5 +229,8 @@
     <Text Include="..\data\shaders\vertLightPoint.txt">
       <Filter>Resource Files</Filter>
     </Text>
+    <Text Include="..\data\shaders\vertGbufferAnim.txt">
+      <Filter>Resource Files</Filter>
+    </Text>
   </ItemGroup>
 </Project>

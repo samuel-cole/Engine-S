@@ -181,7 +181,7 @@ private:
 	//These variables are used to set up the light pass.
 	unsigned int m_lightFBO, m_lightTexture;
 	//These are the programs used for deferred rendering.
-	unsigned int m_gpassProgram, m_dirLightProgram, m_pointLightProgram, m_compositeProgram;
+	unsigned int m_gpassProgram, m_gpassAnimProgram, m_dirLightProgram, m_pointLightProgram, m_compositeProgram;
 	//Bool to store whether everything is currently being rendered with forwards rendering or deferred rendering. True for deferred.
 	bool m_deferredRenderMode;
 

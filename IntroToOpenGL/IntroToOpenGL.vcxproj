@@ -146,6 +146,7 @@
     <Text Include="..\data\shaders\vert.txt" />
     <Text Include="..\data\shaders\vertAnim.txt" />
     <Text Include="..\data\shaders\vertGbuffer.txt" />
+    <Text Include="..\data\shaders\vertGbufferAnim.txt" />
     <Text Include="..\data\shaders\vertGPUParticles.txt" />
     <Text Include="..\data\shaders\vertGPUParticlesUpdate.txt" />
     <Text Include="..\data\shaders\vertLightPoint.txt" />
