@@ -80,7 +80,9 @@ m_standardProgram(-1), m_particleProgram(-1), m_animatedProgram(-1), m_postProce
 	/////////Deferred Rendering Stuff//////////
 	SetupGpass();
 	SetupLightBuffer();
+	SetupPointLights();
 	m_dirLightProgram = CreateProgram("../data/shaders/vertPostProcessing.txt", "../data/shaders/fragLightDir.txt");
+	m_pointLightProgram = CreateProgram("../data/shaders/vertLightPoint.txt", "../data/shaders/fragLightPoint.txt");
 	m_compositeProgram = CreateProgram("../data/shaders/vertPostProcessing.txt", "../data/shaders/fragComposite.txt");
 	TwAddButton(a_bar, "Switch Deferred/Forward Rendering", ChangeDeferred, (void*)this, "");
 	/////////End of Deferred Rendering Stuff///
@@ -160,6 +162,63 @@ void Renderer::SetupLightBuffer()
 		std::cout << "Error: Light Framebuffer generation failed!" << std::endl;
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void Renderer::SetupPointLights()
+{
+	float cubeVertexData[] =
+	{
+		-1, -1, 1, 1,
+		1, -1, 1, 1,
+		1, -1, -1, 1,
+		-1, -1, -1, 1,
+		-1, 1, 1, 1,
+		1, 1, 1, 1,
+		1, 1, -1, 1,
+		-1, 1, -1, 1,
+	};
+
+	unsigned int cubeIndexData[] =
+	{
+		0, 5, 4,
+		0, 1, 5,
+		1, 6, 5,
+		1, 2, 6,
+		2, 7, 6,
+		2, 3, 7,
+		3, 4, 7,
+		3, 0, 4,
+		4, 6, 7,
+		4, 5, 6,
+		3, 1, 0,
+		3, 2, 1
+	};
+
+	//Generating buffers
+	glGenVertexArrays(1, &m_pointVAO);
+	glGenBuffers(1, &m_pointVBO);
+	glGenBuffers(1, &m_pointIBO);
+
+	//Bind stuff
+	glBindVertexArray(m_pointVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, m_pointVBO);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_pointIBO);
+
+	//Enable positions only
+	glEnableVertexAttribArray(0);
+
+	//Tell opengl how the memory is formatted
+	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(vec4), (void*)0);
+
+	//Tell openGL what the vertices and indices are.
+	glBufferData(GL_ARRAY_BUFFER, 32 * sizeof(vec4), cubeVertexData, GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, 36 * sizeof(vec4), cubeIndexData, GL_STATIC_DRAW);
+
+	//Unloading stuff.
+	glBindVertexArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
 }
 
 void Renderer::SwitchDeferred()
@@ -671,70 +730,21 @@ unsigned int Renderer::GenerateGrid(const unsigned int a_rows, const unsigned in
 	return m_numOfIndices.size() - 1;
 }
 
-unsigned int Renderer::CreatePointLight(const vec3& a_colour, const vec3& a_position)
+unsigned int Renderer::CreatePointLight(const vec3& a_colour, const float a_radius, const vec3& a_position)
 {
-	float cubeVertexData[] = 
-	{
-		-1, -1, 1, 1,
-		1, -1, 1, 1,
-		1, -1, -1, 1,
-		-1, -1, -1, 1,
-		-1, 1, 1, 1,
-		1, 1, 1, 1,
-		1, 1, -1, 1,
-		-1, 1, -1, 1,
-	};
-	unsigned int cubeIndexData[] = 
-	{
-		0, 5, 4,
-		0, 1, 5,
-		1, 6, 5,
-		1, 2, 6,
-		2, 7, 6,
-		2, 3, 7,
-		3, 4, 7,
-		3, 0, 4,
-		4, 6, 7,
-		4, 5, 6,
-		3, 1, 0,
-		3, 2, 1
-	};
+	m_pointColours.push_back(a_colour);
+	m_pointPositions.push_back(a_position);
+	m_pointRadii.push_back(a_radius);
 
-	//Add the newest number of indices to the vector.
-	m_pointNumOfIndices.push_back(36);
-	
-	//Add new buffer variables to the vectors.
-	m_pointVAO.push_back(-1);
-	m_pointVBO.push_back(-1); 
-	m_pointIBO.push_back(-1);
+	TwAddSeparator(m_bar, (std::string("Point Light ") + std::to_string(m_pointRadii.size())).c_str(), "");
+	TwAddVarRW(m_bar, (std::string("Point Light ") + std::to_string(m_pointRadii.size()) + std::string(" Colour")).c_str(), TW_TYPE_COLOR3F, &m_pointColours.back().x, "");
+	TwAddVarRW(m_bar, (std::string("Point Light ") + std::to_string(m_pointRadii.size()) + std::string(" X-Pos")).c_str(), TW_TYPE_FLOAT, &m_pointPositions.back().x, "step=0.1");
+	TwAddVarRW(m_bar, (std::string("Point Light ") + std::to_string(m_pointRadii.size()) + std::string(" Y-Pos")).c_str(), TW_TYPE_FLOAT, &m_pointPositions.back().y, "step=0.1");
+	TwAddVarRW(m_bar, (std::string("Point Light ") + std::to_string(m_pointRadii.size()) + std::string(" Z-Pos")).c_str(), TW_TYPE_FLOAT, &m_pointPositions.back().z, "step=0.1");
+	//TwAddVarRW(m_bar, (std::string("Point Light ") + std::to_string(m_pointRadii.size()) + std::string(" Position")).c_str(), TW_TYPE_DIR3F, &m_pointPositions[m_pointPositions.size() - 1].x, "");
+	TwAddVarRW(m_bar, (std::string("Point Light ") + std::to_string(m_pointRadii.size()) + std::string(" Radius")).c_str(), TW_TYPE_FLOAT, &m_pointRadii.back(), "step=0.1");
 
-	//Generating buffers
-	glGenVertexArrays(1, &m_pointVAO[m_pointVAO.size() - 1]);
-	glGenBuffers(1, &m_pointVBO[m_pointVBO.size() - 1]);
-	glGenBuffers(1, &m_pointIBO[m_pointIBO.size() - 1]);
-
-	//Bind stuff
-	glBindVertexArray(m_pointVAO[m_pointVAO.size() - 1]);
-	glBindBuffer(GL_ARRAY_BUFFER, m_pointVBO[m_pointVBO.size() - 1]);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_pointIBO[m_pointIBO.size() - 1]);
-
-	//Enable positions only
-	glEnableVertexAttribArray(0);
-
-	//Tell opengl how the memory is formatted
-	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, sizeof(vec4), (void*)0);
-
-
-	//Tell openGL what the vertices and indices are.
-	glBufferData(GL_ARRAY_BUFFER, 32 * sizeof(vec4), cubeVertexData, GL_STATIC_DRAW);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, 36 * sizeof(vec4), cubeIndexData, GL_STATIC_DRAW);
-
-	//Unloading stuff.
-	glBindVertexArray(0);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
-	return m_pointNumOfIndices.size() - 1;
+	return m_pointPositions.size() - 1;
 }
 
 unsigned int Renderer::CreateEmitter(const unsigned int a_maxParticles, const unsigned int a_emitRate, const float a_lifespanMin, const float a_lifespanMax, const float a_velocityMin, const float a_velocityMax,
@@ -1271,7 +1281,7 @@ void Renderer::Draw()
 
 
 		///////////////////////////LIGHT\\\\\\\\\\\\\\\\\\\\\\\\
-			//Light Pass: render lights as geometry, sampling position and normals.
+		//Light Pass: render lights as geometry, sampling position and normals.
 		glBindFramebuffer(GL_FRAMEBUFFER, m_lightFBO);
 		glClear(GL_COLOR_BUFFER_BIT);
 
@@ -1280,26 +1290,15 @@ void Renderer::Draw()
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_ONE, GL_ONE);
 
-		glUseProgram(m_dirLightProgram);
-
-		//Pass in normals
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, m_normalTexture);
-		glUniform1i((m_uniformLocations[m_dirLightProgram])[NORMAL], 0);
-
-		//Pass in positions
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, m_positionTexture);
-		glUniform1i((m_uniformLocations[m_dirLightProgram])[GLOBAL], 1);
-
-
 		//Draw lights as fullscreen quads.
-		DrawDirectionalLight(m_lightDir, m_lightColour);
+		DrawDirectionalLight();
+
+		DrawPointLights();
 
 		glDisable(GL_BLEND);
 
 		///////////////////////////COMPOSITE\\\\\\\\\\\\\\\\\\\\\\\\
-			//Composite Pass: render a quad and combine albedo and light.
+		//Composite Pass: render a quad and combine albedo and light.
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glClear(GL_COLOR_BUFFER_BIT);
 
@@ -1347,18 +1346,81 @@ void Renderer::Draw()
 	}
 }
 
-void Renderer::DrawDirectionalLight(const vec3& a_direction, const vec3& a_diffuse)
+void Renderer::DrawDirectionalLight()
 {
-	vec4 viewSpaceLight = m_cameras[0]->GetView() * vec4(glm::normalize(a_direction), 0);
+	glUseProgram(m_dirLightProgram);
+
+	//Pass in normals
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, m_normalTexture);
+	glUniform1i((m_uniformLocations[m_dirLightProgram])[NORMAL], 0);
+
+	//Pass in positions
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, m_positionTexture);
+	glUniform1i((m_uniformLocations[m_dirLightProgram])[GLOBAL], 1);
+
+	//vec4 viewSpaceLight = m_cameras[0]->GetView() * vec4(glm::normalize(m_lightDir), 0);
 	
 	//glUniform3f((m_uniformLocations[m_dirLightProgram])[LIGHT_DIR], viewSpaceLight.x, viewSpaceLight.y, viewSpaceLight.z);
-	glUniform3f((m_uniformLocations[m_dirLightProgram])[LIGHT_DIR], a_direction.x, a_direction.y, a_direction.z);
-	glUniform3f((m_uniformLocations[m_dirLightProgram])[LIGHT_COLOUR], a_diffuse.x, a_diffuse.y, a_diffuse.z);
+	glUniform3f((m_uniformLocations[m_dirLightProgram])[LIGHT_DIR], m_lightDir.x, m_lightDir.y, m_lightDir.z);
+	glUniform3f((m_uniformLocations[m_dirLightProgram])[LIGHT_COLOUR], m_lightColour.x, m_lightColour.y, m_lightColour.z);
 	glUniform3fv((m_uniformLocations[m_dirLightProgram])[CAMERA_POS], 1, &(m_cameras[0]->GetWorldTransform()[3][0]));
 	glUniform1f((m_uniformLocations[m_dirLightProgram])[SPEC_POW], m_specPow);
 
 	glBindVertexArray(m_VAO[0]);
 	glDrawElements(GL_TRIANGLES, m_numOfIndices[0], GL_UNSIGNED_INT, nullptr);
+}
+
+void Renderer::DrawPointLights()
+{
+	if (m_pointRadii.size() > 0)
+	{
+		glUseProgram(m_pointLightProgram);
+
+		glCullFace(GL_FRONT);
+
+		//Pass in normals
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, m_normalTexture);
+		glUniform1i((m_uniformLocations[m_pointLightProgram])[NORMAL], 0);
+
+		//Pass in positions
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, m_positionTexture);
+		glUniform1i((m_uniformLocations[m_pointLightProgram])[GLOBAL], 1);
+
+
+		//Uniforms that are uniform for all lights.
+		glUniformMatrix4fv((m_uniformLocations[m_pointLightProgram])[PROJECTION_VIEW], 1, GL_FALSE, &(m_cameras[0]->GetProjectionView()[0][0]));
+		glUniform3fv((m_uniformLocations[m_pointLightProgram])[CAMERA_POS], 1, &(m_cameras[0]->GetWorldTransform()[3][0]));
+		glUniform1f((m_uniformLocations[m_pointLightProgram])[SPEC_POW], m_specPow);
+
+
+		std::list<vec3>::iterator pointColourIter = m_pointColours.begin();
+		std::list<vec3>::iterator pointPositionsIter = m_pointPositions.begin();
+		std::list<float>::iterator pointRadiiIter = m_pointRadii.begin();
+
+		for (unsigned int i = 0; i < m_pointRadii.size(); ++i)
+		{
+			//std::cout << i << ": " << m_pointColours[m_pointColours.size() - 1].x << " " << m_pointColours[m_pointColours.size() - 1].y << " " << m_pointColours[m_pointColours.size() - 1].z << std::endl;
+
+			//Uniforms that change per light.
+			glUniform3fv((m_uniformLocations[m_pointLightProgram])[LIGHT_MATRIX], 1, &(pointPositionsIter->x));
+			glUniform3fv((m_uniformLocations[m_pointLightProgram])[LIGHT_COLOUR], 1, &(pointColourIter->x));
+			glUniform1f((m_uniformLocations[m_pointLightProgram])[LIGHT_DIR], (*pointRadiiIter));
+
+			//Draw the light.
+			glBindVertexArray(m_pointVAO);
+			glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, nullptr);
+
+			++pointColourIter;
+			++pointPositionsIter;
+			++pointRadiiIter;
+		}
+
+		glCullFace(GL_BACK);
+	}
 }
 
 void Renderer::DrawModels(const unsigned int j)

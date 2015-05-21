@@ -95,6 +95,7 @@
     <ClCompile Include="..\src\tut10\Tutorial10.cpp" />
     <ClCompile Include="..\src\tut11\Tutorial11.cpp" />
     <ClCompile Include="..\src\tut12\Tutorial12.cpp" />
+    <ClCompile Include="..\src\tut13\Tutorial13.cpp" />
     <ClCompile Include="..\src\tut2\Tutorial2.cpp" />
     <ClCompile Include="..\src\tut3\Tutorial3.cpp" />
     <ClCompile Include="..\src\tut4\Tutorial4.cpp" />
@@ -121,6 +122,7 @@
     <ClInclude Include="..\src\tut10\Tutorial10.h" />
     <ClInclude Include="..\src\tut11\Tutorial11.h" />
     <ClInclude Include="..\src\tut12\Tutorial12.h" />
+    <ClInclude Include="..\src\tut13\Tutorial13.h" />
     <ClInclude Include="..\src\tut2\Tutorial2.h" />
     <ClInclude Include="..\src\tut3\Tutorial3.h" />
     <ClInclude Include="..\src\tut4\Tutorial4.h" />
@@ -132,12 +134,11 @@
     <ClInclude Include="..\src\Tutorial1.h" />
   </ItemGroup>
   <ItemGroup>
-    <Text Include="..\..\GitHub\IntroToOpenGL\data\shaders\fragLightPoint.txt" />
-    <Text Include="..\..\GitHub\IntroToOpenGL\data\shaders\vertLightPoint.txt" />
     <Text Include="..\data\shaders\frag.txt" />
     <Text Include="..\data\shaders\fragComposite.txt" />
     <Text Include="..\data\shaders\fragGbuffer.txt" />
     <Text Include="..\data\shaders\fragLightDir.txt" />
+    <Text Include="..\data\shaders\fragLightPoint.txt" />
     <Text Include="..\data\shaders\fragParticles.txt" />
     <Text Include="..\data\shaders\fragPostProcessing.txt" />
     <Text Include="..\data\shaders\fragShadowMap.txt" />
@@ -147,6 +148,7 @@
     <Text Include="..\data\shaders\vertGbuffer.txt" />
     <Text Include="..\data\shaders\vertGPUParticles.txt" />
     <Text Include="..\data\shaders\vertGPUParticlesUpdate.txt" />
+    <Text Include="..\data\shaders\vertLightPoint.txt" />
     <Text Include="..\data\shaders\vertParticles.txt" />
     <Text Include="..\data\shaders\vertPostProcessing.txt" />
     <Text Include="..\data\shaders\vertShadowMap.txt" />

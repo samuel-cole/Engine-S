@@ -1,0 +1,16 @@
+#version 410
+
+layout(location = 0) in vec4 Position;
+
+//I'm using LightMatrix to store global position because the 'Global' uniform name is already being used by fragLightPoint.txt
+uniform vec3 LightMatrix;
+
+//I'm using LightDir to store radius- while this isn't intuitive, it does help make my C++ code a little more efficient.
+uniform float LightDir;
+
+uniform mat4 ProjectionView;
+
+void main()
+{
+	gl_Position = ProjectionView * vec4(Position.xyz * LightDir + LightMatrix, 1);
+}

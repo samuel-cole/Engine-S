@@ -296,7 +296,6 @@ bool CheckersTest::ValidMove()
 					{
 						//Check each direction for opponent pieces
 						//Whoops- made it check backwards as well as forwards. Commented out lines should only apply when kings are involved.
-						//There is an error in this one- not sure what yet though.
 						if (//(i < 6 && j < 6 && m_board[i + 1][j + 1] < 12 && m_board[i + 1][j - 1] != -1 && m_board[i + 2][j + 2] == -1) ||
 							(i < 6 && j > 1 && m_board[i + 1][j - 1] < 12 && m_board[i + 1][j - 1] != -1 && m_board[i + 2][j - 2] == -1) ||
 							//(i > 1 && j < 6 && m_board[i - 1][j + 1] < 12 && m_board[i - 1][j - 1] != -1 && m_board[i - 2][j + 2] == -1) ||

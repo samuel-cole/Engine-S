@@ -4,7 +4,6 @@ in vec2 vUV;
 
 out vec3 LightOutput;
 
-//direction in view-space
 uniform vec3 LightDir;
 uniform vec3 LightColour;
 uniform vec3 CameraPos;

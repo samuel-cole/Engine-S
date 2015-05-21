@@ -5,6 +5,7 @@
 #include "glm\ext.hpp"
 #include <vector>
 #include <map>
+#include <list>
 #include "AntTweakBar.h"
 
 using glm::vec4;
@@ -162,25 +163,25 @@ private:
 	//How powerful the specular component of the light should be.
 	float m_specPow;
 
-	//Vector that stores all of the vertex buffer objects for the point lights.
-	std::vector<unsigned int> m_pointVBO;
-	//Vector that stores all of the index buffer objects for the point lights.
-	std::vector<unsigned int> m_pointIBO;
-	//Vector that stores all of the vertex array objects for the point lights.
-	std::vector<unsigned int> m_pointVAO;
-	//Vector that contains the number of indices that each point light has.
-	std::vector<unsigned int> m_pointNumOfIndices;
+	//Vector that stores the vertex buffer object used for the point lights.
+	unsigned int m_pointVBO;
+	//Vector that stores the index buffer object for the point lights.
+	unsigned int m_pointIBO;
+	//Vector that stores the vertex array object for the point lights.
+	unsigned int m_pointVAO;
 	//Vector that stores all of the colours for the point lights.
-	std::vector<vec3> m_pointColour;
+	std::list<vec3> m_pointColours;
 	//Vector that stores the positions of all of the point lights.
-	std::vector<vec3> m_pointPositions;
+	std::list<vec3> m_pointPositions;
+	//Vector that stores the radii for each of the point lights.
+	std::list<float> m_pointRadii;
 
 	//These variables are used to set up the G-Pass.
 	unsigned int m_gpassFBO, m_albedoTexture, m_positionTexture, m_normalTexture, m_gpassDepth;
 	//These variables are used to set up the light pass.
 	unsigned int m_lightFBO, m_lightTexture;
 	//These are the programs used for deferred rendering.
-	unsigned int m_gpassProgram, m_dirLightProgram, m_compositeProgram;
+	unsigned int m_gpassProgram, m_dirLightProgram, m_pointLightProgram, m_compositeProgram;
 	//Bool to store whether everything is currently being rendered with forwards rendering or deferred rendering. True for deferred.
 	bool m_deferredRenderMode;
 
@@ -188,9 +189,13 @@ private:
 	void SetupGpass();
 	//Sets up everything required for the light pass of deferred rendering.
 	void SetupLightBuffer();
+	//Sets up point lights for use.
+	void SetupPointLights();
 
 	//Used in drawing directional lights for deferred rendering.
-	void DrawDirectionalLight(const vec3& a_direction, const vec3& a_diffuse);
+	void DrawDirectionalLight();
+	//Used in drawing point lights for deferred rendering.
+	void DrawPointLights();
 
 	//Splits an OBJ face(index) line into its components, and uses those components to construct vertices which it pushes into the appropriate vectors.
 	void SplitIndex(const std::string& a_string,				std::vector<Vertex>* const a_vertices,
@@ -256,7 +261,7 @@ public:
 	unsigned int GenerateGrid(const unsigned int a_rows, const unsigned int a_columns);
 
 	//Generates a point light. Returns an index to the point light.
-	unsigned int CreatePointLight(const vec3& a_colour, const vec3& a_position = vec3(0, 0, 0));
+	unsigned int CreatePointLight(const vec3& a_colour, const float a_radius, const vec3& a_position = vec3(0, 0, 0));
 
 	//Method for creating a particle emitter. Note that the emit rate variable will not be used if gpu-based particles are created, and that the direction and directionvariance variables will not be used for cpu particles.
 	unsigned int CreateEmitter(const unsigned int a_maxParticles, const unsigned int a_emitRate, const float a_lifespanMin, const float a_lifespanMax, const  float a_velocityMin, const float a_velocityMax, 

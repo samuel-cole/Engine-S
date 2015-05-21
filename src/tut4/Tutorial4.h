@@ -17,9 +17,6 @@ private:
 
 	FlyCamera* m_camera;
 	Renderer* m_renderer;
-
-	bool m_normalToggle;
-
 };
 
 #endif

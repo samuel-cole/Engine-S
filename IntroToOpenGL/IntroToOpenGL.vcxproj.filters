@@ -90,6 +90,9 @@
     <ClCompile Include="..\src\checkersTest\CheckersTest1.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\tut13\Tutorial13.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\gl_core_4_4.h">
@@ -164,6 +167,9 @@
     <ClInclude Include="..\src\checkersTest\CheckersTest1.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\tut13\Tutorial13.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\data\shaders\frag.txt">
@@ -217,10 +223,10 @@
     <Text Include="..\data\shaders\fragLightDir.txt">
       <Filter>Resource Files</Filter>
     </Text>
-    <Text Include="..\..\GitHub\IntroToOpenGL\data\shaders\fragLightPoint.txt">
+    <Text Include="..\data\shaders\fragLightPoint.txt">
       <Filter>Resource Files</Filter>
     </Text>
-    <Text Include="..\..\GitHub\IntroToOpenGL\data\shaders\vertLightPoint.txt">
+    <Text Include="..\data\shaders\vertLightPoint.txt">
       <Filter>Resource Files</Filter>
     </Text>
   </ItemGroup>
