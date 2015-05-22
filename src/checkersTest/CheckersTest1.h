@@ -36,7 +36,7 @@ private:
 
 	const float M_TILE_WIDTH = 12.5f;
 
-	//The unsigned int at each location on the board represents which emitter is at that location.
+	//The int at each location on the board represents which emitter is at that location.
 	int m_board[8][8];
 			
 	unsigned int m_currentX;

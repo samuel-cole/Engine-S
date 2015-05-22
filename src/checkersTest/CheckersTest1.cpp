@@ -5,6 +5,7 @@
 #include "Renderer.h"
 #include "AntTweakBar.h"
 #include "InputManager.h"
+#include "tut13\Tutorial13.h"
 #include <iostream>
 
 void TW_CALL BoardGenerate(void* a_clientData)
@@ -38,11 +39,15 @@ int CheckersTest::Init()
 
 	//M_TILE_WIDTH = 100.0f / 8.0f;
 	
-	TwAddSeparator(m_debugBar, "Plane 1", "");
+	TwAddSeparator(m_debugBar, "Plane", "");
 	TwAddVarRW(m_debugBar, "Amplitude", TW_TYPE_FLOAT, &m_infoForBar.amplitude, "");
 	TwAddVarRW(m_debugBar, "Persistence", TW_TYPE_FLOAT, &m_infoForBar.persistence, "");
 	TwAddVarRW(m_debugBar, "Seed", TW_TYPE_UINT32, &m_infoForBar.seed, "");
 	TwAddButton(m_debugBar, "Re-generate", BoardGenerate, (void*)&m_infoForBar, "");
+
+
+	TwAddSeparator(m_debugBar, "Lights", "");
+	TwAddButton(m_debugBar, "AddLight", AddLight, (void*)(m_infoForBar.renderer), "");
 
 	for (unsigned int i = 0; i < 24; ++i)
 	{
@@ -282,7 +287,7 @@ bool CheckersTest::ValidMove()
 						if ((i < 6 && j < 6 && m_board[i + 1][j + 1] >= 12 && m_board[i + 2][j + 2] == -1) ||
 							/*(i < 6 && j > 1 && m_board[i + 1][j - 1] >= 12 && m_board[i + 2][j - 2] == -1) ||*/
 							(i > 1 && j < 6 && m_board[i - 1][j + 1] >= 12 && m_board[i - 2][j + 2] == -1) /*||
-																										   (i > 1 && j > 1 && m_board[i - 1][j - 1] >= 12 && m_board[i - 2][j - 2] == -1)*/)
+							(i > 1 && j > 1 && m_board[i - 1][j - 1] >= 12 && m_board[i - 2][j - 2] == -1)*/)
 						{
 							std::cout << "Invalid Move: Must Capture Opponent Piece!" << std::endl;
 							return false;

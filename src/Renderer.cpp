@@ -1253,6 +1253,8 @@ void Renderer::Draw()
 #pragma region DEFERRED_CODE
 		///////////////////////////G-Pass\\\\\\\\\\\\\\\\\\\\\\\\
 		//G-Pass: render out the albedo, position and normal.
+#pragma region G_PASS
+		//Maybe repeatedly iterate over one texture, with subtractive blending? See how lights do additive, then change to subtractive.
 		glEnable(GL_DEPTH_TEST);
 
 		glBindFramebuffer(GL_FRAMEBUFFER, m_gpassFBO);
@@ -1311,10 +1313,11 @@ void Renderer::Draw()
 			glBindVertexArray(m_VAO[i]);
 			glDrawElements(GL_TRIANGLES, m_numOfIndices[i], GL_UNSIGNED_INT, nullptr);
 		}
-
+#pragma endregion G_PASS
 
 		///////////////////////////LIGHT\\\\\\\\\\\\\\\\\\\\\\\\
 		//Light Pass: render lights as geometry, sampling position and normals.
+#pragma region LIGHT_PASS
 		glBindFramebuffer(GL_FRAMEBUFFER, m_lightFBO);
 		glClear(GL_COLOR_BUFFER_BIT);
 
@@ -1322,6 +1325,7 @@ void Renderer::Draw()
 		glDisable(GL_DEPTH_TEST);
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_ONE, GL_ONE);
+		glEnable(GL_CULL_FACE);
 
 		//Draw lights as fullscreen quads.
 		DrawDirectionalLight();
@@ -1329,9 +1333,13 @@ void Renderer::Draw()
 		DrawPointLights();
 
 		glDisable(GL_BLEND);
+		glDisable(GL_CULL_FACE);
+
+#pragma endregion LIGHT_PASS
 
 		///////////////////////////COMPOSITE\\\\\\\\\\\\\\\\\\\\\\\\
 		//Composite Pass: render a quad and combine albedo and light.
+#pragma region COMPOSITE
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glClear(GL_COLOR_BUFFER_BIT);
 
@@ -1350,7 +1358,7 @@ void Renderer::Draw()
 		//Draw
 		glBindVertexArray(m_VAO[0]);
 		glDrawElements(GL_TRIANGLES, m_numOfIndices[0], GL_UNSIGNED_INT, nullptr);
-
+#pragma endregion COMPOSITE
 
 
 		//CPU Particles
@@ -1375,7 +1383,7 @@ void Renderer::Draw()
 				m_gpuEmitters[i]->Draw((float)glfwGetTime(), m_cameras[0]->GetWorldTransform(), m_cameras[0]->GetProjectionView());
 			}
 		}
-#pragma endregion
+#pragma endregion DEFERRED_CODE
 	}
 }
 
@@ -1648,7 +1656,7 @@ void Renderer::DrawModels(const unsigned int j)
 
 void Renderer::UpdateAnimation(const float a_time, const unsigned int a_index)
 {
-	if (m_skeletons[a_index] != nullptr)
+	if (m_skeletons.size() > a_index && m_skeletons[a_index] != nullptr)
 	{
 		m_skeletons[a_index]->updateBones();
 
