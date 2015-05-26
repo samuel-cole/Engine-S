@@ -25,8 +25,11 @@ private:
 	void Update(float a_deltaTime);
 	void Draw();
 
-	void HandleEnter();
-	bool ValidMove();
+	void HandleEnter( int (&a_board)[8][8], const unsigned int a_xPos, const unsigned int a_yPos,	   unsigned int &a_prevX,	   unsigned int &a_prevY,	    bool &a_turn, bool a_changeEmitters, unsigned int &a_pieceSelected);
+	bool ValidMove(const int a_board[8][8], const unsigned int a_xPos, const unsigned int a_yPos, const unsigned int a_prevX, const unsigned int a_prevY,  const bool a_turn, bool a_changeEmitters);
+
+	void AIMove(int (&a_board)[8][8]);
+	std::vector<int[8][8]> GetPossibleMoves(const int a_board[8][8], const bool a_turn);
 
 	FlyCamera* m_camera;
 

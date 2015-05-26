@@ -182,7 +182,7 @@ void CheckersTest::Update(float a_deltaTime)
 		}
 		if (InputManager::GetKey(Keys::ENTER))
 		{
-			HandleEnter();
+			HandleEnter(m_board, m_currentX, m_currentY, m_previousX, m_previousY, m_turn, true, m_pieceSelected);
 			m_inputTimer = 0.15f;
 		}
 	}
@@ -204,18 +204,82 @@ int CheckersTest::Deinit()
 	return Application::Deinit();
 }
 
-void CheckersTest::HandleEnter()
+void CheckersTest::HandleEnter(int(&a_board)[8][8], const unsigned int a_xPos, const unsigned int a_yPos, unsigned int &a_prevX, unsigned int &a_prevY, bool &a_turn, bool a_changeEmitters, unsigned int& a_pieceSelected)
 {
-	if (m_pieceSelected == -1)
+	if (a_pieceSelected == -1)
 	{
-		if (m_board[m_currentX][m_currentY] != -1)
+		if (a_board[a_xPos][a_yPos] != -1)
 		{
-			if ((m_turn && m_board[m_currentX][m_currentY] < 12) || (!m_turn && m_board[m_currentX][m_currentY] >= 12))
+			if ((a_turn && a_board[a_xPos][a_yPos] < 12) || (!a_turn && a_board[a_xPos][a_yPos] >= 12))
 			{
-				m_pieceSelected = m_board[m_currentX][m_currentY];
-				m_infoForBar.renderer->SetEmitterPosition(m_emitters[m_pieceSelected], true, vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentX, 10, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentY));
-				m_previousX = m_currentX;
-				m_previousY = m_currentY;
+				//For an explanation of the below 'if' statement, look this way -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> v v v v v v v v v v v v v v v v v v v v v
+				if ((a_turn &&																																					//If it is player 1's turn...
+					((a_xPos < 6 && a_yPos < 6 && a_board[a_xPos + 1][a_yPos + 1] >= 12 && a_board[a_xPos + 2][a_yPos + 2] == -1) ||											//...and he can jump forwards and to one side...
+					(a_xPos > 1 && a_yPos < 6 && a_board[a_xPos - 1][a_yPos + 1] >= 12 && a_board[a_xPos - 2][a_yPos + 2] == -1)))												//...or forwards and to the other side...
+				    ||																																							// OR
+				    (!a_turn &&																																					//If it is player 2's turn...
+					((a_xPos < 6 && a_yPos > 1 && a_board[a_xPos + 1][a_yPos - 1] < 12 && a_board[a_xPos + 1][a_yPos - 1] != -1 && a_board[a_xPos + 2][a_yPos - 2] == -1) ||	//...and he can jump backwards and to one side...
+					(a_xPos > 1 && a_yPos > 1 && a_board[a_xPos - 1][a_yPos - 1] < 12 && a_board[a_xPos - 1][a_yPos - 1] != -1 && a_board[a_xPos - 2][a_yPos - 2] == -1))))		//...or backwards and to the other side... 
+				{
+					//Then this piece can jump, do a move.
+					a_pieceSelected = a_board[a_xPos][a_yPos];
+					a_prevX = a_xPos;
+					a_prevY = a_yPos;
+					if (a_changeEmitters)
+						m_infoForBar.renderer->SetEmitterPosition(m_emitters[a_pieceSelected], true, vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * a_xPos, 10, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * a_yPos));
+				}
+				else
+				{
+					//This piece cannot capture, check to see if any other can.
+					//Check for if a capture-move is possible
+					for (unsigned int i = 0; i < 8; ++i)
+					{
+						for (unsigned int j = 0; j < 8; ++j)
+						{
+							//Check to see if player 1 can take player 2.
+							if (a_turn)
+							{
+								if (a_board[i][j] != -1 && a_board[i][j] < 12)
+								{
+									//Check each direction for opponent pieces
+									//Whoops- made it check backwards as well as forwards. Commented out lines should only apply when kings are involved.
+									if ((i < 6 && j < 6 && a_board[i + 1][j + 1] >= 12 && a_board[i + 2][j + 2] == -1) ||
+										/*(i < 6 && j > 1 && m_board[i + 1][j - 1] >= 12 && m_board[i + 2][j - 2] == -1) ||*/
+										(i > 1 && j < 6 && a_board[i - 1][j + 1] >= 12 && a_board[i - 2][j + 2] == -1) /*||
+																													   (i > 1 && j > 1 && m_board[i - 1][j - 1] >= 12 && m_board[i - 2][j - 2] == -1)*/)
+									{
+										std::cout << "Invalid Move: Must Capture Opponent Piece!" << std::endl;
+										return;
+									}
+								}
+							}
+							//Check to see if player 2 can take player 1
+							else
+							{
+								if (a_board[i][j] >= 12)
+								{
+									//Check each direction for opponent pieces
+									//Whoops- made it check backwards as well as forwards. Commented out lines should only apply when kings are involved.
+									if (//(i < 6 && j < 6 && m_board[i + 1][j + 1] < 12 && m_board[i + 1][j - 1] != -1 && m_board[i + 2][j + 2] == -1) ||
+										(i < 6 && j > 1 && a_board[i + 1][j - 1] < 12 && a_board[i + 1][j - 1] != -1 && a_board[i + 2][j - 2] == -1) ||
+										//(i > 1 && j < 6 && m_board[i - 1][j + 1] < 12 && m_board[i - 1][j - 1] != -1 && m_board[i - 2][j + 2] == -1) ||
+										(i > 1 && j > 1 && a_board[i - 1][j - 1] < 12 && a_board[i - 1][j - 1] != -1 && a_board[i - 2][j - 2] == -1))
+									{
+										std::cout << "Invalid Move: Must Capture Opponent Piece!" << std::endl;
+										return;
+									}
+								}
+							}
+						}
+					}
+
+					//If we are here, this piece cannot jump, but neither can any other.
+					a_pieceSelected = a_board[a_xPos][a_yPos];
+					a_prevX = a_xPos;
+					a_prevY = a_yPos;
+					if (a_changeEmitters)
+						m_infoForBar.renderer->SetEmitterPosition(m_emitters[a_pieceSelected], true, vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * a_xPos, 10, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * a_yPos));
+				}
 			}
 			else
 			{
@@ -225,107 +289,147 @@ void CheckersTest::HandleEnter()
 	}
 	else
 	{
-		if (ValidMove())
+		if (ValidMove(a_board, a_xPos, a_yPos, a_prevX, a_prevY, a_turn, a_changeEmitters))
 		{
-			m_infoForBar.renderer->SetEmitterPosition(m_emitters[m_pieceSelected], true, vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentX, 5, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentY));
-			m_board[m_previousX][m_previousY] = -1;
-			m_board[m_currentX][m_currentY] = m_pieceSelected;
-			m_pieceSelected = -1;
-			m_turn = !m_turn;
+			if (a_xPos == a_prevX + 2 || a_xPos == a_yPos - 2)	//If the move was a capture one
+			{
+				unsigned int takenSquare = a_board[(a_xPos + a_prevX) / 2][(a_yPos + a_prevY) / 2];
+
+				if (a_changeEmitters)
+					m_infoForBar.renderer->SetEmitterPosition(m_emitters[takenSquare], true, vec3(M_TILE_WIDTH * 4.5f * ((takenSquare < 12) ? -1 : 1), 5, 0));
+
+				a_board[(a_xPos + a_prevX) / 2][(a_yPos + a_prevY) / 2] = -1;
+			}
+			if (a_changeEmitters)
+				m_infoForBar.renderer->SetEmitterPosition(m_emitters[a_pieceSelected], true, vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * a_xPos, 5, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * a_yPos));
+			a_board[a_prevX][a_prevY] = -1;
+			a_board[a_xPos][a_yPos] = a_pieceSelected;
+			a_pieceSelected = -1;
+			a_turn = !a_turn;
 		}
 		else
 		{
-			m_infoForBar.renderer->SetEmitterPosition(m_emitters[m_pieceSelected], true, vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_previousX, 5, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_previousY));
-			m_pieceSelected = -1;
+			if (a_changeEmitters)
+				m_infoForBar.renderer->SetEmitterPosition(m_emitters[a_pieceSelected], true, vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * a_prevX, 5, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * a_prevY));
+			a_pieceSelected = -1;
 		}
 	}
 }
 
-bool CheckersTest::ValidMove()
+bool CheckersTest::ValidMove(const int a_board[8][8], const unsigned int a_xPos, const unsigned int a_yPos, const unsigned int a_prevX, const unsigned int a_prevY, const bool a_turn, bool a_changeEmitters)
 {
 	//I should later account for kings or whatever the upgraded checker pieces are called.
 
 	//Remember to revise my code at some point to make sure that < 12 checks aren't breaking everything by selecting -1 tiles.
 
 	//Capture move
-	if ((m_currentX == m_previousX + 2 || m_currentX == m_previousX - 2) && ((m_currentY == m_previousY + 2 && m_pieceSelected < 12) || (m_currentY == m_previousY - 2 && m_pieceSelected >= 12)))
+	if ((a_xPos == a_prevX + 2 || a_xPos == a_prevX - 2) && ((a_yPos == a_prevY + 2 && m_pieceSelected < 12) || (a_yPos == a_prevY - 2 && m_pieceSelected >= 12)))
 	{
-		if (m_board[m_currentX][m_currentY] != -1)
+		if (a_board[a_xPos][a_yPos] != -1)
 		{
-			std::cout << "Invalid Move: Square Occupied!" << std::endl;
+			if (a_changeEmitters)
+				std::cout << "Invalid Move: Square Occupied!" << std::endl;
 			return false;
 		}
-		unsigned int takenSquare = m_board[(m_currentX + m_previousX) / 2][(m_currentY + m_previousY) / 2];
+		unsigned int takenSquare = a_board[(a_xPos + a_prevX) / 2][(a_yPos + a_prevY) / 2];
 		if (takenSquare == -1)
 		{
-			std::cout << "Invalid Move: Jump Move Requires Piece To Jump!" << std::endl;
+			if (a_changeEmitters)
+				std::cout << "Invalid Move: Jump Move Requires Piece To Jump!" << std::endl;
 			return false;
 		}
-		if ((takenSquare < 12) == (m_board[m_previousX][m_previousY] < 12))
+		if ((takenSquare < 12) == (a_board[a_prevX][a_prevY] < 12))
 		{
-			std::cout << "Invalid Move: Jumped Piece Must Belong To Opponent" << std::endl;
+			if (a_changeEmitters)
+				std::cout << "Invalid Move: Jumped Piece Must Belong To Opponent" << std::endl;
 			return false;
 		}
-		m_infoForBar.renderer->SetEmitterPosition(m_emitters[takenSquare], true, vec3(M_TILE_WIDTH * 4.5f * ((takenSquare < 12) ? -1 : 1), 5, 0));
-		m_board[(m_currentX + m_previousX) / 2][(m_currentY + m_previousY) / 2] = -1;
 		return true;
 	}
 	else
 	{
-		//First of all, do a check to see if a capture move is possible- if it is, then tell the player that their move is invalid, because 'take a piece' moves have already been checked for.
-		for (unsigned int i = 0; i < 8; ++i)
+		//First of all, do a check to see if a capture move is possible- if it is, then tell the player that their move is invalid, because 'take a piece' moves have to be done.
+		//I only check if a capture move is possible for the current piece, because checks for all other pieces have already been done.
+		//For an explanation of the below 'if' statement, look this way -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> 	v v v v v v v v v v v v v v v v v v v v v
+		if ((a_turn &&																																							//If it is player 1's turn...
+			((a_prevX < 6 && a_prevY < 6 && a_board[a_prevX + 1][a_prevY + 1] >= 12 && a_board[a_prevX + 2][a_prevY + 2] == -1) ||												//...and he can jump forwards and to one side...
+			 (a_prevX > 1 && a_prevY < 6 && a_board[a_prevX - 1][a_prevY + 1] >= 12 && a_board[a_prevX - 2][a_prevY + 2] == -1)))												//...or forwards and to the other side...
+			||																																									// OR
+			(!a_turn &&																																							//If it is player 2's turn...
+			((a_prevX < 6 && a_prevY > 1 && a_board[a_prevX + 1][a_prevY - 1] < 12 && a_board[a_prevX + 1][a_prevY - 1] != -1 && a_board[a_prevX + 2][a_prevY - 2] == -1) ||	//...and he can jump backwards and to one side...
+			 (a_prevX > 1 && a_prevY > 1 && a_board[a_prevX - 1][a_prevY - 1] < 12 && a_board[a_prevX - 1][a_prevY - 1] != -1 && a_board[a_prevX - 2][a_prevY - 2] == -1))))	//...or backwards and to the other side... 
 		{
-			for (unsigned int j = 0; j < 8; ++j)
-			{
-				//Check to see if player 1 can take player 2.
-				if (m_turn)
-				{
-					if (m_board[i][j] != -1 && m_board[i][j] < 12)
-					{
-						//Check each direction for opponent pieces
-						//Whoops- made it check backwards as well as forwards. Commented out lines should only apply when kings are involved.
-						if ((i < 6 && j < 6 && m_board[i + 1][j + 1] >= 12 && m_board[i + 2][j + 2] == -1) ||
-							/*(i < 6 && j > 1 && m_board[i + 1][j - 1] >= 12 && m_board[i + 2][j - 2] == -1) ||*/
-							(i > 1 && j < 6 && m_board[i - 1][j + 1] >= 12 && m_board[i - 2][j + 2] == -1) /*||
-							(i > 1 && j > 1 && m_board[i - 1][j - 1] >= 12 && m_board[i - 2][j - 2] == -1)*/)
-						{
-							std::cout << "Invalid Move: Must Capture Opponent Piece!" << std::endl;
-							return false;
-						}
-					}
-				}
-				//Check to see if player 2 can take player 1
-				else
-				{
-					if (m_board[i][j] >= 12)
-					{
-						//Check each direction for opponent pieces
-						//Whoops- made it check backwards as well as forwards. Commented out lines should only apply when kings are involved.
-						if (//(i < 6 && j < 6 && m_board[i + 1][j + 1] < 12 && m_board[i + 1][j - 1] != -1 && m_board[i + 2][j + 2] == -1) ||
-							(i < 6 && j > 1 && m_board[i + 1][j - 1] < 12 && m_board[i + 1][j - 1] != -1 && m_board[i + 2][j - 2] == -1) ||
-							//(i > 1 && j < 6 && m_board[i - 1][j + 1] < 12 && m_board[i - 1][j - 1] != -1 && m_board[i - 2][j + 2] == -1) ||
-							(i > 1 && j > 1 && m_board[i - 1][j - 1] < 12 && m_board[i - 1][j - 1] != -1 && m_board[i - 2][j - 2] == -1))
-						{
-							std::cout << "Invalid Move: Must Capture Opponent Piece!" << std::endl;
-							return false;
-						}
-					}
-				}
-			}
+			if (a_changeEmitters)
+				std::cout << "Invalid Move: Must Capture Opponent Piece!" << std::endl;
+			return false;
 		}
 
 		//Default move
-		if ((m_currentX == m_previousX + 1 || m_currentX == m_previousX - 1) && ((m_currentY == m_previousY + 1 && m_pieceSelected < 12) || (m_currentY == m_previousY - 1 && m_pieceSelected >= 12)))
+		if ((a_xPos == a_prevX + 1 || a_xPos == a_prevX - 1) && ((a_yPos == a_prevY + 1 && m_pieceSelected < 12) || (a_yPos == a_prevY - 1 && m_pieceSelected >= 12)))
 		{
-			if (m_board[m_currentX][m_currentY] != -1)
+			if (a_board[a_xPos][a_yPos] != -1)
 			{
-				std::cout << "Invalid Move: Square Occupied!" << std::endl;
+				if (a_changeEmitters)
+					std::cout << "Invalid Move: Square Occupied!" << std::endl;
 				return false;
 			}
 			return true;
 		}
-		std::cout << "Invalid Move!" << std::endl;
+		if (a_changeEmitters)
+			std::cout << "Invalid Move!" << std::endl;
 		return false;
 	}
 
+}
+
+void CheckersTest::AIMove(int(&a_board)[8][8])
+{
+	std::vector<int[8][8]> actions;
+	std::vector<int> scores;
+
+	int cloneBoard[8][8];
+	for (int i = 0; i < 8; ++i)
+	{
+		for (int j = 0; j < 8; ++j)
+		{
+			cloneBoard[i][j] = a_board[i][j];
+		}
+	}
+
+
+}
+
+std::vector<int[8][8]> CheckersTest::GetPossibleMoves(const int a_board[8][8], const bool a_turn)
+{
+	std::vector<int[8][8]> results;
+
+	for (int i = 0; i < 8; ++i)
+	{
+		for (int j = 0; j < 8; ++j)
+		{
+			//If the tile (i, j) contains a piece that belongs to the player whos turn it is
+			if (a_board[i][j] != -1 && a_board[i][j] < 12 == a_turn)	
+			{
+				int moveDirection = (a_turn ? 1 : -1);
+				if (ValidMove(a_board, i + 1, j + moveDirection, i, j, a_turn, false))
+				{
+					//int newResult[8][8] =  
+				}
+				if (ValidMove(a_board, i - 1, j + moveDirection, i, j, a_turn, false))
+				{
+
+				}
+				if (ValidMove(a_board, i + 2, j + moveDirection * 2, i, j, a_turn, false))
+				{
+
+				}
+				if (ValidMove(a_board, i - 2, j + moveDirection * 2, i, j, a_turn, false))
+				{
+
+				}
+			}
+		}
+
+	}
+	return results;
 }
