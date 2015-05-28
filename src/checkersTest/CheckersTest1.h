@@ -25,11 +25,14 @@ private:
 	void Update(float a_deltaTime);
 	void Draw();
 
-	void HandleEnter( int (&a_board)[8][8], const unsigned int a_xPos, const unsigned int a_yPos,	   unsigned int &a_prevX,	   unsigned int &a_prevY,	    bool &a_turn, bool a_changeEmitters, unsigned int &a_pieceSelected);
-	bool ValidMove(const int a_board[8][8], const unsigned int a_xPos, const unsigned int a_yPos, const unsigned int a_prevX, const unsigned int a_prevY,  const bool a_turn, bool a_changeEmitters);
+	void HandleEnter( int (&a_board)[8][8], const unsigned int a_xPos, const unsigned int a_yPos,	   unsigned int &a_prevX,	   unsigned int &a_prevY,	    bool &a_turn, const bool a_changeEmitters, unsigned int &a_pieceSelected);
+	bool ValidMove(const int a_board[8][8], const unsigned int a_xPos, const unsigned int a_yPos, const unsigned int a_prevX, const unsigned int a_prevY,  const bool a_turn, const bool a_changeEmitters);
 
-	void AIMove(int (&a_board)[8][8]);
-	std::vector<int[8][8]> GetPossibleMoves(const int a_board[8][8], const bool a_turn);
+	void AIMove(int (&a_board)[8][8], const bool a_turn, const unsigned int a_difficulty);
+	//As vectors of arrays don't work, a vector<vector<int>>> has been used to replace a vector<int[8][8]>
+	std::vector<std::vector<std::vector<int>>> GetPossibleMoves(const int a_board[8][8], const bool a_turn);
+	//Plays random moves for both sides until the game ends.
+	int PlayUntilEnd(std::vector<std::vector<int>> a_board, const bool a_turn);
 
 	FlyCamera* m_camera;
 

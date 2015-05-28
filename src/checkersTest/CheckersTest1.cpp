@@ -45,7 +45,6 @@ int CheckersTest::Init()
 	TwAddVarRW(m_debugBar, "Seed", TW_TYPE_UINT32, &m_infoForBar.seed, "");
 	TwAddButton(m_debugBar, "Re-generate", BoardGenerate, (void*)&m_infoForBar, "");
 
-
 	TwAddSeparator(m_debugBar, "Lights", "");
 	TwAddButton(m_debugBar, "AddLight", AddLight, (void*)(m_infoForBar.renderer), "");
 
@@ -142,50 +141,69 @@ void CheckersTest::Update(float a_deltaTime)
 
 	m_inputTimer -= a_deltaTime;
 
-	if (m_inputTimer < 0)
-	{
-		if (InputManager::GetKey(Keys::LEFT))
+	//if (!m_turn)
+	//{
+		if (m_inputTimer < 0)
 		{
-			if (m_currentX > 0)
+			if (InputManager::GetKey(Keys::LEFT))
 			{
-				--m_currentX;
+				if (m_currentX > 0)
+				{
+					--m_currentX;
+					m_inputTimer = 0.15f;
+					m_infoForBar.renderer->SetTransform(glm::translate(vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentX, 10, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentY)), m_positionMarker);
+				}
+			}
+			if (InputManager::GetKey(Keys::RIGHT))
+			{
+				if (m_currentX < 7)
+				{
+					++m_currentX;
+					m_inputTimer = 0.15f;
+					m_infoForBar.renderer->SetTransform(glm::translate(vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentX, 10, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentY)), m_positionMarker);
+				}
+			}
+			if (InputManager::GetKey(Keys::UP))
+			{
+				if (m_currentY > 0)
+				{
+					--m_currentY;
+					m_inputTimer = 0.15f;
+					m_infoForBar.renderer->SetTransform(glm::translate(vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentX, 10, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentY)), m_positionMarker);
+				}
+			}
+			if (InputManager::GetKey(Keys::DOWN))
+			{
+				if (m_currentY < 7)
+				{
+					++m_currentY;
+					m_inputTimer = 0.15f;
+					m_infoForBar.renderer->SetTransform(glm::translate(vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentX, 10, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentY)), m_positionMarker);
+				}
+			}
+			if (InputManager::GetKey(Keys::ENTER))
+			{
+				HandleEnter(m_board, m_currentX, m_currentY, m_previousX, m_previousY, m_turn, true, m_pieceSelected);
 				m_inputTimer = 0.15f;
-				m_infoForBar.renderer->SetTransform(glm::translate(vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentX, 10, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentY)), m_positionMarker);
 			}
 		}
-		if (InputManager::GetKey(Keys::RIGHT))
-		{
-			if (m_currentX < 7)
-			{
-				++m_currentX;
-				m_inputTimer = 0.15f;
-				m_infoForBar.renderer->SetTransform(glm::translate(vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentX, 10, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentY)), m_positionMarker);
-			}
-		}
-		if (InputManager::GetKey(Keys::UP))
-		{
-			if (m_currentY > 0)
-			{
-				--m_currentY;
-				m_inputTimer = 0.15f;
-				m_infoForBar.renderer->SetTransform(glm::translate(vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentX, 10, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentY)), m_positionMarker);
-			}
-		}
-		if (InputManager::GetKey(Keys::DOWN))
-		{
-			if (m_currentY < 7)
-			{
-				++m_currentY;
-				m_inputTimer = 0.15f;
-				m_infoForBar.renderer->SetTransform(glm::translate(vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentX, 10, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentY)), m_positionMarker);
-			}
-		}
-		if (InputManager::GetKey(Keys::ENTER))
-		{
-			HandleEnter(m_board, m_currentX, m_currentY, m_previousX, m_previousY, m_turn, true, m_pieceSelected);
-			m_inputTimer = 0.15f;
-		}
-	}
+	//}
+	//else
+	//{
+	//	AIMove(m_board, m_turn, 100);
+	//	m_turn = !m_turn;
+	//	for (unsigned int i = 0; i < 8; ++i)
+	//	{
+	//		for (unsigned int j = 0; j < 8; ++j)
+	//		{
+	//			if (m_board[i][j] != -1)
+	//			{
+	//				m_infoForBar.renderer->SetEmitterPosition(m_emitters[m_board[i][j]], true, vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * i, 5, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * j));
+	//			}
+	//		}
+	//	}
+	//}
+	
 
 	m_camera->Update(a_deltaTime);
 }
@@ -204,7 +222,7 @@ int CheckersTest::Deinit()
 	return Application::Deinit();
 }
 
-void CheckersTest::HandleEnter(int(&a_board)[8][8], const unsigned int a_xPos, const unsigned int a_yPos, unsigned int &a_prevX, unsigned int &a_prevY, bool &a_turn, bool a_changeEmitters, unsigned int& a_pieceSelected)
+void CheckersTest::HandleEnter(int(&a_board)[8][8], const unsigned int a_xPos, const unsigned int a_yPos, unsigned int &a_prevX, unsigned int &a_prevY, bool &a_turn, const bool a_changeEmitters, unsigned int& a_pieceSelected)
 {
 	if (a_pieceSelected == -1)
 	{
@@ -323,7 +341,7 @@ bool CheckersTest::ValidMove(const int a_board[8][8], const unsigned int a_xPos,
 	//Remember to revise my code at some point to make sure that < 12 checks aren't breaking everything by selecting -1 tiles.
 
 	//Capture move
-	if ((a_xPos == a_prevX + 2 || a_xPos == a_prevX - 2) && ((a_yPos == a_prevY + 2 && m_pieceSelected < 12) || (a_yPos == a_prevY - 2 && m_pieceSelected >= 12)))
+	if ((a_xPos == a_prevX + 2 || a_xPos == a_prevX - 2) && ((a_yPos == a_prevY + 2 && a_turn) || (a_yPos == a_prevY - 2 && !a_turn)))
 	{
 		if (a_board[a_xPos][a_yPos] != -1)
 		{
@@ -365,7 +383,7 @@ bool CheckersTest::ValidMove(const int a_board[8][8], const unsigned int a_xPos,
 		}
 
 		//Default move
-		if ((a_xPos == a_prevX + 1 || a_xPos == a_prevX - 1) && ((a_yPos == a_prevY + 1 && m_pieceSelected < 12) || (a_yPos == a_prevY - 1 && m_pieceSelected >= 12)))
+		if ((a_xPos == a_prevX + 1 || a_xPos == a_prevX - 1) && ((a_yPos == a_prevY + 1 && a_turn) || (a_yPos == a_prevY - 1 && !a_turn)))
 		{
 			if (a_board[a_xPos][a_yPos] != -1)
 			{
@@ -382,9 +400,9 @@ bool CheckersTest::ValidMove(const int a_board[8][8], const unsigned int a_xPos,
 
 }
 
-void CheckersTest::AIMove(int(&a_board)[8][8])
+void CheckersTest::AIMove(int(&a_board)[8][8], const bool a_turn, const unsigned int a_difficulty)
 {
-	std::vector<int[8][8]> actions;
+	std::vector<std::vector<std::vector<int>>> actions;
 	std::vector<int> scores;
 
 	int cloneBoard[8][8];
@@ -396,12 +414,43 @@ void CheckersTest::AIMove(int(&a_board)[8][8])
 		}
 	}
 
+	actions = GetPossibleMoves(cloneBoard, a_turn);
+	scores.assign(actions.size(), 0);
 
+	for (unsigned int i = 0; i < actions.size(); ++i)
+	{
+		for (unsigned int j = 0; j < a_difficulty; ++j)
+		{
+			scores[i] += PlayUntilEnd(actions[i], !a_turn);
+		}
+	}
+
+	int highestScore = -99999;
+	int highestScoreIndex = -1;
+	for (unsigned int i = 0; i < scores.size(); ++i)
+	{
+		if (scores[i] > highestScore)
+		{
+			highestScore = scores[i];
+			highestScoreIndex = i;
+		}
+	}
+
+	if (highestScoreIndex != -1)
+	{
+		for (unsigned int i = 0; i < 8; ++i)
+		{
+			for (unsigned int j = 0; j < 8; ++j)
+			{
+				a_board[i][j] = actions[highestScoreIndex][i][j];
+			}
+		}
+	}
 }
 
-std::vector<int[8][8]> CheckersTest::GetPossibleMoves(const int a_board[8][8], const bool a_turn)
+std::vector<std::vector<std::vector<int>>> CheckersTest::GetPossibleMoves(const int a_board[8][8], const bool a_turn)
 {
-	std::vector<int[8][8]> results;
+	std::vector<std::vector<std::vector<int>>> results;
 
 	for (int i = 0; i < 8; ++i)
 	{
@@ -411,25 +460,156 @@ std::vector<int[8][8]> CheckersTest::GetPossibleMoves(const int a_board[8][8], c
 			if (a_board[i][j] != -1 && a_board[i][j] < 12 == a_turn)	
 			{
 				int moveDirection = (a_turn ? 1 : -1);
-				if (ValidMove(a_board, i + 1, j + moveDirection, i, j, a_turn, false))
+				if (i < 7 && j + moveDirection < 8 && j + moveDirection >= 0 && ValidMove(a_board, i + 1, j + moveDirection, i, j, a_turn, false))
 				{
-					//int newResult[8][8] =  
-				}
-				if (ValidMove(a_board, i - 1, j + moveDirection, i, j, a_turn, false))
-				{
+					std::vector<std::vector<int>> newResult;
+					std::vector<int> emptyRow;
+					emptyRow.assign(8, -1);
+					newResult.assign(8, emptyRow);
 
-				}
-				if (ValidMove(a_board, i + 2, j + moveDirection * 2, i, j, a_turn, false))
-				{
+					for (unsigned int k = 0; k < 8; ++k)
+					{
+						for (unsigned int l = 0; l < 8; ++l)
+						{
+							newResult[k][l] = a_board[k][l];
+						}
+					}
+					//Move the piece.
+					newResult[i + 1][j + moveDirection] = newResult[i][j];
+					newResult[i][j] = -1;
 
+					results.push_back(newResult);
 				}
-				if (ValidMove(a_board, i - 2, j + moveDirection * 2, i, j, a_turn, false))
+				if (i > 0 && j + moveDirection < 8 && j + moveDirection >= 0 && ValidMove(a_board, i - 1, j + moveDirection, i, j, a_turn, false))
 				{
+					std::vector<std::vector<int>> newResult;
+					std::vector<int> emptyRow;
+					emptyRow.assign(8, -1);
+					newResult.assign(8, emptyRow);
 
+					for (unsigned int k = 0; k < 8; ++k)
+					{
+						for (unsigned int l = 0; l < 8; ++l)
+						{
+							newResult[k][l] = a_board[k][l];
+						}
+					}
+					//Move the piece.
+					newResult[i - 1][j + moveDirection] = newResult[i][j];
+					newResult[i][j] = -1;
+
+					results.push_back(newResult);
+				}
+				if (i < 6 && j + moveDirection < 7 && j + moveDirection > 0 && ValidMove(a_board, i + 2, j + moveDirection * 2, i, j, a_turn, false))
+				{
+					std::vector<std::vector<int>> newResult;
+					std::vector<int> emptyRow;
+					emptyRow.assign(8, -1);
+					newResult.assign(8, emptyRow);
+
+					for (unsigned int k = 0; k < 8; ++k)
+					{
+						for (unsigned int l = 0; l < 8; ++l)
+						{
+							newResult[k][l] = a_board[k][l];
+						}
+					}
+					//Move the piece, and remove the taken piece.
+					newResult[i + 2][j + moveDirection * 2] = newResult[i][j];
+					newResult[i][j] = -1;
+					newResult[i + 1][j + moveDirection] = -1;
+
+					results.push_back(newResult);
+				}
+				if (i > 1 && j + moveDirection < 7 && j + moveDirection > 0 && ValidMove(a_board, i - 2, j + moveDirection * 2, i, j, a_turn, false))
+				{
+					std::vector<std::vector<int>> newResult;
+					std::vector<int> emptyRow;
+					emptyRow.assign(8, -1);
+					newResult.assign(8, emptyRow);
+
+					for (unsigned int k = 0; k < 8; ++k)
+					{
+						for (unsigned int l = 0; l < 8; ++l)
+						{
+							newResult[k][l] = a_board[k][l];
+						}
+					}
+					//Move the piece, and remove the taken piece.
+					newResult[i - 2][j + moveDirection * 2] = newResult[i][j];
+					newResult[i][j] = -1;
+					newResult[i - 1][j + moveDirection] = -1;
+
+					results.push_back(newResult);
 				}
 			}
 		}
-
 	}
 	return results;
+}
+
+int CheckersTest::PlayUntilEnd(std::vector<std::vector<int>> a_board, const bool a_turn)
+{
+	int board[8][8];
+	for (int i = 0; i < 8; ++i)
+	{
+		for (int j = 0; j < 8; ++j)
+		{
+			board[i][j] = a_board[i][j];
+		}
+	}
+
+	bool turn = a_turn;
+
+	std::vector<std::vector<std::vector<int>>> possibleMoves = GetPossibleMoves(board, turn);
+
+	while (possibleMoves.size() > 0)
+	{
+		//Do random moves until the game ends.
+		int randChoice = rand() % possibleMoves.size();
+
+		for (int i = 0; i < 8; ++i)
+		{
+			for (int j = 0; j < 8; ++j)
+			{
+				board[i][j] = possibleMoves[randChoice][i][j];
+			}
+		}
+
+		turn = !turn;
+
+		possibleMoves = GetPossibleMoves(board, turn);
+	}
+	//If win, return 1
+	//If draw, return 0
+	//If lose, return -1
+	bool player1Present = false;
+	bool player2Present = false;
+	for (int i = 0; i < 8; ++i)
+	{
+		for (int j = 0; j < 8; ++j)
+		{
+			if (board[i][j] != -1 && board[i][j] < 12)
+			{
+				player1Present = true;
+			}
+			else if (board[i][j] >= 12)
+			{
+				player2Present = true;
+			}
+		}
+	}
+	if ((player1Present && player2Present) || (!player1Present && !player2Present))
+	{
+		return 0;
+	}
+	else if (player1Present)
+	{
+		return (a_turn?1:-1);
+	}
+	else
+	{
+		return (a_turn?-1:1);
+	}
+
 }
