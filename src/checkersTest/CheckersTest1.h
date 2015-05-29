@@ -7,6 +7,7 @@ class FlyCamera;
 class StaticCamera;
 class Renderer;
 
+#include <thread>
 #include <vector>
 
 struct InfoForBar {
@@ -28,6 +29,7 @@ private:
 	void HandleEnter( int (&a_board)[8][8], const unsigned int a_xPos, const unsigned int a_yPos,	   unsigned int &a_prevX,	   unsigned int &a_prevY,	    bool &a_turn, const bool a_changeEmitters, unsigned int &a_pieceSelected);
 	bool ValidMove(const int a_board[8][8], const unsigned int a_xPos, const unsigned int a_yPos, const unsigned int a_prevX, const unsigned int a_prevY,  const bool a_turn, const bool a_changeEmitters);
 
+	void UseAIMove();
 	void AIMove(int (&a_board)[8][8], const bool a_turn, const unsigned int a_difficulty);
 	//As vectors of arrays don't work, a vector<vector<int>>> has been used to replace a vector<int[8][8]>
 	std::vector<std::vector<std::vector<int>>> GetPossibleMoves(const int a_board[8][8], const bool a_turn);
@@ -56,6 +58,8 @@ private:
 	float m_inputTimer;
 
 	unsigned int m_pieceSelected;
+
+	std::thread aiThread;
 
 	bool m_turn;
 };

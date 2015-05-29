@@ -7,6 +7,7 @@
 #include "InputManager.h"
 #include "tut13\Tutorial13.h"
 #include <iostream>
+#include <thread>
 
 void TW_CALL BoardGenerate(void* a_clientData)
 {
@@ -141,8 +142,8 @@ void CheckersTest::Update(float a_deltaTime)
 
 	m_inputTimer -= a_deltaTime;
 
-	//if (!m_turn)
-	//{
+	if (!m_turn)
+	{
 		if (m_inputTimer < 0)
 		{
 			if (InputManager::GetKey(Keys::LEFT))
@@ -187,23 +188,11 @@ void CheckersTest::Update(float a_deltaTime)
 				m_inputTimer = 0.15f;
 			}
 		}
-	//}
-	//else
-	//{
-	//	AIMove(m_board, m_turn, 100);
-	//	m_turn = !m_turn;
-	//	for (unsigned int i = 0; i < 8; ++i)
-	//	{
-	//		for (unsigned int j = 0; j < 8; ++j)
-	//		{
-	//			if (m_board[i][j] != -1)
-	//			{
-	//				m_infoForBar.renderer->SetEmitterPosition(m_emitters[m_board[i][j]], true, vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * i, 5, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * j));
-	//			}
-	//		}
-	//	}
-	//}
-	
+	}
+	else
+	{
+		aiThread = std::thread(UseAIMove);
+	}
 
 	m_camera->Update(a_deltaTime);
 }
@@ -230,14 +219,40 @@ void CheckersTest::HandleEnter(int(&a_board)[8][8], const unsigned int a_xPos, c
 		{
 			if ((a_turn && a_board[a_xPos][a_yPos] < 12) || (!a_turn && a_board[a_xPos][a_yPos] >= 12))
 			{
-				//For an explanation of the below 'if' statement, look this way -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> v v v v v v v v v v v v v v v v v v v v v
-				if ((a_turn &&																																					//If it is player 1's turn...
-					((a_xPos < 6 && a_yPos < 6 && a_board[a_xPos + 1][a_yPos + 1] >= 12 && a_board[a_xPos + 2][a_yPos + 2] == -1) ||											//...and he can jump forwards and to one side...
-					(a_xPos > 1 && a_yPos < 6 && a_board[a_xPos - 1][a_yPos + 1] >= 12 && a_board[a_xPos - 2][a_yPos + 2] == -1)))												//...or forwards and to the other side...
-				    ||																																							// OR
-				    (!a_turn &&																																					//If it is player 2's turn...
-					((a_xPos < 6 && a_yPos > 1 && a_board[a_xPos + 1][a_yPos - 1] < 12 && a_board[a_xPos + 1][a_yPos - 1] != -1 && a_board[a_xPos + 2][a_yPos - 2] == -1) ||	//...and he can jump backwards and to one side...
-					(a_xPos > 1 && a_yPos > 1 && a_board[a_xPos - 1][a_yPos - 1] < 12 && a_board[a_xPos - 1][a_yPos - 1] != -1 && a_board[a_xPos - 2][a_yPos - 2] == -1))))		//...or backwards and to the other side... 
+				//Teleporters
+				if ((a_turn && a_yPos == 7) || (!a_turn && a_yPos == 0))
+				{
+					//If telefragging
+					if (a_changeEmitters && ((a_board[a_xPos + 1][0] != -1 && a_turn) || (a_board[a_xPos - 1][7] != -1 && !a_turn)))
+					{
+						if (a_turn)
+							m_infoForBar.renderer->SetEmitterPosition(m_emitters[a_board[a_xPos + 1][0]], true, vec3(M_TILE_WIDTH * 5.5f * ((a_board[a_xPos + 1][0] < 12) ? -1 : 1), 5, 0));
+						else
+							m_infoForBar.renderer->SetEmitterPosition(m_emitters[a_board[a_xPos - 1][7]], true, vec3(M_TILE_WIDTH * 5.5f * ((a_board[a_xPos - 1][7] < 12) ? -1 : 1), 5, 0));
+					}
+
+					if (a_turn)
+					{
+						a_board[a_xPos + 1][0] = a_board[a_xPos][7];
+						a_board[a_xPos][7] = -1;
+						m_infoForBar.renderer->SetEmitterPosition(m_emitters[a_board[a_xPos + 1][0]], true, vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * (a_xPos + 1), 5, 0));
+					}
+					else
+					{
+						a_board[a_xPos - 1][7] = a_board[a_xPos][0];
+						a_board[a_xPos][0] = -1;
+						m_infoForBar.renderer->SetEmitterPosition(m_emitters[a_board[a_xPos - 1][7]], true, vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * (a_xPos - 1), 5, M_TILE_WIDTH * 3.5f));
+					}
+					a_turn = !a_turn;
+				}
+				//For an explanation of the below 'if' statement, look this way -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> v v v v v v v v v v v v v v v v v v v v v
+				else if ((a_turn &&																																					//If it is player 1's turn...
+						((a_xPos < 6 && a_yPos < 6 && a_board[a_xPos + 1][a_yPos + 1] >= 12 && a_board[a_xPos + 2][a_yPos + 2] == -1) ||											//...and he can jump forwards and to one side...
+						(a_xPos > 1 && a_yPos < 6 && a_board[a_xPos - 1][a_yPos + 1] >= 12 && a_board[a_xPos - 2][a_yPos + 2] == -1)))												//...or forwards and to the other side...
+						||																																							// OR
+						(!a_turn &&																																					//If it is player 2's turn...
+						((a_xPos < 6 && a_yPos > 1 && a_board[a_xPos + 1][a_yPos - 1] < 12 && a_board[a_xPos + 1][a_yPos - 1] != -1 && a_board[a_xPos + 2][a_yPos - 2] == -1) ||	//...and he can jump backwards and to one side...
+						(a_xPos > 1 && a_yPos > 1 && a_board[a_xPos - 1][a_yPos - 1] < 12 && a_board[a_xPos - 1][a_yPos - 1] != -1 && a_board[a_xPos - 2][a_yPos - 2] == -1))))		//...or backwards and to the other side... 
 				{
 					//Then this piece can jump, do a move.
 					a_pieceSelected = a_board[a_xPos][a_yPos];
@@ -309,12 +324,12 @@ void CheckersTest::HandleEnter(int(&a_board)[8][8], const unsigned int a_xPos, c
 	{
 		if (ValidMove(a_board, a_xPos, a_yPos, a_prevX, a_prevY, a_turn, a_changeEmitters))
 		{
-			if (a_xPos == a_prevX + 2 || a_xPos == a_yPos - 2)	//If the move was a capture one
+			if (a_xPos == a_prevX + 2 || a_xPos == a_prevX - 2)	//If the move was a capture one
 			{
 				unsigned int takenSquare = a_board[(a_xPos + a_prevX) / 2][(a_yPos + a_prevY) / 2];
 
 				if (a_changeEmitters)
-					m_infoForBar.renderer->SetEmitterPosition(m_emitters[takenSquare], true, vec3(M_TILE_WIDTH * 4.5f * ((takenSquare < 12) ? -1 : 1), 5, 0));
+					m_infoForBar.renderer->SetEmitterPosition(m_emitters[takenSquare], true, vec3(M_TILE_WIDTH * 5.5f * ((takenSquare < 12) ? -1 : 1), 5, 0));
 
 				a_board[(a_xPos + a_prevX) / 2][(a_yPos + a_prevY) / 2] = -1;
 			}
@@ -452,15 +467,40 @@ std::vector<std::vector<std::vector<int>>> CheckersTest::GetPossibleMoves(const 
 {
 	std::vector<std::vector<std::vector<int>>> results;
 
+	int captureMovePossible = -1;
 	for (int i = 0; i < 8; ++i)
 	{
 		for (int j = 0; j < 8; ++j)
+		{
+			//Capture move possible
+			//For an explanation of the below 'if' statement, look this way -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> ->   v v v v v v v v v v v v v v v v v v v v v
+			if ((a_turn &&	a_board[i][j] != -1 && a_board[i][j] < 12 &&														//If it is player 1's turn...
+			   ((i < 6 && j < 6 && a_board[i + 1][j + 1] >= 12 && a_board[i + 2][j + 2] == -1) ||								//...and he can jump forwards and to one side...
+			   (i > 1 && j < 6 && a_board[i - 1][j + 1] >= 12 && a_board[i - 2][j + 2] == -1)))									//...or forwards and to the other side...
+			   ||																												// OR
+			   (!a_turn &&	a_board[i][j] >= 12 &&																				//If it is player 2's turn...
+			   ((i < 6 && j > 1 && a_board[i + 1][j - 1] < 12 && a_board[i + 1][j - 1] != -1 && a_board[i + 2][j - 2] == -1) ||	//...and he can jump backwards and to one side...
+			   (i > 1 && j > 1 && a_board[i - 1][j - 1] < 12 && a_board[i - 1][j - 1] != -1 && a_board[i - 2][j - 2] == -1))))	//...or backwards and to the other side... 
+			{
+				captureMovePossible = i * 8 + j;
+				goto outsideLoop;	//This goes here	-->--->--->---->---->--->--|
+			}																	 /*|*/
+		}																		 /*|*/
+	}																			 /*|*/
+	//This outsideLoop bit is used for breaking out of the nested for loops.	   |
+	outsideLoop: //<--<--<--<--<--<--<---<--<--<--<--<--<--<--<--<--<--<--<--<--<--<
+
+	for (int i = (captureMovePossible == -1?0:captureMovePossible/8); i < 8; ++i)
+	{
+		for (int j = (captureMovePossible == -1?0:captureMovePossible % 8); j < 8; ++j)
 		{
 			//If the tile (i, j) contains a piece that belongs to the player whos turn it is
 			if (a_board[i][j] != -1 && a_board[i][j] < 12 == a_turn)	
 			{
 				int moveDirection = (a_turn ? 1 : -1);
-				if (i < 7 && j + moveDirection < 8 && j + moveDirection >= 0 && ValidMove(a_board, i + 1, j + moveDirection, i, j, a_turn, false))
+
+				//Normal Move
+				if (captureMovePossible == -1 && i < 7 && j + moveDirection < 8 && j + moveDirection >= 0 && ValidMove(a_board, i + 1, j + moveDirection, i, j, a_turn, false))
 				{
 					std::vector<std::vector<int>> newResult;
 					std::vector<int> emptyRow;
@@ -480,7 +520,8 @@ std::vector<std::vector<std::vector<int>>> CheckersTest::GetPossibleMoves(const 
 
 					results.push_back(newResult);
 				}
-				if (i > 0 && j + moveDirection < 8 && j + moveDirection >= 0 && ValidMove(a_board, i - 1, j + moveDirection, i, j, a_turn, false))
+				//Normal Move other direction
+				if (captureMovePossible == -1 && i > 0 && j + moveDirection < 8 && j + moveDirection >= 0 && ValidMove(a_board, i - 1, j + moveDirection, i, j, a_turn, false))
 				{
 					std::vector<std::vector<int>> newResult;
 					std::vector<int> emptyRow;
@@ -500,7 +541,8 @@ std::vector<std::vector<std::vector<int>>> CheckersTest::GetPossibleMoves(const 
 
 					results.push_back(newResult);
 				}
-				if (i < 6 && j + moveDirection < 7 && j + moveDirection > 0 && ValidMove(a_board, i + 2, j + moveDirection * 2, i, j, a_turn, false))
+				//Jump Move
+				if (captureMovePossible != -1 && i < 6 && j + moveDirection < 7 && j + moveDirection > 0 && ValidMove(a_board, i + 2, j + moveDirection * 2, i, j, a_turn, false))
 				{
 					std::vector<std::vector<int>> newResult;
 					std::vector<int> emptyRow;
@@ -521,7 +563,8 @@ std::vector<std::vector<std::vector<int>>> CheckersTest::GetPossibleMoves(const 
 
 					results.push_back(newResult);
 				}
-				if (i > 1 && j + moveDirection < 7 && j + moveDirection > 0 && ValidMove(a_board, i - 2, j + moveDirection * 2, i, j, a_turn, false))
+				//Jump Move other direction
+				if (captureMovePossible != -1 && i > 1 && j + moveDirection < 7 && j + moveDirection > 0 && ValidMove(a_board, i - 2, j + moveDirection * 2, i, j, a_turn, false))
 				{
 					std::vector<std::vector<int>> newResult;
 					std::vector<int> emptyRow;
@@ -539,6 +582,35 @@ std::vector<std::vector<std::vector<int>>> CheckersTest::GetPossibleMoves(const 
 					newResult[i - 2][j + moveDirection * 2] = newResult[i][j];
 					newResult[i][j] = -1;
 					newResult[i - 1][j + moveDirection] = -1;
+
+					results.push_back(newResult);
+				}
+				//Teleport Move
+				if (captureMovePossible == -1 && ((a_turn && j == 7) || (!a_turn && j == 0)))
+				{
+					std::vector<std::vector<int>> newResult;
+					std::vector<int> emptyRow;
+					emptyRow.assign(8, -1);
+					newResult.assign(8, emptyRow);
+
+					for (unsigned int k = 0; k < 8; ++k)
+					{
+						for (unsigned int l = 0; l < 8; ++l)
+						{
+							newResult[k][l] = a_board[k][l];
+						}
+					}
+
+					if (a_turn)
+					{
+						newResult[i + 1][0] = newResult[i][7];
+						newResult[i][7] = -1;
+					}
+					else
+					{
+						newResult[i - 1][7] = newResult[i][0];
+						newResult[i][0] = -1;
+					}
 
 					results.push_back(newResult);
 				}
@@ -612,4 +684,34 @@ int CheckersTest::PlayUntilEnd(std::vector<std::vector<int>> a_board, const bool
 		return (a_turn?-1:1);
 	}
 
+}
+
+void CheckersTest::UseAIMove()
+{
+	std::vector<bool> emittersMoved;
+	emittersMoved.assign(24, false);
+
+	AIMove(m_board, m_turn, 100);
+	m_turn = !m_turn;
+	//Move pieces
+	for (unsigned int i = 0; i < 8; ++i)
+	{
+		for (unsigned int j = 0; j < 8; ++j)
+		{
+			if (m_board[i][j] != -1)
+			{
+				m_infoForBar.renderer->SetEmitterPosition(m_emitters[m_board[i][j]], true, vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * i, 5, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * j));
+				emittersMoved[m_board[i][j]] = true;
+			}
+		}
+	}
+
+	//Remove taken pieces
+	for (unsigned int i = 0; i < emittersMoved.size(); ++i)
+	{
+		if (!emittersMoved[i])
+		{
+			m_infoForBar.renderer->SetEmitterPosition(m_emitters[i], true, vec3(M_TILE_WIDTH * 5.5f * ((m_emitters[i] < 12) ? -1 : 1), 5, 0));
+		}
+	}
 }
