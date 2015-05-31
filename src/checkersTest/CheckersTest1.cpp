@@ -121,6 +121,8 @@ int CheckersTest::Init()
 
 	m_turn = false;
 
+	m_threadFinished = true;
+
 	return 0;
 }
 
@@ -140,58 +142,64 @@ void CheckersTest::Update(float a_deltaTime)
 	Don't select a piece at all it cannot make a move
 	*/
 
+	//if (aiThread.joinable())
+	//	aiThread.join();
+
 	m_inputTimer -= a_deltaTime;
 
-	if (!m_turn)
+
+	if (m_inputTimer < 0)
 	{
-		if (m_inputTimer < 0)
+		if (InputManager::GetKey(Keys::LEFT))
 		{
-			if (InputManager::GetKey(Keys::LEFT))
+			if (m_currentX > 0)
 			{
-				if (m_currentX > 0)
-				{
-					--m_currentX;
-					m_inputTimer = 0.15f;
-					m_infoForBar.renderer->SetTransform(glm::translate(vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentX, 10, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentY)), m_positionMarker);
-				}
+				--m_currentX;
+				m_inputTimer = 0.15f;
+				m_infoForBar.renderer->SetTransform(glm::translate(vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentX, 10, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentY)), m_positionMarker);
 			}
-			if (InputManager::GetKey(Keys::RIGHT))
+		}
+		if (InputManager::GetKey(Keys::RIGHT))
+		{
+			if (m_currentX < 7)
 			{
-				if (m_currentX < 7)
-				{
-					++m_currentX;
-					m_inputTimer = 0.15f;
-					m_infoForBar.renderer->SetTransform(glm::translate(vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentX, 10, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentY)), m_positionMarker);
-				}
+				++m_currentX;
+				m_inputTimer = 0.15f;
+				m_infoForBar.renderer->SetTransform(glm::translate(vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentX, 10, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentY)), m_positionMarker);
 			}
-			if (InputManager::GetKey(Keys::UP))
+		}
+		if (InputManager::GetKey(Keys::UP))
+		{
+			if (m_currentY > 0)
 			{
-				if (m_currentY > 0)
-				{
-					--m_currentY;
-					m_inputTimer = 0.15f;
-					m_infoForBar.renderer->SetTransform(glm::translate(vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentX, 10, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentY)), m_positionMarker);
-				}
+				--m_currentY;
+				m_inputTimer = 0.15f;
+				m_infoForBar.renderer->SetTransform(glm::translate(vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentX, 10, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentY)), m_positionMarker);
 			}
-			if (InputManager::GetKey(Keys::DOWN))
+		}
+		if (InputManager::GetKey(Keys::DOWN))
+		{
+			if (m_currentY < 7)
 			{
-				if (m_currentY < 7)
-				{
-					++m_currentY;
-					m_inputTimer = 0.15f;
-					m_infoForBar.renderer->SetTransform(glm::translate(vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentX, 10, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentY)), m_positionMarker);
-				}
+				++m_currentY;
+				m_inputTimer = 0.15f;
+				m_infoForBar.renderer->SetTransform(glm::translate(vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentX, 10, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentY)), m_positionMarker);
 			}
+		}
+		if (!m_turn)
+		{
 			if (InputManager::GetKey(Keys::ENTER))
 			{
 				HandleEnter(m_board, m_currentX, m_currentY, m_previousX, m_previousY, m_turn, true, m_pieceSelected);
 				m_inputTimer = 0.15f;
 			}
 		}
-	}
-	else
-	{
-		aiThread = std::thread(UseAIMove);
+		else if (m_threadFinished)
+		{
+			std::thread thr(&CheckersTest::UseAIMove, this);
+			std::swap(thr, m_aiThread);
+			m_aiThread.detach();
+		}
 	}
 
 	m_camera->Update(a_deltaTime);
@@ -436,7 +444,7 @@ void CheckersTest::AIMove(int(&a_board)[8][8], const bool a_turn, const unsigned
 	{
 		for (unsigned int j = 0; j < a_difficulty; ++j)
 		{
-			scores[i] += PlayUntilEnd(actions[i], !a_turn);
+			scores[i] -= PlayUntilEnd(actions[i], !a_turn);
 		}
 	}
 
@@ -688,10 +696,11 @@ int CheckersTest::PlayUntilEnd(std::vector<std::vector<int>> a_board, const bool
 
 void CheckersTest::UseAIMove()
 {
+	m_threadFinished = false;
 	std::vector<bool> emittersMoved;
 	emittersMoved.assign(24, false);
 
-	AIMove(m_board, m_turn, 100);
+	AIMove(m_board, m_turn, 10);
 	m_turn = !m_turn;
 	//Move pieces
 	for (unsigned int i = 0; i < 8; ++i)
@@ -714,4 +723,6 @@ void CheckersTest::UseAIMove()
 			m_infoForBar.renderer->SetEmitterPosition(m_emitters[i], true, vec3(M_TILE_WIDTH * 5.5f * ((m_emitters[i] < 12) ? -1 : 1), 5, 0));
 		}
 	}
+
+	m_threadFinished = true;
 }

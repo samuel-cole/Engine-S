@@ -1251,6 +1251,9 @@ void Renderer::Draw()
 	else
 	{
 #pragma region DEFERRED_CODE
+
+
+
 		///////////////////////////G-Pass\\\\\\\\\\\\\\\\\\\\\\\\
 		//G-Pass: render out the albedo, position and normal.
 #pragma region G_PASS
@@ -1334,6 +1337,8 @@ void Renderer::Draw()
 
 		glDisable(GL_BLEND);
 		glDisable(GL_CULL_FACE);
+		//glEnable(GL_DEPTH_TEST);
+
 
 #pragma endregion LIGHT_PASS
 
@@ -1358,8 +1363,10 @@ void Renderer::Draw()
 		//Draw
 		glBindVertexArray(m_VAO[0]);
 		glDrawElements(GL_TRIANGLES, m_numOfIndices[0], GL_UNSIGNED_INT, nullptr);
+
 #pragma endregion COMPOSITE
 
+#pragma region PARTICLES
 
 		//CPU Particles
 		if (m_particleProgram != -1)
@@ -1383,6 +1390,8 @@ void Renderer::Draw()
 				m_gpuEmitters[i]->Draw((float)glfwGetTime(), m_cameras[0]->GetWorldTransform(), m_cameras[0]->GetProjectionView());
 			}
 		}
+
+#pragma endregion PARTICLES
 #pragma endregion DEFERRED_CODE
 	}
 }

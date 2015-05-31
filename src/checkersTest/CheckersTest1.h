@@ -59,7 +59,9 @@ private:
 
 	unsigned int m_pieceSelected;
 
-	std::thread aiThread;
+	std::thread m_aiThread;
+
+	bool m_threadFinished;
 
 	bool m_turn;
 };
