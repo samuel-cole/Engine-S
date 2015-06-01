@@ -30,10 +30,12 @@ m_standardProgram(-1), m_particleProgram(-1), m_animatedProgram(-1), m_postProce
 	//Fill the uniform locations vector with empty vcetors. 300 should be more than enough programs.
 	m_uniformLocations.assign(300, std::vector<unsigned int>());
 
+	m_dirLightToggle = false;
 	m_lightColour = vec3(1, 1, 1);
 	m_lightDir = vec3(1, -1, 1);
 	m_specPow = 2.0f;
 
+	TwAddVarRW(m_bar, "Directional Light", TW_TYPE_BOOLCPP, &m_dirLightToggle, "");
 	TwAddVarRW(m_bar, "Light Colour", TW_TYPE_COLOR3F, &m_lightColour[0], "");
 	TwAddVarRW(m_bar, "Light Direction", TW_TYPE_DIR3F, &m_lightDir[0], "");
 	TwAddVarRW(m_bar, "Specular Power", TW_TYPE_FLOAT, &m_specPow, "");
@@ -780,19 +782,21 @@ unsigned int Renderer::GenerateGrid(const unsigned int a_rows, const unsigned in
 	return m_numOfIndices.size() - 1;
 }
 
-unsigned int Renderer::CreatePointLight(const vec3& a_colour, const float a_radius, const vec3& a_position)
+unsigned int Renderer::CreatePointLight(const vec3& a_colour, const float a_radius, const bool a_debug, const vec3& a_position)
 {
 	m_pointColours.push_back(a_colour);
 	m_pointPositions.push_back(a_position);
 	m_pointRadii.push_back(a_radius);
 
-	TwAddSeparator(m_bar, (std::string("Point Light ") + std::to_string(m_pointRadii.size())).c_str(), "");
-	TwAddVarRW(m_bar, (std::string("Point Light ") + std::to_string(m_pointRadii.size()) + std::string(" Colour")).c_str(), TW_TYPE_COLOR3F, &m_pointColours.back().x, "");
-	TwAddVarRW(m_bar, (std::string("Point Light ") + std::to_string(m_pointRadii.size()) + std::string(" X-Pos")).c_str(), TW_TYPE_FLOAT, &m_pointPositions.back().x, "step=0.1");
-	TwAddVarRW(m_bar, (std::string("Point Light ") + std::to_string(m_pointRadii.size()) + std::string(" Y-Pos")).c_str(), TW_TYPE_FLOAT, &m_pointPositions.back().y, "step=0.1");
-	TwAddVarRW(m_bar, (std::string("Point Light ") + std::to_string(m_pointRadii.size()) + std::string(" Z-Pos")).c_str(), TW_TYPE_FLOAT, &m_pointPositions.back().z, "step=0.1");
-	//TwAddVarRW(m_bar, (std::string("Point Light ") + std::to_string(m_pointRadii.size()) + std::string(" Position")).c_str(), TW_TYPE_DIR3F, &m_pointPositions[m_pointPositions.size() - 1].x, "");
-	TwAddVarRW(m_bar, (std::string("Point Light ") + std::to_string(m_pointRadii.size()) + std::string(" Radius")).c_str(), TW_TYPE_FLOAT, &m_pointRadii.back(), "step=0.1");
+	if (a_debug)
+	{
+		TwAddSeparator(m_bar, (std::string("Point Light ") + std::to_string(m_pointRadii.size())).c_str(), "");
+		TwAddVarRW(m_bar, (std::string("Point Light ") + std::to_string(m_pointRadii.size()) + std::string(" Colour")).c_str(), TW_TYPE_COLOR3F, &m_pointColours.back().x, "");
+		TwAddVarRW(m_bar, (std::string("Point Light ") + std::to_string(m_pointRadii.size()) + std::string(" X-Pos")).c_str(), TW_TYPE_FLOAT, &m_pointPositions.back().x, "step=0.1");
+		TwAddVarRW(m_bar, (std::string("Point Light ") + std::to_string(m_pointRadii.size()) + std::string(" Y-Pos")).c_str(), TW_TYPE_FLOAT, &m_pointPositions.back().y, "step=0.1");
+		TwAddVarRW(m_bar, (std::string("Point Light ") + std::to_string(m_pointRadii.size()) + std::string(" Z-Pos")).c_str(), TW_TYPE_FLOAT, &m_pointPositions.back().z, "step=0.1");
+		TwAddVarRW(m_bar, (std::string("Point Light ") + std::to_string(m_pointRadii.size()) + std::string(" Radius")).c_str(), TW_TYPE_FLOAT, &m_pointRadii.back(), "step=0.1");
+	}
 
 	return m_pointPositions.size() - 1;
 }
@@ -897,6 +901,24 @@ unsigned int Renderer::CreateEmitter(const unsigned int a_maxParticles, const fl
 		std::cout << "Error: incorrect CreateEmitter overload called. For CPU-based particles, use the CreateEmitter function which specifies emit rate.";
 		return -1;
 	}
+}
+
+void Renderer::SetLightPosition(const unsigned int a_index, const vec3& a_position)
+{
+	std::list<vec3>::iterator iter = std::next(m_pointPositions.begin(), a_index);
+	(*iter) = a_position;
+}
+
+const vec3& Renderer::GetLightPosition(const unsigned int a_index)
+{
+	std::list<vec3>::iterator iter = std::next(m_pointPositions.begin(), a_index);
+	return (*iter);
+}
+
+void Renderer::SetLightColour(const unsigned int a_index, const vec3& a_position)
+{
+	std::list<vec3>::iterator iter = std::next(m_pointColours.begin(), a_index);
+	(*iter) = a_position;
 }
 
 void Renderer::SetEmitterPosition(const unsigned int a_index, const bool a_gpuBased, const vec3& a_position)
@@ -1397,7 +1419,8 @@ void Renderer::Draw()
 		glEnable(GL_CULL_FACE);
 
 		//Draw each type of light.
-		DrawDirectionalLight();
+		if (m_dirLightToggle)
+			DrawDirectionalLight();
 		DrawPointLights();
 
 		glDisable(GL_BLEND);

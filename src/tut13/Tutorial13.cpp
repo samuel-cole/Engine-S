@@ -13,7 +13,7 @@
 void TW_CALL AddLight(void* a_clientData)
 {
 	Renderer* renderer = (Renderer*)a_clientData;
-	renderer->CreatePointLight(vec3(1, 0, 0), 1);
+	renderer->CreatePointLight(vec3(1, 0, 0), 1, true);
 }
 
 int Tutorial13::Init()

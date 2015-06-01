@@ -16,6 +16,7 @@ void TW_CALL BoardGenerate(void* a_clientData)
 	infoForBar->renderer->DestroyObject(infoForBar->object);
 	infoForBar->object = infoForBar->renderer->GenerateGrid(100, 100);
 	infoForBar->renderer->LoadTexture("../data/checkerboard.png", infoForBar->object);
+	infoForBar->renderer->LoadAmbient("../data/checkerboard.png", infoForBar->object);
 	infoForBar->renderer->GeneratePerlinNoiseMap(9, 9, 6, infoForBar->amplitude, infoForBar->persistence, infoForBar->object, infoForBar->seed, false);
 }
 
@@ -27,7 +28,7 @@ int CheckersTest::Init()
 
 	m_camera = new FlyCamera(m_debugBar);
 	m_camera->SetPerspective(glm::pi<float>() * 0.25f, 16.0f / 9.0f, 0.1f, 10000.0f);
-	m_camera->SetLookAt(vec3(10, 10, 10), vec3(0, 0, 0), vec3(0, 1, 0));
+	m_camera->SetLookAt(vec3(0, 90, 90), vec3(0, 0, 10), vec3(0, 1, 0));
 
 	m_infoForBar.renderer = new Renderer(m_camera, m_debugBar);
 
@@ -68,6 +69,9 @@ int CheckersTest::Init()
 			m_debugBar);			//GPU based
 
 		m_emitters.push_back(emitter);
+
+		unsigned int light = m_infoForBar.renderer->CreatePointLight(((i < 12) ? vec3(1, 0.5f, 0) : vec3(0, 0.5f, 1)), 12, false);
+		m_pieceLights.push_back(light);
 	}
 
 	for (unsigned int i = 0; i < 8; ++i)
@@ -81,32 +85,38 @@ int CheckersTest::Init()
 	for (unsigned int i = 0; i < 4; ++i)
 	{
 		m_infoForBar.renderer->SetEmitterPosition(m_emitters[i], true, vec3(M_TILE_WIDTH * -3.5f + i * 2 * M_TILE_WIDTH, 5, M_TILE_WIDTH * -2.5f));
+		m_infoForBar.renderer->SetLightPosition(m_pieceLights[i], vec3(M_TILE_WIDTH * -3.5f + i * 2 * M_TILE_WIDTH, 5, M_TILE_WIDTH * -2.5f));
 		m_board[i * 2][1] = i;
 	}
 	for (unsigned int i = 0; i < 4; ++i)
 	{
 		m_infoForBar.renderer->SetEmitterPosition(m_emitters[i + 12], true, vec3(M_TILE_WIDTH * -3.5f + i * 2 * M_TILE_WIDTH, 5, M_TILE_WIDTH * 1.5f));
+		m_infoForBar.renderer->SetLightPosition(m_pieceLights[i + 12], vec3(M_TILE_WIDTH * -3.5f + i * 2 * M_TILE_WIDTH, 5, M_TILE_WIDTH * 1.5f));
 		m_board[i * 2][5] = i + 12;
 	}
 	for (unsigned int i = 0; i < 4; ++i)
 	{
 		m_infoForBar.renderer->SetEmitterPosition(m_emitters[i + 16], true, vec3(M_TILE_WIDTH * -3.5f + i * 2 * M_TILE_WIDTH, 5, M_TILE_WIDTH * 3.5f));
+		m_infoForBar.renderer->SetLightPosition(m_pieceLights[i + 16], vec3(M_TILE_WIDTH * -3.5f + i * 2 * M_TILE_WIDTH, 5, M_TILE_WIDTH * 3.5f));
 		m_board[i * 2][7] = i + 16;
 	}
 
 	for (unsigned int i = 0; i < 4; ++i)
 	{
 		m_infoForBar.renderer->SetEmitterPosition(m_emitters[i + 4], true, vec3(M_TILE_WIDTH * -2.5f + i * 2 * M_TILE_WIDTH, 5, M_TILE_WIDTH * -3.5f));
+		m_infoForBar.renderer->SetLightPosition(m_pieceLights[i + 4], vec3(M_TILE_WIDTH * -2.5f + i * 2 * M_TILE_WIDTH, 5, M_TILE_WIDTH * -3.5f));
 		m_board[1 + i * 2][0] = i + 4;
 	}
 	for (unsigned int i = 0; i < 4; ++i)
 	{
 		m_infoForBar.renderer->SetEmitterPosition(m_emitters[i + 8], true, vec3(M_TILE_WIDTH * -2.5f + i * 2 * M_TILE_WIDTH, 5, M_TILE_WIDTH * -1.5f));
+		m_infoForBar.renderer->SetLightPosition(m_pieceLights[i + 8], vec3(M_TILE_WIDTH * -2.5f + i * 2 * M_TILE_WIDTH, 5, M_TILE_WIDTH * -1.5f));
 		m_board[1 + i * 2][2] = i + 8;
 	}
 	for (unsigned int i = 0; i < 4; ++i)
 	{
 		m_infoForBar.renderer->SetEmitterPosition(m_emitters[i + 20], true, vec3(M_TILE_WIDTH * -2.5f + i * 2 * M_TILE_WIDTH, 5, M_TILE_WIDTH * 2.5f));
+		m_infoForBar.renderer->SetLightPosition(m_pieceLights[i + 20], vec3(M_TILE_WIDTH * -2.5f + i * 2 * M_TILE_WIDTH, 5, M_TILE_WIDTH * 2.5f));
 		m_board[1 + i * 2][6] = i + 20;
 	}
 
@@ -116,6 +126,12 @@ int CheckersTest::Init()
 	m_positionMarker = m_infoForBar.renderer->LoadOBJ("../data/sphere/sphere.obj");
 	m_infoForBar.renderer->LoadTexture("../data/crate.png", m_positionMarker);
 	m_infoForBar.renderer->SetTransform(glm::translate(vec3(M_TILE_WIDTH * 3.5f, 10, M_TILE_WIDTH * 3.5f)), m_positionMarker);
+	m_positionLight = m_infoForBar.renderer->CreatePointLight(vec3(1, 1, 1), 15, false);
+	m_infoForBar.renderer->SetLightPosition(m_positionLight, vec3(M_TILE_WIDTH * 3.5f, 8, M_TILE_WIDTH * 3.5f));
+	m_positionLight2 = m_infoForBar.renderer->CreatePointLight(vec3(1, 1, 1), 15, false);
+	m_infoForBar.renderer->SetLightPosition(m_positionLight2, vec3(M_TILE_WIDTH * 3.5f, 12, M_TILE_WIDTH * 3.5f));
+	m_colourTimer = 0.1f;
+
 
 	m_inputTimer = 0;
 
@@ -149,6 +165,17 @@ void CheckersTest::Update(float a_deltaTime)
 	//	aiThread.join();
 
 	m_inputTimer -= a_deltaTime;
+	m_colourTimer -= a_deltaTime;
+
+	if (m_colourTimer <= 0)
+	{
+		//Randomise the colour
+		vec3 randomColour((float)rand() / (float)RAND_MAX, (float)rand() / (float)RAND_MAX, (float)rand() / (float)RAND_MAX);
+		m_infoForBar.renderer->SetLightColour(m_positionLight, randomColour);
+		m_infoForBar.renderer->SetLightColour(m_positionLight2, randomColour);
+		m_colourTimer = 0.1f;
+	}
+
 
 
 	if (m_inputTimer < 0)
@@ -160,6 +187,8 @@ void CheckersTest::Update(float a_deltaTime)
 				--m_currentX;
 				m_inputTimer = 0.15f;
 				m_infoForBar.renderer->SetTransform(glm::translate(vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentX, 10, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentY)), m_positionMarker);
+				m_infoForBar.renderer->SetLightPosition(m_positionLight, vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentX, 8, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentY));
+				m_infoForBar.renderer->SetLightPosition(m_positionLight2, vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentX, 12, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentY));
 			}
 		}
 		if (InputManager::GetKey(Keys::RIGHT))
@@ -169,6 +198,8 @@ void CheckersTest::Update(float a_deltaTime)
 				++m_currentX;
 				m_inputTimer = 0.15f;
 				m_infoForBar.renderer->SetTransform(glm::translate(vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentX, 10, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentY)), m_positionMarker);
+				m_infoForBar.renderer->SetLightPosition(m_positionLight, vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentX, 8, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentY));
+				m_infoForBar.renderer->SetLightPosition(m_positionLight2, vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentX, 12, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentY));
 			}
 		}
 		if (InputManager::GetKey(Keys::UP))
@@ -178,6 +209,8 @@ void CheckersTest::Update(float a_deltaTime)
 				--m_currentY;
 				m_inputTimer = 0.15f;
 				m_infoForBar.renderer->SetTransform(glm::translate(vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentX, 10, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentY)), m_positionMarker);
+				m_infoForBar.renderer->SetLightPosition(m_positionLight, vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentX, 8, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentY));
+				m_infoForBar.renderer->SetLightPosition(m_positionLight2, vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentX, 12, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentY));
 			}
 		}
 		if (InputManager::GetKey(Keys::DOWN))
@@ -187,6 +220,8 @@ void CheckersTest::Update(float a_deltaTime)
 				++m_currentY;
 				m_inputTimer = 0.15f;
 				m_infoForBar.renderer->SetTransform(glm::translate(vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentX, 10, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentY)), m_positionMarker);
+				m_infoForBar.renderer->SetLightPosition(m_positionLight, vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentX, 8, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentY));
+				m_infoForBar.renderer->SetLightPosition(m_positionLight2, vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentX, 12, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentY));
 			}
 		}
 		if (!m_turn)
@@ -206,6 +241,9 @@ void CheckersTest::Update(float a_deltaTime)
 		else if (InputManager::GetKey(Keys::ENTER))
 		{
 			std::cout << "Invalid Move: Must Wait For Computer Opponents Move!" << std::endl;
+			m_infoForBar.renderer->SetLightColour(m_positionLight, vec3(1, 0, 0));
+			m_infoForBar.renderer->SetLightColour(m_positionLight2, vec3(1, 0, 0));
+			m_colourTimer = 0.5f;
 			m_inputTimer = 0.15f;
 		}
 	}
@@ -242,9 +280,15 @@ void CheckersTest::HandleEnter(int(&a_board)[8][8], const unsigned int a_xPos, c
 					if (a_changeEmitters && ((a_board[a_xPos + 1][0] != -1 && a_turn) || (a_board[a_xPos - 1][7] != -1 && !a_turn)))
 					{
 						if (a_turn)
+						{
 							m_infoForBar.renderer->SetEmitterPosition(m_emitters[a_board[a_xPos + 1][0]], true, vec3(M_TILE_WIDTH * 5.5f * ((a_board[a_xPos + 1][0] < 12) ? -1 : 1), 5, 0));
+							m_infoForBar.renderer->SetLightPosition(m_pieceLights[a_board[a_xPos + 1][0]], vec3(M_TILE_WIDTH * 5.5f * ((a_board[a_xPos + 1][0] < 12) ? -1 : 1), 5, 0));
+						}
 						else
+						{
 							m_infoForBar.renderer->SetEmitterPosition(m_emitters[a_board[a_xPos - 1][7]], true, vec3(M_TILE_WIDTH * 5.5f * ((a_board[a_xPos - 1][7] < 12) ? -1 : 1), 5, 0));
+							m_infoForBar.renderer->SetLightPosition(m_pieceLights[a_board[a_xPos - 1][7]], vec3(M_TILE_WIDTH * 5.5f * ((a_board[a_xPos - 1][7] < 12) ? -1 : 1), 5, 0));
+						}
 					}
 
 					if (a_turn)
@@ -252,12 +296,15 @@ void CheckersTest::HandleEnter(int(&a_board)[8][8], const unsigned int a_xPos, c
 						a_board[a_xPos + 1][0] = a_board[a_xPos][7];
 						a_board[a_xPos][7] = -1;
 						m_infoForBar.renderer->SetEmitterPosition(m_emitters[a_board[a_xPos + 1][0]], true, vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * (a_xPos + 1), 5, 0));
+						m_infoForBar.renderer->SetLightPosition(m_pieceLights[a_board[a_xPos + 1][0]], vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * (a_xPos + 1), 5, 0));
+
 					}
 					else
 					{
 						a_board[a_xPos - 1][7] = a_board[a_xPos][0];
 						a_board[a_xPos][0] = -1;
 						m_infoForBar.renderer->SetEmitterPosition(m_emitters[a_board[a_xPos - 1][7]], true, vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * (a_xPos - 1), 5, M_TILE_WIDTH * 3.5f));
+						m_infoForBar.renderer->SetLightPosition(m_pieceLights[a_board[a_xPos - 1][7]], vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * (a_xPos - 1), 5, M_TILE_WIDTH * 3.5f));
 					}
 					a_turn = !a_turn;
 				}
@@ -275,7 +322,10 @@ void CheckersTest::HandleEnter(int(&a_board)[8][8], const unsigned int a_xPos, c
 					a_prevX = a_xPos;
 					a_prevY = a_yPos;
 					if (a_changeEmitters)
+					{
 						m_infoForBar.renderer->SetEmitterPosition(m_emitters[a_pieceSelected], true, vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * a_xPos, 10, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * a_yPos));
+						m_infoForBar.renderer->SetLightPosition(m_pieceLights[a_pieceSelected], vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * a_xPos, 10, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * a_yPos));
+					}
 				}
 				else
 				{
@@ -298,6 +348,9 @@ void CheckersTest::HandleEnter(int(&a_board)[8][8], const unsigned int a_xPos, c
 																													   (i > 1 && j > 1 && m_board[i - 1][j - 1] >= 12 && m_board[i - 2][j - 2] == -1)*/)
 									{
 										std::cout << "Invalid Move: Must Capture Opponent Piece!" << std::endl;
+										m_infoForBar.renderer->SetLightColour(m_positionLight, vec3(1, 0, 0));
+										m_infoForBar.renderer->SetLightColour(m_positionLight2, vec3(1, 0, 0));
+										m_colourTimer = 0.5f;
 										return;
 									}
 								}
@@ -315,6 +368,9 @@ void CheckersTest::HandleEnter(int(&a_board)[8][8], const unsigned int a_xPos, c
 										(i > 1 && j > 1 && a_board[i - 1][j - 1] < 12 && a_board[i - 1][j - 1] != -1 && a_board[i - 2][j - 2] == -1))
 									{
 										std::cout << "Invalid Move: Must Capture Opponent Piece!" << std::endl;
+										m_infoForBar.renderer->SetLightColour(m_positionLight, vec3(1, 0, 0));
+										m_infoForBar.renderer->SetLightColour(m_positionLight2, vec3(1, 0, 0));
+										m_colourTimer = 0.5f;
 										return;
 									}
 								}
@@ -327,12 +383,19 @@ void CheckersTest::HandleEnter(int(&a_board)[8][8], const unsigned int a_xPos, c
 					a_prevX = a_xPos;
 					a_prevY = a_yPos;
 					if (a_changeEmitters)
+					{
 						m_infoForBar.renderer->SetEmitterPosition(m_emitters[a_pieceSelected], true, vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * a_xPos, 10, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * a_yPos));
+						m_infoForBar.renderer->SetLightPosition(m_pieceLights[a_pieceSelected], vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * a_xPos, 10, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * a_yPos));
+					}
+						
 				}
 			}
 			else
 			{
 				std::cout << "Invalid Move: Cannot Select Opponents Piece!" << std::endl;
+				m_infoForBar.renderer->SetLightColour(m_positionLight, vec3(1, 0, 0));
+				m_infoForBar.renderer->SetLightColour(m_positionLight2, vec3(1, 0, 0));
+				m_colourTimer = 0.5f;
 			}
 		}
 	}
@@ -345,12 +408,18 @@ void CheckersTest::HandleEnter(int(&a_board)[8][8], const unsigned int a_xPos, c
 				unsigned int takenSquare = a_board[(a_xPos + a_prevX) / 2][(a_yPos + a_prevY) / 2];
 
 				if (a_changeEmitters)
+				{
 					m_infoForBar.renderer->SetEmitterPosition(m_emitters[takenSquare], true, vec3(M_TILE_WIDTH * 5.5f * ((takenSquare < 12) ? -1 : 1), 5, 0));
+					m_infoForBar.renderer->SetLightPosition(m_pieceLights[takenSquare], vec3(M_TILE_WIDTH * 5.5f * ((takenSquare < 12) ? -1 : 1), 5, 0));
+				}
 
 				a_board[(a_xPos + a_prevX) / 2][(a_yPos + a_prevY) / 2] = -1;
 			}
 			if (a_changeEmitters)
+			{
 				m_infoForBar.renderer->SetEmitterPosition(m_emitters[a_pieceSelected], true, vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * a_xPos, 5, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * a_yPos));
+				m_infoForBar.renderer->SetLightPosition(m_pieceLights[a_pieceSelected], vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * a_xPos, 5, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * a_yPos));
+			}
 			a_board[a_prevX][a_prevY] = -1;
 			a_board[a_xPos][a_yPos] = a_pieceSelected;
 			a_pieceSelected = -1;
@@ -359,7 +428,10 @@ void CheckersTest::HandleEnter(int(&a_board)[8][8], const unsigned int a_xPos, c
 		else
 		{
 			if (a_changeEmitters)
+			{
 				m_infoForBar.renderer->SetEmitterPosition(m_emitters[a_pieceSelected], true, vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * a_prevX, 5, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * a_prevY));
+				m_infoForBar.renderer->SetLightPosition(m_pieceLights[a_pieceSelected], vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * a_prevX, 5, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * a_prevY));
+			}
 			a_pieceSelected = -1;
 		}
 	}
@@ -377,20 +449,35 @@ bool CheckersTest::ValidMove(const int a_board[8][8], const unsigned int a_xPos,
 		if (a_board[a_xPos][a_yPos] != -1)
 		{
 			if (a_changeEmitters)
+			{
 				std::cout << "Invalid Move: Square Occupied!" << std::endl;
+				m_infoForBar.renderer->SetLightColour(m_positionLight, vec3(1, 0, 0));
+				m_infoForBar.renderer->SetLightColour(m_positionLight2, vec3(1, 0, 0));
+				m_colourTimer = 0.5f;
+			}
 			return false;
 		}
 		unsigned int takenSquare = a_board[(a_xPos + a_prevX) / 2][(a_yPos + a_prevY) / 2];
 		if (takenSquare == -1)
 		{
 			if (a_changeEmitters)
+			{
 				std::cout << "Invalid Move: Jump Move Requires Piece To Jump!" << std::endl;
+				m_infoForBar.renderer->SetLightColour(m_positionLight, vec3(1, 0, 0));
+				m_infoForBar.renderer->SetLightColour(m_positionLight2, vec3(1, 0, 0));
+				m_colourTimer = 0.5f;
+			}
 			return false;
 		}
 		if ((takenSquare < 12) == (a_board[a_prevX][a_prevY] < 12))
 		{
 			if (a_changeEmitters)
+			{
 				std::cout << "Invalid Move: Jumped Piece Must Belong To Opponent" << std::endl;
+				m_infoForBar.renderer->SetLightColour(m_positionLight, vec3(1, 0, 0));
+				m_infoForBar.renderer->SetLightColour(m_positionLight2, vec3(1, 0, 0));
+				m_colourTimer = 0.5f;
+			}
 			return false;
 		}
 		return true;
@@ -409,7 +496,12 @@ bool CheckersTest::ValidMove(const int a_board[8][8], const unsigned int a_xPos,
 			 (a_prevX > 1 && a_prevY > 1 && a_board[a_prevX - 1][a_prevY - 1] < 12 && a_board[a_prevX - 1][a_prevY - 1] != -1 && a_board[a_prevX - 2][a_prevY - 2] == -1))))	//...or backwards and to the other side... 
 		{
 			if (a_changeEmitters)
+			{
 				std::cout << "Invalid Move: Must Capture Opponent Piece!" << std::endl;
+				m_infoForBar.renderer->SetLightColour(m_positionLight, vec3(1, 0, 0));
+				m_infoForBar.renderer->SetLightColour(m_positionLight2, vec3(1, 0, 0));
+				m_colourTimer = 0.5f;
+			}
 			return false;
 		}
 
@@ -419,13 +511,23 @@ bool CheckersTest::ValidMove(const int a_board[8][8], const unsigned int a_xPos,
 			if (a_board[a_xPos][a_yPos] != -1)
 			{
 				if (a_changeEmitters)
+				{
 					std::cout << "Invalid Move: Square Occupied!" << std::endl;
+					m_infoForBar.renderer->SetLightColour(m_positionLight, vec3(1, 0, 0));
+					m_infoForBar.renderer->SetLightColour(m_positionLight2, vec3(1, 0, 0));
+					m_colourTimer = 0.5f;
+				}
 				return false;
 			}
 			return true;
 		}
 		if (a_changeEmitters)
+		{
 			std::cout << "Invalid Move!" << std::endl;
+			m_infoForBar.renderer->SetLightColour(m_positionLight, vec3(1, 0, 0));
+			m_infoForBar.renderer->SetLightColour(m_positionLight2, vec3(1, 0, 0));
+			m_colourTimer = 0.5f;
+		}
 		return false;
 	}
 
@@ -732,6 +834,7 @@ void CheckersTest::UseAIMove()
 			if (m_board[i][j] != -1)
 			{
 				m_infoForBar.renderer->SetEmitterPosition(m_emitters[m_board[i][j]], true, vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * i, 5, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * j));
+				m_infoForBar.renderer->SetLightPosition(m_pieceLights[m_board[i][j]], vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * i, 5, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * j));
 				emittersMoved[m_board[i][j]] = true;
 			}
 		}
@@ -743,6 +846,7 @@ void CheckersTest::UseAIMove()
 		if (!emittersMoved[i])
 		{
 			m_infoForBar.renderer->SetEmitterPosition(m_emitters[i], true, vec3(M_TILE_WIDTH * 5.5f * ((m_emitters[i] < 12) ? -1 : 1), 5, 0));
+			m_infoForBar.renderer->SetLightPosition(m_pieceLights[i], vec3(M_TILE_WIDTH * 5.5f * ((m_emitters[i] < 12) ? -1 : 1), 5, 0));
 		}
 	}
 

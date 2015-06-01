@@ -41,6 +41,7 @@ private:
 	InfoForBar m_infoForBar;
 
 	std::vector<unsigned int> m_emitters;
+	std::vector<unsigned int> m_pieceLights;
 
 	const float M_TILE_WIDTH = 12.5f;
 
@@ -54,6 +55,10 @@ private:
 	unsigned int m_previousY;
 
 	unsigned int m_positionMarker;
+	unsigned int m_positionLight;
+	unsigned int m_positionLight2;
+
+	float m_colourTimer;
 
 	float m_inputTimer;
 

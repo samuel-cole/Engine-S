@@ -62,8 +62,6 @@ int Tutorial4::Init()
 	m_renderer->LoadTexture("../data/crate.png", location);
 	m_renderer->LoadNormalMap("../data/rock_normal.tga", location);
 
-	m_renderer->CreatePointLight(vec3(1, 0, 0), 10, vec3(0, 1, 1));
-
 
 
 	return 0;

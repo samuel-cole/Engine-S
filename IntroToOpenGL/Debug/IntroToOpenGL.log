@@ -1,9 +1,38 @@
-﻿Build started 1/06/2015 3:30:30 PM.
+﻿Build started 1/06/2015 5:34:27 PM.
      1>Project "E:\My Documents\Visual Studio 2013\IntroToOpenGL\IntroToOpenGL\IntroToOpenGL.vcxproj" on node 2 (Build target(s)).
-     1>Link:
+     1>ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /I"E:\My Documents\Visual Studio 2013\IntroToOpenGL\dep\stb" /I"E:\My Documents\Visual Studio 2013\IntroToOpenGL\src" /I"E:\My Documents\Visual Studio 2013\IntroToOpenGL\dep\glm" /I"E:\My Documents\Visual Studio 2013\IntroToOpenGL\dep\aieutilities" /I"E:\My Documents\Visual Studio 2013\IntroToOpenGL\dep\glfw-3.1.bin.WIN32\include" /I"E:\My Documents\Visual Studio 2013\IntroToOpenGL\dep\AntTweakBar\include" /I"E:\My Documents\Visual Studio 2013\IntroToOpenGL\dep\fbx" /ZI /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _CONSOLE /D GLM_FORCE_PURE /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt ..\src\checkersTest\CheckersTest1.cpp
+         CheckersTest1.cpp
+       Link:
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"E:\My Documents\Visual Studio 2013\IntroToOpenGL\Debug\IntroToOpenGL.exe" /INCREMENTAL /NOLOGO /LIBPATH:"E:\My Documents\Visual Studio 2013\IntroToOpenGL\dep\AntTweakBar\lib" /LIBPATH:"E:\My Documents\Visual Studio 2013\IntroToOpenGL\dep\fbx" /LIBPATH:"E:\My Documents\Visual Studio 2013\IntroToOpenGL\dep\glfw-3.1.bin.WIN32\lib-vc2013" glfw3.lib opengl32.lib FBXLoader_d.lib AntTweakBar.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"E:\My Documents\Visual Studio 2013\IntroToOpenGL\Debug\IntroToOpenGL.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"E:\My Documents\Visual Studio 2013\IntroToOpenGL\Debug\IntroToOpenGL.lib" /MACHINE:X86 Debug\Gizmos.obj
+         Debug\Application.obj
+         Debug\Camera.obj
+         Debug\CheckersTest1.obj
+         Debug\FlyCamera.obj
+         Debug\gl_core_4_4.obj
+         Debug\GPUParticle.obj
+         Debug\InputManager.obj
+         Debug\main.obj
+         Debug\mirrorTest1.obj
+         Debug\Particle.obj
+         Debug\Renderer.obj
+         Debug\StaticCamera.obj
+         Debug\Tutorial10.obj
+         Debug\Tutorial11.obj
+         Debug\Tutorial12.obj
+         Debug\Tutorial13.obj
+         Debug\Tutorial2.obj
+         Debug\Tutorial3.obj
+         Debug\Tutorial4.obj
+         Debug\Tutorial5.obj
+         Debug\Tutorial6.obj
+         Debug\Tutorial7.obj
+         Debug\Tutorial8.obj
+         Debug\Tutorial9.obj
+         Debug\Tutorial1.obj
          IntroToOpenGL.vcxproj -> E:\My Documents\Visual Studio 2013\IntroToOpenGL\Debug\IntroToOpenGL.exe
      1>Done Building Project "E:\My Documents\Visual Studio 2013\IntroToOpenGL\IntroToOpenGL\IntroToOpenGL.vcxproj" (Build target(s)).
 
 Build succeeded.
 
-Time Elapsed 00:00:00.04
+Time Elapsed 00:00:01.20

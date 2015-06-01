@@ -159,6 +159,8 @@ private:
 	//HUD bar used for debugging.
 	TwBar* m_bar;
 
+	//Whether or not the directional light should be on.
+	bool m_dirLightToggle;
 	//The direction that light is coming from.
 	vec3 m_lightDir;
 	//The colour of the light.
@@ -265,8 +267,8 @@ public:
 	//Generates a grid of vertices on the x-z plane with the specified number of rows and columns. Returns the index of the grid, for use in texturing/transform altering.
 	unsigned int GenerateGrid(const unsigned int a_rows, const unsigned int a_columns);
 
-	//Generates a point light. Returns an index to the point light.
-	unsigned int CreatePointLight(const vec3& a_colour, const float a_radius, const vec3& a_position = vec3(0, 0, 0));
+	//Generates a point light of the specified colour and radius. Set a_debug to true to add the light to antweakbar. Returns an index to the point light.
+	unsigned int CreatePointLight(const vec3& a_colour, const float a_radius, const bool a_debug, const vec3& a_position = vec3(0, 0, 0));
 
 	//Method for creating a particle emitter. Note that the emit rate variable will not be used if gpu-based particles are created, and that the direction and directionvariance variables will not be used for cpu particles.
 	unsigned int CreateEmitter(const unsigned int a_maxParticles, const unsigned int a_emitRate, const float a_lifespanMin, const float a_lifespanMax, const  float a_velocityMin, const float a_velocityMax, 
@@ -279,8 +281,15 @@ public:
 							   const float a_startSize, const float a_endSize, const vec4& a_startColour, const vec4& a_endColour, const vec3& a_direction, const float a_directionVariance, const bool a_gpuBased, TwBar* a_bar);
 
 	//Sets the position of the emitter at the specified index to the position indicated.
+	void SetLightPosition(const unsigned int a_index, const vec3& a_position);
+	//Returns the position of the emitter at the specified index.
+	const vec3& GetLightPosition(const unsigned int a_index);
+	//Sets the colour of the emitter at the specified index to the colour indicated.
+	void SetLightColour(const unsigned int a_index, const vec3& a_colour);
+
+	//Sets the position of the emitter at the specified index to the position indicated.
 	void SetEmitterPosition(const unsigned int a_index, const bool a_gpuBased, const vec3& a_position);
-	//Returns the position of the emitter at thye specified index.
+	//Returns the position of the emitter at the specified index.
 	const vec3& GetEmitterPosition(const unsigned int a_index, const bool a_gpuBased);
 
 	//Method for destroying an emitter- takes in the index of the emitter, and whether it was GPU based or not.
