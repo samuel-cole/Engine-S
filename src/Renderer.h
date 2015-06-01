@@ -28,15 +28,14 @@ enum UniformTypes
 	CAMERA_POS,
 	SPEC_POW,
 	DIFFUSE,
+	AMBIENT,
 	NORMAL,
 	SPECULAR,
 	LIGHT_MATRIX,
 	SHADOW_MAP,
 	SHADOW_BIAS,
 	MIRROR_MATRIX,
-	VIEW,
-	ALBEDO,
-	LIGHT
+	VIEW
 };
 
 struct Vertex
@@ -97,8 +96,10 @@ private:
 	//Uniform Locations. Indexed with program id, then uniform type.
 	std::vector<std::vector<unsigned int>> m_uniformLocations;
 
-	//Vector containing all of the textures associated with this renderer.
+	//Vector containing all of the textures (diffuse maps) associated with this renderer.
 	std::vector<unsigned int> m_textures;
+	//Vector containing all of the ambient maps associated with this renderer. NOTE: Ambient maps are only used while in deferred rendering mode.
+	std::vector<unsigned int> m_ambients;
 	//Vector containing all of the normal maps associated with this renderer.
 	std::vector<unsigned int> m_normals;
 	//Vector containing all of the specular maps associated with this renderer.
@@ -106,7 +107,9 @@ private:
 	//Vector containing the camera that each mirror uses for rendering.
 	std::vector<unsigned int> m_mirrors;
 
-	//Default black diffuse used for objects without a diffuse map.
+	//Default black ambient used for objects without an ambient map.
+	unsigned int m_defaultAmbient;
+	//Default grey diffuse used for objects without a diffuse map.
 	unsigned int m_defaultDiffuse;
 	//Default normal map used for objects without a normal map.
 	unsigned int m_defaultNormal;
@@ -177,9 +180,9 @@ private:
 	std::list<float> m_pointRadii;
 
 	//These variables are used to set up the G-Pass.
-	unsigned int m_gpassFBO, m_albedoTexture, m_positionTexture, m_normalTexture, m_gpassDepth;
+	unsigned int m_gpassFBO, m_diffuseTexture, m_ambientTexture, m_positionTexture, m_normalTexture, m_specularTexture, m_gpassDepth;
 	//These variables are used to set up the light pass.
-	unsigned int m_lightFBO, m_lightTexture;
+	unsigned int m_lightFBO, m_lightDiffuseTexture, m_lightSpecularTexture;
 	//These are the programs used for deferred rendering.
 	unsigned int m_gpassProgram, m_gpassAnimProgram, m_dirLightProgram, m_pointLightProgram, m_compositeProgram;
 	//Bool to store whether everything is currently being rendered with forwards rendering or deferred rendering. True for deferred.
@@ -247,6 +250,8 @@ public:
 	void LoadTexture(const std::string& a_filePath, const unsigned int a_index);
 	//Method for loading in a texture that has already been created (used in conjunction with LoadFrameBuffer to create render targets).
 	void LoadTexture(const unsigned int a_textureIndex, const unsigned int a_index);
+	//Method for lading in an ambient map. Pass the index of the model to have the ambient map applied to it into a_index. NOTE: AMBIENT MAPS ARE ONLY USED IN 'DEFERRED' RENDER MODE.
+	void LoadAmbient(const std::string& a_filePath, const unsigned int a_index);
 	//Method for loading in a normal map. Pass the index of the model to have the normal map applied to it into a_index.
 	void LoadNormalMap(const std::string& a_filePath, const unsigned int a_index);
 	//Method for loading in a specular map. Pass the index of the model to have the specular map applied to it into a_index.

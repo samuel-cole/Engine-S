@@ -70,7 +70,8 @@ m_standardProgram(-1), m_particleProgram(-1), m_animatedProgram(-1), m_postProce
 
 	m_postProcessingProgram = CreateProgram("../data/shaders/vertPostProcessing.txt", "../data/shaders/fragPostProcessing.txt");
 
-	m_defaultDiffuse = LoadTexture("../data/default/specular.png");
+	m_defaultAmbient = LoadTexture("../data/default/specular.png");
+	m_defaultDiffuse = LoadTexture("../data/default/diffuse.png");
 	m_defaultNormal = LoadTexture("../data/default/normal.png");
 	m_defaultShadow = LoadTexture("../data/default/shadow.png");
 	m_defaultSpec = m_defaultShadow;
@@ -96,9 +97,23 @@ void Renderer::SetupGpass()
 	glGenFramebuffers(1, &m_gpassFBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, m_gpassFBO);
 
-	//Set up albedo.
-	glGenTextures(1, &m_albedoTexture);
-	glBindTexture(GL_TEXTURE_2D, m_albedoTexture);
+	//Set up diffuse.
+	glGenTextures(1, &m_diffuseTexture);
+	glBindTexture(GL_TEXTURE_2D, m_diffuseTexture);
+	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB8, 1280, 720);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+	//Set up ambient.
+	glGenTextures(1, &m_ambientTexture);
+	glBindTexture(GL_TEXTURE_2D, m_ambientTexture);
+	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB8, 1280, 720);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+	//Set up specular.
+	glGenTextures(1, &m_specularTexture);
+	glBindTexture(GL_TEXTURE_2D, m_specularTexture);
 	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB8, 1280, 720);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -125,14 +140,22 @@ void Renderer::SetupGpass()
 	
 	//In case I forget : a frame buffer is essentially just a collection of pointers to render buffers and textures.Render buffers are actual collections of pixels.
 	//Set textures for the frame buffer.
-	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, m_albedoTexture, 0);
-	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, m_positionTexture, 0);
-	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, m_normalTexture, 0);
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, m_diffuseTexture, 0);
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, m_ambientTexture, 0);
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, m_specularTexture,0);
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, m_positionTexture,0);
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT4, m_normalTexture,  0);
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_gpassDepth);
 
-	GLenum gpassTargets[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
+	GLenum gpassTargets[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4 };
 
-	glDrawBuffers(3, gpassTargets);
+	glDrawBuffers(5, gpassTargets);
+
+	//Check for errors
+	unsigned int status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+	if (status != GL_FRAMEBUFFER_COMPLETE)
+		std::cout << "Error: G-Pass Framebuffer generation failed!" << std::endl;
+
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	m_gpassProgram = CreateProgram("../data/shaders/vertGbuffer.txt", "../data/shaders/fragGbuffer.txt");
@@ -145,18 +168,29 @@ void Renderer::SetupLightBuffer()
 	glGenFramebuffers(1, &m_lightFBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, m_lightFBO);
 
-	//Light texture
-	glGenTextures(1, &m_lightTexture);
-	glBindTexture(GL_TEXTURE_2D, m_lightTexture);
+	//Diffuse texture
+	glGenTextures(1, &m_lightDiffuseTexture);
+	glBindTexture(GL_TEXTURE_2D, m_lightDiffuseTexture);
 	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB8, 1280, 720);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_lightTexture, 0);
+	//Specular texture
+	glGenTextures(1, &m_lightSpecularTexture);
+	glBindTexture(GL_TEXTURE_2D, m_lightSpecularTexture);
+	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB8, 1280, 720);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
-	GLenum lightTargets[] = { GL_COLOR_ATTACHMENT0 };
-	glDrawBuffers(1, lightTargets);
+	//Tell OpenGL which textures to render to.
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, m_lightDiffuseTexture, 0);
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, m_lightSpecularTexture, 0);
 
+	GLenum lightTargets[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+
+	glDrawBuffers(2, lightTargets);
+	
+	//Check for errors
 	unsigned int status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 	if (status != GL_FRAMEBUFFER_COMPLETE)
 		std::cout << "Error: Light Framebuffer generation failed!" << std::endl;
@@ -269,6 +303,7 @@ unsigned int Renderer::CreateProgram(const string& a_vertPath, const string& a_f
 	m_uniformLocations[programID].push_back(glGetUniformLocation(programID, "CameraPos"));
 	m_uniformLocations[programID].push_back(glGetUniformLocation(programID, "SpecPow"));
 	m_uniformLocations[programID].push_back(glGetUniformLocation(programID, "Diffuse"));
+	m_uniformLocations[programID].push_back(glGetUniformLocation(programID, "Ambient"));
 	m_uniformLocations[programID].push_back(glGetUniformLocation(programID, "Normal"));
 	m_uniformLocations[programID].push_back(glGetUniformLocation(programID, "Specular"));
 	m_uniformLocations[programID].push_back(glGetUniformLocation(programID, "LightMatrix"));
@@ -276,8 +311,6 @@ unsigned int Renderer::CreateProgram(const string& a_vertPath, const string& a_f
 	m_uniformLocations[programID].push_back(glGetUniformLocation(programID, "ShadowBias"));
 	m_uniformLocations[programID].push_back(glGetUniformLocation(programID, "MirrorMatrix"));
 	m_uniformLocations[programID].push_back(glGetUniformLocation(programID, "View"));
-	m_uniformLocations[programID].push_back(glGetUniformLocation(programID, "AlbedoTexture"));
-	m_uniformLocations[programID].push_back(glGetUniformLocation(programID, "LightTexture"));
 
 	return programID;
 }
@@ -567,11 +600,6 @@ unsigned int Renderer::LoadTexture(const std::string& a_path)
 
 void Renderer::LoadTexture(const string& a_filePath, const unsigned int a_index)
 {
-	//while (a_index >= m_textures.size())
-	//{
-	//	m_textures.push_back(-1);
-	//}
-
 	if (a_index >= m_numOfIndices.size() || m_numOfIndices[a_index] == -1)
 	{
 		std::cout << "Error: Loading texture for invalid object!" << std::endl;
@@ -604,6 +632,26 @@ void Renderer::LoadTexture(const unsigned int a_textureIndex, const unsigned int
 	}
 
 	m_textures[a_index] = a_textureIndex;
+}
+
+void Renderer::LoadAmbient(const string& a_filePath, const unsigned int a_index)
+{
+	if (a_index >= m_numOfIndices.size() || m_numOfIndices[a_index] == -1)
+	{
+		std::cout << "Error: Loading texture for invalid object!" << std::endl;
+		return;
+	}
+
+	int imageWidth = 0, imageHeight = 0, imageFormat = 0;
+	unsigned char* data = stbi_load(a_filePath.c_str(), &imageWidth, &imageHeight, &imageFormat, STBI_default);
+
+	glGenTextures(1, &m_ambients[a_index]);
+	glBindTexture(GL_TEXTURE_2D, m_ambients[a_index]);
+	glTexImage2D(GL_TEXTURE_2D, 0, (imageFormat == 4) ? GL_RGBA : GL_RGB, imageWidth, imageHeight, 0, (imageFormat == 4) ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, data);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+	stbi_image_free(data);
 }
 
 void Renderer::LoadNormalMap(const string& a_filePath, const unsigned int a_index)
@@ -1174,7 +1222,7 @@ void Renderer::Draw()
 
 	if (!m_deferredRenderMode)
 	{
-#pragma region NOT_DEFERRED_CODE
+#pragma region FORWARD_CODE
 		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 		if (m_shadowGenProgram != -1)
@@ -1246,13 +1294,11 @@ void Renderer::Draw()
 
 		glBindVertexArray(m_VAO[0]);
 		glDrawElements(GL_TRIANGLES, m_numOfIndices[0], GL_UNSIGNED_INT, nullptr);
-#pragma endregion
+#pragma endregion FORWARD_CODE
 	}
 	else
 	{
 #pragma region DEFERRED_CODE
-
-
 
 		///////////////////////////G-Pass\\\\\\\\\\\\\\\\\\\\\\\\
 		//G-Pass: render out the albedo, position and normal.
@@ -1281,10 +1327,20 @@ void Renderer::Draw()
 			glBindTexture(GL_TEXTURE_2D, ((m_textures[i] == -1) ? m_defaultDiffuse : m_textures[i]));
 			glUniform1i((m_uniformLocations[m_gpassProgram])[DIFFUSE], 0);
 
-			// Set Normal Map Slot
+			// Set Ambient Slot
 			glActiveTexture(GL_TEXTURE1);
+			glBindTexture(GL_TEXTURE_2D, ((m_ambients[i] == -1) ? m_defaultAmbient : m_ambients[i]));
+			glUniform1i((m_uniformLocations[m_gpassProgram])[AMBIENT], 1);
+
+			// Set Specular Slot
+			glActiveTexture(GL_TEXTURE2);
+			glBindTexture(GL_TEXTURE_2D, ((m_speculars[i] == -1) ? m_defaultSpec : m_speculars[i]));
+			glUniform1i((m_uniformLocations[m_gpassProgram])[SPECULAR], 2);
+
+			// Set Normal Map Slot
+			glActiveTexture(GL_TEXTURE3);
 			glBindTexture(GL_TEXTURE_2D, ((m_normals[i] == -1) ? m_defaultNormal : m_normals[i]));
-			glUniform1i((m_uniformLocations[m_gpassProgram])[NORMAL], 1);
+			glUniform1i((m_uniformLocations[m_gpassProgram])[NORMAL], 3);
 
 			glBindVertexArray(m_VAO[i]);
 			glDrawElements(GL_TRIANGLES, m_numOfIndices[i], GL_UNSIGNED_INT, nullptr);
@@ -1308,10 +1364,20 @@ void Renderer::Draw()
 			glBindTexture(GL_TEXTURE_2D, ((m_textures[i] == -1) ? m_defaultDiffuse : m_textures[i]));
 			glUniform1i((m_uniformLocations[m_gpassAnimProgram])[DIFFUSE], 0);
 		
-			// Set Normal Map Slot
+			// Set Ambient Slot
 			glActiveTexture(GL_TEXTURE1);
+			glBindTexture(GL_TEXTURE_2D, ((m_ambients[i] == -1) ? m_defaultDiffuse : m_ambients[i]));
+			glUniform1i((m_uniformLocations[m_gpassProgram])[AMBIENT], 1);
+
+			// Set Specular Slot
+			glActiveTexture(GL_TEXTURE2);
+			glBindTexture(GL_TEXTURE_2D, ((m_speculars[i] == -1) ? m_defaultSpec : m_speculars[i]));
+			glUniform1i((m_uniformLocations[m_gpassProgram])[SPECULAR], 2);
+
+			// Set Normal Map Slot
+			glActiveTexture(GL_TEXTURE3);
 			glBindTexture(GL_TEXTURE_2D, ((m_normals[i] == -1) ? m_defaultNormal : m_normals[i]));
-			glUniform1i((m_uniformLocations[m_gpassAnimProgram])[NORMAL], 1);
+			glUniform1i((m_uniformLocations[m_gpassAnimProgram])[NORMAL], 3);
 		
 			glBindVertexArray(m_VAO[i]);
 			glDrawElements(GL_TRIANGLES, m_numOfIndices[i], GL_UNSIGNED_INT, nullptr);
@@ -1330,9 +1396,8 @@ void Renderer::Draw()
 		glBlendFunc(GL_ONE, GL_ONE);
 		glEnable(GL_CULL_FACE);
 
-		//Draw lights as fullscreen quads.
+		//Draw each type of light.
 		DrawDirectionalLight();
-
 		DrawPointLights();
 
 		glDisable(GL_BLEND);
@@ -1350,15 +1415,30 @@ void Renderer::Draw()
 
 		glUseProgram(m_compositeProgram);
 
-		//Albedo
+		//Diffuse
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, m_albedoTexture);
-		glUniform1i((m_uniformLocations[m_compositeProgram])[ALBEDO], 0);
+		glBindTexture(GL_TEXTURE_2D, m_diffuseTexture);
+		glUniform1i((m_uniformLocations[m_compositeProgram])[DIFFUSE], 0);
+
+		//Ambient
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, m_ambientTexture);
+		glUniform1i((m_uniformLocations[m_compositeProgram])[AMBIENT], 1);
+
+		//Specular
+		glActiveTexture(GL_TEXTURE2);
+		glBindTexture(GL_TEXTURE_2D, m_specularTexture);
+		glUniform1i((m_uniformLocations[m_compositeProgram])[SPECULAR], 2);
 
 		//Light
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, m_lightTexture);
-		glUniform1i((m_uniformLocations[m_compositeProgram])[LIGHT], 1);
+		glActiveTexture(GL_TEXTURE3);
+		glBindTexture(GL_TEXTURE_2D, m_lightDiffuseTexture);
+		glUniform1i((m_uniformLocations[m_compositeProgram])[LIGHT_COLOUR], 3);
+
+		//Light
+		glActiveTexture(GL_TEXTURE4);
+		glBindTexture(GL_TEXTURE_2D, m_lightSpecularTexture);
+		glUniform1i((m_uniformLocations[m_compositeProgram])[SPEC_POW], 4);
 
 		//Draw
 		glBindVertexArray(m_VAO[0]);
@@ -1850,6 +1930,8 @@ void Renderer::LoadIntoOpenGL(const Vertex* const a_verticesArray, const unsigne
 	//Add a new empty entry into each of this objects appropriate vectors.
 	if (m_textures.size() < m_numOfIndices.size())
 		m_textures.push_back(-1);
+	if (m_ambients.size() < m_numOfIndices.size())
+		m_ambients.push_back(-1);
 	if (m_normals.size() < m_numOfIndices.size())
 		m_normals.push_back(-1);
 	if (m_speculars.size() < m_numOfIndices.size())
@@ -1914,6 +1996,8 @@ void Renderer::DestroyObject(const unsigned int a_index)
 
 	glDeleteTextures(1, &m_textures[a_index]);
 	m_textures[a_index] = -1;
+	glDeleteTextures(1, &m_ambients[a_index]);
+	m_ambients[a_index] = -1;
 	glDeleteTextures(1, &m_normals[a_index]);
 	m_normals[a_index] = -1;
 	glDeleteTextures(1, &m_speculars[a_index]);
@@ -1972,6 +2056,11 @@ void Renderer::CleanupBuffers()
 	{
 		if (m_textures[i] != -1)
 			glDeleteTextures(1, &m_textures[i]);
+	}
+	for (unsigned int i = 0; i < m_ambients.size(); ++i)
+	{
+		if (m_ambients[i] != -1)
+			glDeleteTextures(1, &m_ambients[i]);
 	}
 	for (unsigned int i = 0; i < m_normals.size(); ++i)
 	{

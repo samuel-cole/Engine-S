@@ -59,6 +59,8 @@ private:
 
 	unsigned int m_pieceSelected;
 
+	unsigned int m_aiDifficulty;
+
 	std::thread m_aiThread;
 
 	bool m_threadFinished;

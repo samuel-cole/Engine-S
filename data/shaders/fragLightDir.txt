@@ -2,7 +2,8 @@
 
 in vec2 vUV;
 
-out vec3 LightOutput;
+layout(location = 0) out vec3 diffuseOutput;
+layout(location = 1) out vec3 specularOutput;
 
 uniform vec3 LightDir;
 uniform vec3 LightColour;
@@ -20,14 +21,12 @@ void main()
 
 	//Diffuse
 	float d = max(0, dot(normal, -LightDir));
+	diffuseOutput = LightColour * d * 0.5f;
 
 	//Specular
 	vec3 E = normalize( CameraPos - position );
 	vec3 R = reflect( LightDir, normal );
 	float s = max( 0, dot( R, E ) );
 	s = pow( s, SpecPow );
-
-	LightOutput = LightColour * d + LightColour * s;
-
-	LightOutput /= 3;
+	specularOutput = LightColour * s * 0.5f;
 }

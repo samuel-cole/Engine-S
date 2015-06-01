@@ -36,6 +36,7 @@ int CheckersTest::Init()
 	m_infoForBar.seed = 0;
 	m_infoForBar.object = m_infoForBar.renderer->GenerateGrid(100, 100);
 	m_infoForBar.renderer->LoadTexture("../data/checkerboard.png", m_infoForBar.object);
+	m_infoForBar.renderer->LoadAmbient("../data/checkerboard.png", m_infoForBar.object);
 	m_infoForBar.renderer->GeneratePerlinNoiseMap(9, 9, 6, m_infoForBar.amplitude, m_infoForBar.persistence, m_infoForBar.object, m_infoForBar.seed, false);
 
 	//M_TILE_WIDTH = 100.0f / 8.0f;
@@ -45,6 +46,7 @@ int CheckersTest::Init()
 	TwAddVarRW(m_debugBar, "Persistence", TW_TYPE_FLOAT, &m_infoForBar.persistence, "");
 	TwAddVarRW(m_debugBar, "Seed", TW_TYPE_UINT32, &m_infoForBar.seed, "");
 	TwAddButton(m_debugBar, "Re-generate", BoardGenerate, (void*)&m_infoForBar, "");
+	TwAddVarRW(m_debugBar, "AI Difficulty", TW_TYPE_UINT32, &m_aiDifficulty, "");
 
 	TwAddSeparator(m_debugBar, "Lights", "");
 	TwAddButton(m_debugBar, "AddLight", AddLight, (void*)(m_infoForBar.renderer), "");
@@ -52,10 +54,10 @@ int CheckersTest::Init()
 	for (unsigned int i = 0; i < 24; ++i)
 	{
 		unsigned int emitter = m_infoForBar.renderer->CreateEmitter(1000, //Max particles
-			0.1f,			//Lifespan minimum 
-			1.0f,			//Lifespan maximum
-			0.1f,			//Velocity minimum
-			10.0f,			//Velocity maximum
+			0.2f,			//Lifespan minimum 
+			2.0f,			//Lifespan maximum
+			0.05f,			//Velocity minimum
+			5.0f,			//Velocity maximum
 			1.0f,			//Start size
 			0.1f,			//End size
 			((i < 12) ? vec4(1, 0, 0, 1) : vec4(0, 0, 1, 1)), //Start colour
@@ -122,6 +124,7 @@ int CheckersTest::Init()
 	m_turn = false;
 
 	m_threadFinished = true;
+	m_aiDifficulty = 10;
 
 	return 0;
 }
@@ -199,6 +202,11 @@ void CheckersTest::Update(float a_deltaTime)
 			std::thread thr(&CheckersTest::UseAIMove, this);
 			std::swap(thr, m_aiThread);
 			m_aiThread.detach();
+		}
+		else if (InputManager::GetKey(Keys::ENTER))
+		{
+			std::cout << "Invalid Move: Must Wait For Computer Opponents Move!" << std::endl;
+			m_inputTimer = 0.15f;
 		}
 	}
 
@@ -438,8 +446,22 @@ void CheckersTest::AIMove(int(&a_board)[8][8], const bool a_turn, const unsigned
 	}
 
 	actions = GetPossibleMoves(cloneBoard, a_turn);
-	scores.assign(actions.size(), 0);
 
+	//If there is only one action, do that action.
+	if (actions.size() == 1)
+	{
+		for (int i = 0; i < 8; ++i)
+		{
+			for (int j = 0; j < 8; ++j)
+			{
+				a_board[i][j] = actions[0][i][j];
+			}
+		}
+		return;
+	}
+
+
+	scores.assign(actions.size(), 0);
 	for (unsigned int i = 0; i < actions.size(); ++i)
 	{
 		for (unsigned int j = 0; j < a_difficulty; ++j)
@@ -700,7 +722,7 @@ void CheckersTest::UseAIMove()
 	std::vector<bool> emittersMoved;
 	emittersMoved.assign(24, false);
 
-	AIMove(m_board, m_turn, 10);
+	AIMove(m_board, m_turn, m_aiDifficulty);
 	m_turn = !m_turn;
 	//Move pieces
 	for (unsigned int i = 0; i < 8; ++i)

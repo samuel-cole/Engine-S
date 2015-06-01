@@ -4,17 +4,21 @@ in vec2 vUV;
 
 out vec4 FragColour;
 
-uniform sampler2D AlbedoTexture;
-uniform sampler2D LightTexture;
+uniform sampler2D Diffuse;
+uniform sampler2D Ambient;
+uniform sampler2D Specular;
+//LightColour is used for the diffuse light map passed back by the light pass, and SpecPow is used for the specular light map passed back by the light pass.
+//These variables are used to cut back on overhead in the C++ code.
+uniform sampler2D LightColour;
+uniform sampler2D SpecPow;
 
 void main()
 {
-	vec3 light = texture(LightTexture, vUV).rgb * 3;
-	vec3 albedo = texture(AlbedoTexture, vUV).rgb;
+	vec3 diffuseLight = texture(LightColour, vUV).rgb;
+	vec3 specLight = texture(SpecPow, vUV).rgb;
+	vec3 diffuse = texture(Diffuse, vUV).rgb;
+	vec3 ambient = texture(Ambient, vUV).rgb;
+	vec3 specular = texture(Specular, vUV).rgb;
 
-	bool ambient;
-	ambient = (length(albedo * light) > 0.1);
-
-	FragColour = float(ambient) * vec4(albedo * light, 1) + float(!ambient) * vec4(0.1, 0.1, 0.1, 1) * vec4(albedo, 1);
-	//FragColour = vec4(light, 1);
+	FragColour =  vec4(ambient, 1) * 0.1f + vec4(diffuse * diffuseLight, 1) + vec4(specular * specLight, 1);
 } 

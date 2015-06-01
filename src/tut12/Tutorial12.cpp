@@ -27,7 +27,7 @@ void TW_CALL Regenerate2(void* a_clientData)
 
 	buttonInfo->renderer->DestroyObject(buttonInfo->object);
 	buttonInfo->object = buttonInfo->renderer->GenerateGrid(buttonInfo->rows, buttonInfo->columns);
-	buttonInfo->renderer->LoadTexture("../data/grey.png", buttonInfo->object);
+	buttonInfo->renderer->LoadTexture("../data/default/diffuse.png", buttonInfo->object);
 	buttonInfo->renderer->GeneratePerlinNoiseMap(buttonInfo->perlinRows, buttonInfo->perlinColumns, 6, buttonInfo->amplitude, buttonInfo->persistence, buttonInfo->object, buttonInfo->seed, true);
 }
 
