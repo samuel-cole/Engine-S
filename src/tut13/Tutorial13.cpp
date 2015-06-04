@@ -34,39 +34,71 @@ int Tutorial13::Init()
 
 	m_renderer = new Renderer(m_camera, m_debugBar);
 
-	//Lower suit
-	unsigned int location = m_renderer->LoadOBJ("../data/vanquish/lower.obj");
-	m_renderer->LoadTexture("../data/vanquish/lower_d.tga", location);
-	m_renderer->LoadNormalMap("../data/vanquish/lower_n.tga", location);
+	for (int i = 0; i < 1000; ++i)
+	{
+		glm::mat4 randomPos = glm::translate(vec3(((float)rand() / (float)RAND_MAX) * 100.0f, ((float)rand() / (float)RAND_MAX) * 100.0f, ((float)rand() / (float)RAND_MAX) * 100.0f));
 
-	//Upper suit
-	location = m_renderer->LoadOBJ("../data/vanquish/upper.obj");
-	m_renderer->LoadTexture("../data/vanquish/upper_d.tga", location);
-	m_renderer->LoadNormalMap("../data/vanquish/upper_n.tga", location);
+		//Lower suit
+		unsigned int location = m_renderer->LoadOBJ("../data/vanquish/lower.obj");
+		m_renderer->LoadAmbient("../data/vanquish/lower_d.tga", location);
+		m_renderer->LoadTexture("../data/vanquish/lower_d.tga", location);
+		m_renderer->LoadSpecularMap("../data/vanquish/lower_d.tga", location);
+		m_renderer->LoadNormalMap("../data/vanquish/lower_n.tga", location);
 
-	//Inner suit
-	location = m_renderer->LoadOBJ("../data/vanquish/inner.obj");
-	m_renderer->LoadTexture("../data/vanquish/inner_d.tga", location);
-	m_renderer->LoadNormalMap("../data/vanquish/inner_n.tga", location);
+		m_renderer->SetTransform(randomPos, location);
 
-	//Hand
-	location = m_renderer->LoadOBJ("../data/vanquish/hand.obj");
-	m_renderer->LoadTexture("../data/vanquish/inner_d.tga", location);
-	m_renderer->LoadNormalMap("../data/vanquish/inner_n.tga", location);
+		//Upper suit
+		location = m_renderer->LoadOBJ("../data/vanquish/upper.obj");
+		m_renderer->LoadAmbient("../data/vanquish/upper_d.tga", location);
+		m_renderer->LoadTexture("../data/vanquish/upper_d.tga", location);
+		m_renderer->LoadNormalMap("../data/vanquish/upper_n.tga", location);
+		m_renderer->LoadSpecularMap("../data/vanquish/upper_d.tga", location);
 
-	//Buttons
-	location = m_renderer->LoadOBJ("../data/vanquish/buttons.obj");
-	m_renderer->LoadTexture("../data/vanquish/upper_d.tga", location);
-	m_renderer->LoadNormalMap("../data/vanquish/upper_n.tga", location);
+		m_renderer->SetTransform(randomPos, location);
 
-	//Visor
-	location = m_renderer->LoadOBJ("../data/vanquish/visor.obj");
-	m_renderer->LoadTexture("../data/vanquish/visor.tga", location);
+		//Inner suit
+		location = m_renderer->LoadOBJ("../data/vanquish/inner.obj");
+		m_renderer->LoadAmbient("../data/vanquish/inner_d.tga", location);
+		m_renderer->LoadTexture("../data/vanquish/inner_d.tga", location);
+		m_renderer->LoadNormalMap("../data/vanquish/inner_n.tga", location);
+		m_renderer->LoadSpecularMap("../data/vanquish/inner_d.tga", location);
 
-	//Ground
-	location = m_renderer->GenerateGrid(10, 10);
-	m_renderer->LoadTexture("../data/crate.png", location);
-	m_renderer->LoadNormalMap("../data/rock_normal.tga", location);
+		m_renderer->SetTransform(randomPos, location);
+
+		//Hand
+		location = m_renderer->LoadOBJ("../data/vanquish/hand.obj");
+		m_renderer->LoadAmbient("../data/vanquish/inner_d.tga", location);
+		m_renderer->LoadTexture("../data/vanquish/inner_d.tga", location);
+		m_renderer->LoadNormalMap("../data/vanquish/inner_n.tga", location);
+		m_renderer->LoadSpecularMap("../data/vanquish/inner_d.tga", location);
+
+		m_renderer->SetTransform(randomPos, location);
+
+		//Buttons
+		location = m_renderer->LoadOBJ("../data/vanquish/buttons.obj");
+		m_renderer->LoadAmbient("../data/vanquish/upper_d.tga", location);
+		m_renderer->LoadTexture("../data/vanquish/upper_d.tga", location);
+		m_renderer->LoadNormalMap("../data/vanquish/upper_n.tga", location);
+		m_renderer->LoadSpecularMap("../data/vanquish/upper_d.tga", location);
+
+		m_renderer->SetTransform(randomPos, location);
+
+		//Visor
+		location = m_renderer->LoadOBJ("../data/vanquish/visor.obj");
+		m_renderer->LoadAmbient("../data/vanquish/visor.tga", location);
+		m_renderer->LoadTexture("../data/vanquish/visor.tga", location);
+		m_renderer->LoadSpecularMap("../data/vanquish/visor.tga", location);
+
+		m_renderer->SetTransform(randomPos, location);
+
+		//Ground
+		//location = m_renderer->GenerateGrid(10, 10);
+		//m_renderer->LoadTexture("../data/crate.png", location);
+		//m_renderer->LoadNormalMap("../data/rock_normal.tga", location);
+		//
+		//m_renderer->SetTransform(randomPos, location);
+	}
+	
 
 	//m_renderer->LoadOBJ("../data/teapot.obj");
 

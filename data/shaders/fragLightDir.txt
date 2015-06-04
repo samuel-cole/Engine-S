@@ -9,6 +9,8 @@ uniform vec3 LightDir;
 uniform vec3 LightColour;
 uniform vec3 CameraPos;
 uniform float SpecPow;
+//I use LightMatrix to represent light strength.
+uniform float LightMatrix;
 
 //This stores positions, I just named it global to prevent me from having to make more Uniform Types in the C++ side.
 uniform sampler2D Global;
@@ -21,12 +23,12 @@ void main()
 
 	//Diffuse
 	float d = max(0, dot(normal, -LightDir));
-	diffuseOutput = LightColour * d * 0.5f;
+	diffuseOutput = LightColour * d * LightMatrix;
 
 	//Specular
 	vec3 E = normalize( CameraPos - position );
 	vec3 R = reflect( LightDir, normal );
 	float s = max( 0, dot( R, E ) );
 	s = pow( s, SpecPow );
-	specularOutput = LightColour * s * 0.5f;
+	specularOutput = LightColour * s * LightMatrix;
 }

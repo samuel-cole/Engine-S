@@ -82,6 +82,7 @@
     <ClCompile Include="..\dep\aieutilities\Gizmos.cpp" />
     <ClCompile Include="..\src\Application.cpp" />
     <ClCompile Include="..\src\Camera.cpp" />
+    <ClCompile Include="..\src\checkersTest\CheckersMover.cpp" />
     <ClCompile Include="..\src\checkersTest\CheckersTest1.cpp" />
     <ClCompile Include="..\src\FlyCamera.cpp" />
     <ClCompile Include="..\src\gl_core_4_4.c" />
@@ -110,6 +111,7 @@
     <ClInclude Include="..\dep\aieutilities\Gizmos.h" />
     <ClInclude Include="..\src\Application.h" />
     <ClInclude Include="..\src\Camera.h" />
+    <ClInclude Include="..\src\checkersTest\CheckersMover.h" />
     <ClInclude Include="..\src\checkersTest\CheckersTest1.h" />
     <ClInclude Include="..\src\FlyCamera.h" />
     <ClInclude Include="..\src\gl_core_4_4.h" />

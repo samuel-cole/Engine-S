@@ -93,6 +93,9 @@
     <ClCompile Include="..\src\tut13\Tutorial13.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\checkersTest\CheckersMover.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\gl_core_4_4.h">
@@ -168,6 +171,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\src\tut13\Tutorial13.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\checkersTest\CheckersMover.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

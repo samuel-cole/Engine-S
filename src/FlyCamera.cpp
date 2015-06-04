@@ -6,7 +6,7 @@
 
 using glm::vec4;
 
-FlyCamera::FlyCamera(TwBar* a_debugBar) : m_speed(10.0f), m_up(0, 1, 0), m_viewButtonClicked(false), m_mouseStartPos(0, 0)
+FlyCamera::FlyCamera(TwBar* a_debugBar) : m_speed(50.0f), m_up(0, 1, 0), m_viewButtonClicked(false), m_mouseStartPos(0, 0)
 {
 	TwAddVarRW(a_debugBar, "Camera Speed", TW_TYPE_FLOAT, &m_speed, "");
 }

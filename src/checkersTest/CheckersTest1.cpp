@@ -74,6 +74,16 @@ int CheckersTest::Init()
 		m_pieceLights.push_back(light);
 	}
 
+	for (unsigned int i = 0; i < 16; ++i)
+	{
+		unsigned int loc = m_infoForBar.renderer->LoadOBJ("../data/teleporter/teleporter.obj");
+		m_infoForBar.renderer->LoadTexture("../data/teleporter/teleporter.jpg", loc);
+		m_infoForBar.renderer->LoadAmbient("../data/teleporter/teleporter.jpg", loc);
+		m_infoForBar.renderer->LoadSpecularMap("../data/teleporter/teleporter.jpg", loc);
+		
+		m_infoForBar.renderer->SetTransform(glm::translate(vec3(M_TILE_WIDTH * -3.5f + (i%8) * M_TILE_WIDTH, 5, M_TILE_WIDTH * (i < 8?4.5f:-4.5f))), loc);
+	}
+
 	for (unsigned int i = 0; i < 8; ++i)
 	{
 		for (unsigned int j = 0; j < 8; ++j)

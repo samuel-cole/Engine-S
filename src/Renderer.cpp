@@ -30,12 +30,12 @@ m_standardProgram(-1), m_particleProgram(-1), m_animatedProgram(-1), m_postProce
 	//Fill the uniform locations vector with empty vcetors. 300 should be more than enough programs.
 	m_uniformLocations.assign(300, std::vector<unsigned int>());
 
-	m_dirLightToggle = false;
+	m_dirLightStrength = 0.1f;
 	m_lightColour = vec3(1, 1, 1);
 	m_lightDir = vec3(1, -1, 1);
 	m_specPow = 2.0f;
 
-	TwAddVarRW(m_bar, "Directional Light", TW_TYPE_BOOLCPP, &m_dirLightToggle, "");
+	TwAddVarRW(m_bar, "Directional Light Strength", TW_TYPE_FLOAT, &m_dirLightStrength, "step=0.01");
 	TwAddVarRW(m_bar, "Light Colour", TW_TYPE_COLOR3F, &m_lightColour[0], "");
 	TwAddVarRW(m_bar, "Light Direction", TW_TYPE_DIR3F, &m_lightDir[0], "");
 	TwAddVarRW(m_bar, "Specular Power", TW_TYPE_FLOAT, &m_specPow, "");
@@ -607,17 +607,28 @@ void Renderer::LoadTexture(const string& a_filePath, const unsigned int a_index)
 		std::cout << "Error: Loading texture for invalid object!" << std::endl;
 		return;
 	}
+	
+	if (m_textureNames.find(a_filePath) == m_textureNames.end())
+	{
+		int imageWidth = 0, imageHeight = 0, imageFormat = 0;
+		unsigned char* data = stbi_load(a_filePath.c_str(), &imageWidth, &imageHeight, &imageFormat, STBI_default);
 
-	int imageWidth = 0, imageHeight = 0, imageFormat = 0;
-	unsigned char* data = stbi_load(a_filePath.c_str(), &imageWidth, &imageHeight, &imageFormat, STBI_default);
+		glGenTextures(1, &m_textures[a_index]);
+		glBindTexture(GL_TEXTURE_2D, m_textures[a_index]);
+		glTexImage2D(GL_TEXTURE_2D, 0, (imageFormat == 4) ? GL_RGBA : GL_RGB, imageWidth, imageHeight, 0, (imageFormat == 4) ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, data);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
-	glGenTextures(1, &m_textures[a_index]);
-	glBindTexture(GL_TEXTURE_2D, m_textures[a_index]);
-	glTexImage2D(GL_TEXTURE_2D, 0, (imageFormat == 4) ? GL_RGBA : GL_RGB, imageWidth, imageHeight, 0, (imageFormat == 4) ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, data);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		stbi_image_free(data);
 
-	stbi_image_free(data);
+		m_textureNames[a_filePath] = m_textures[a_index];
+	}
+	else
+	{
+		m_textures[a_index] = m_textureNames[a_filePath];
+	}
+
+
 }
 
 void Renderer::LoadTexture(const unsigned int a_textureIndex, const unsigned int a_index)
@@ -644,16 +655,25 @@ void Renderer::LoadAmbient(const string& a_filePath, const unsigned int a_index)
 		return;
 	}
 
-	int imageWidth = 0, imageHeight = 0, imageFormat = 0;
-	unsigned char* data = stbi_load(a_filePath.c_str(), &imageWidth, &imageHeight, &imageFormat, STBI_default);
+	if (m_textureNames.find(a_filePath) == m_textureNames.end())
+	{
+		int imageWidth = 0, imageHeight = 0, imageFormat = 0;
+		unsigned char* data = stbi_load(a_filePath.c_str(), &imageWidth, &imageHeight, &imageFormat, STBI_default);
 
-	glGenTextures(1, &m_ambients[a_index]);
-	glBindTexture(GL_TEXTURE_2D, m_ambients[a_index]);
-	glTexImage2D(GL_TEXTURE_2D, 0, (imageFormat == 4) ? GL_RGBA : GL_RGB, imageWidth, imageHeight, 0, (imageFormat == 4) ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, data);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glGenTextures(1, &m_ambients[a_index]);
+		glBindTexture(GL_TEXTURE_2D, m_ambients[a_index]);
+		glTexImage2D(GL_TEXTURE_2D, 0, (imageFormat == 4) ? GL_RGBA : GL_RGB, imageWidth, imageHeight, 0, (imageFormat == 4) ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, data);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
-	stbi_image_free(data);
+		stbi_image_free(data);
+
+		m_textureNames[a_filePath] = m_ambients[a_index];
+	}
+	else
+	{
+		m_ambients[a_index] = m_textureNames[a_filePath];
+	}
 }
 
 void Renderer::LoadNormalMap(const string& a_filePath, const unsigned int a_index)
@@ -669,16 +689,25 @@ void Renderer::LoadNormalMap(const string& a_filePath, const unsigned int a_inde
 		return;
 	}
 
-	int imageWidth = 0, imageHeight = 0, imageFormat = 0;
-	unsigned char* data = stbi_load(a_filePath.c_str(), &imageWidth, &imageHeight, &imageFormat, STBI_default);
+	if (m_textureNames.find(a_filePath) == m_textureNames.end())
+	{
+		int imageWidth = 0, imageHeight = 0, imageFormat = 0;
+		unsigned char* data = stbi_load(a_filePath.c_str(), &imageWidth, &imageHeight, &imageFormat, STBI_default);
 
-	glGenTextures(1, &m_normals[a_index]);
-	glBindTexture(GL_TEXTURE_2D, m_normals[a_index]);
-	glTexImage2D(GL_TEXTURE_2D, 0, (imageFormat == 4) ? GL_RGBA : GL_RGB, imageWidth, imageHeight, 0, (imageFormat == 4) ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, data);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glGenTextures(1, &m_normals[a_index]);
+		glBindTexture(GL_TEXTURE_2D, m_normals[a_index]);
+		glTexImage2D(GL_TEXTURE_2D, 0, (imageFormat == 4) ? GL_RGBA : GL_RGB, imageWidth, imageHeight, 0, (imageFormat == 4) ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, data);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
-	stbi_image_free(data);
+		stbi_image_free(data);
+
+		m_textureNames[a_filePath] = m_normals[a_index];
+	}
+	else
+	{
+		m_normals[a_index] = m_textureNames[a_filePath];
+	}
 }
 
 void Renderer::LoadSpecularMap(const string& a_filePath, const unsigned int a_index)
@@ -694,16 +723,25 @@ void Renderer::LoadSpecularMap(const string& a_filePath, const unsigned int a_in
 		return;
 	}
 
-	int imageWidth = 0, imageHeight = 0, imageFormat = 0;
-	unsigned char* data = stbi_load(a_filePath.c_str(), &imageWidth, &imageHeight, &imageFormat, STBI_default);
+	if (m_textureNames.find(a_filePath) == m_textureNames.end())
+	{
+		int imageWidth = 0, imageHeight = 0, imageFormat = 0;
+		unsigned char* data = stbi_load(a_filePath.c_str(), &imageWidth, &imageHeight, &imageFormat, STBI_default);
 
-	glGenTextures(1, &m_speculars[a_index]);
-	glBindTexture(GL_TEXTURE_2D, m_speculars[a_index]);
-	glTexImage2D(GL_TEXTURE_2D, 0, (imageFormat == 4) ? GL_RGBA : GL_RGB, imageWidth, imageHeight, 0, (imageFormat == 4) ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, data);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glGenTextures(1, &m_speculars[a_index]);
+		glBindTexture(GL_TEXTURE_2D, m_speculars[a_index]);
+		glTexImage2D(GL_TEXTURE_2D, 0, (imageFormat == 4) ? GL_RGBA : GL_RGB, imageWidth, imageHeight, 0, (imageFormat == 4) ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, data);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
-	stbi_image_free(data);
+		stbi_image_free(data);
+
+		m_textureNames[a_filePath] = m_speculars[a_index];
+	}
+	else
+	{
+		m_speculars[a_index] = m_textureNames[a_filePath];
+	}
 }
 
 void Renderer::SetTransform(const mat4& a_transform, const unsigned int a_index)
@@ -992,183 +1030,258 @@ unsigned int Renderer::LoadFBX(const string& a_filePath, const std::vector<strin
 		m_standardProgram = CreateProgram("../data/shaders/vert.txt", "../data/shaders/frag.txt");
 	}
 
-	FBXFile* file = new FBXFile();
-
-	file->load(a_filePath.c_str());
-	for (unsigned int j = 0; j < file->getMeshCount(); ++j)
+	//If this model has not already been loaded in.
+	if (m_modelNames.find(a_filePath) == m_modelNames.end())
 	{
-		FBXMeshNode* mesh = file->getMeshByIndex(j);
-		file->initialiseOpenGLTextures();
+		FBXFile* file = new FBXFile();
 
-		Vertex* vertices = new Vertex[mesh->m_vertices.size()];
-		for (unsigned int i = 0; i < mesh->m_vertices.size(); ++i)
+		file->load(a_filePath.c_str());
+		for (unsigned int j = 0; j < file->getMeshCount(); ++j)
 		{
-			vertices[i].position = mesh->m_vertices[i].position;
-			vertices[i].normal = mesh->m_vertices[i].normal;
-			vertices[i].uv = mesh->m_vertices[i].texCoord1;
-			vertices[i].colour = mesh->m_vertices[i].colour;
-			vertices[i].tangent = mesh->m_vertices[i].tangent;
-			vertices[i].weights = mesh->m_vertices[i].weights;
-			vertices[i].indices = mesh->m_vertices[i].indices;
-		}
+			FBXMeshNode* mesh = file->getMeshByIndex(j);
+			file->initialiseOpenGLTextures();
 
-		unsigned int* indices = new unsigned int[mesh->m_indices.size()];
-		for (unsigned int i = 0; i < mesh->m_indices.size(); ++i)
-		{
-			indices[i] = mesh->m_indices[i];
-		}		
-
-		LoadIntoOpenGL(vertices, mesh->m_vertices.size(), indices, mesh->m_indices.size());
-
-		SetTransform(mesh->m_globalTransform, m_numOfIndices.size() - 1);
-
-		delete[] vertices;
-		delete[] indices;
-
-		if (j < a_texturePaths->size())
-		{
-			LoadTexture((*a_texturePaths)[j], m_numOfIndices.size() - 1);
-		}
-		if (j < a_normalMapPaths->size())
-		{
-			LoadNormalMap((*a_normalMapPaths)[j], m_numOfIndices.size() - 1);
-		}
-		if (j < a_specularMapPaths->size())
-		{
-			LoadSpecularMap((*a_specularMapPaths)[j], m_numOfIndices.size() - 1);
-		}
-
-		if (file->getSkeletonCount() > 0)
-		{
-			if (m_animatedProgram == -1)
-				m_animatedProgram = CreateProgram("../data/shaders/vertAnim.txt", "../data/shaders/frag.txt");
-			
-			if (j < file->getSkeletonCount() && j < file->getAnimationCount())
+			Vertex* vertices = new Vertex[mesh->m_vertices.size()];
+			for (unsigned int i = 0; i < mesh->m_vertices.size(); ++i)
 			{
-				m_skeletons[m_numOfIndices.size() - 1] = file->getSkeletonByIndex(j);
-				m_animations[m_numOfIndices.size() - 1] = file->getAnimationByIndex(j);
+				vertices[i].position = mesh->m_vertices[i].position;
+				vertices[i].normal = mesh->m_vertices[i].normal;
+				vertices[i].uv = mesh->m_vertices[i].texCoord1;
+				vertices[i].colour = mesh->m_vertices[i].colour;
+				vertices[i].tangent = mesh->m_vertices[i].tangent;
+				vertices[i].weights = mesh->m_vertices[i].weights;
+				vertices[i].indices = mesh->m_vertices[i].indices;
+			}
 
-				m_skeletons[m_numOfIndices.size() - 1]->updateBones();
+			unsigned int* indices = new unsigned int[mesh->m_indices.size()];
+			for (unsigned int i = 0; i < mesh->m_indices.size(); ++i)
+			{
+				indices[i] = mesh->m_indices[i];
+			}
 
-				m_skeletons[m_numOfIndices.size() - 1]->evaluate(m_animations[m_numOfIndices.size() - 1], 0);
+			LoadIntoOpenGL(vertices, mesh->m_vertices.size(), indices, mesh->m_indices.size());
 
-				for (unsigned int i = 0; i < m_skeletons[m_numOfIndices.size() - 1]->m_boneCount; ++i)
+			//Currently only models with a single mesh are reused.
+			if (file->getMeshCount() == 1)
+				m_modelNames[a_filePath] = m_VAO.size() - 1;
+
+			SetTransform(mesh->m_globalTransform, m_numOfIndices.size() - 1);
+
+			delete[] vertices;
+			delete[] indices;
+
+			if (j < a_texturePaths->size())
+			{
+				LoadTexture((*a_texturePaths)[j], m_numOfIndices.size() - 1);
+			}
+			if (j < a_normalMapPaths->size())
+			{
+				LoadNormalMap((*a_normalMapPaths)[j], m_numOfIndices.size() - 1);
+			}
+			if (j < a_specularMapPaths->size())
+			{
+				LoadSpecularMap((*a_specularMapPaths)[j], m_numOfIndices.size() - 1);
+			}
+
+			if (file->getSkeletonCount() > 0)
+			{
+				if (m_animatedProgram == -1)
+					m_animatedProgram = CreateProgram("../data/shaders/vertAnim.txt", "../data/shaders/frag.txt");
+
+				if (j < file->getSkeletonCount() && j < file->getAnimationCount())
 				{
-					m_skeletons[m_numOfIndices.size() - 1]->m_nodes[i]->updateGlobalTransform();
+					m_skeletons[m_numOfIndices.size() - 1] = file->getSkeletonByIndex(j);
+					m_animations[m_numOfIndices.size() - 1] = file->getAnimationByIndex(j);
+
+					m_skeletons[m_numOfIndices.size() - 1]->updateBones();
+
+					m_skeletons[m_numOfIndices.size() - 1]->evaluate(m_animations[m_numOfIndices.size() - 1], 0);
+
+					for (unsigned int i = 0; i < m_skeletons[m_numOfIndices.size() - 1]->m_boneCount; ++i)
+					{
+						m_skeletons[m_numOfIndices.size() - 1]->m_nodes[i]->updateGlobalTransform();
+					}
 				}
 			}
 		}
-	}
 
-	return m_numOfIndices.size() - file->getMeshCount();
+		return m_numOfIndices.size() - file->getMeshCount();
+	}
+	else
+	{
+		//This model has already been loaded in, fill in all of its details with duplicates of the existing ones data.
+
+		//Add the newest number of indices to the vector.
+		m_numOfIndices.push_back(m_numOfIndices[m_modelNames[a_filePath]]);
+
+		//Add whether the object being loaded is animated.
+		m_skeletons.push_back(m_skeletons[m_modelNames[a_filePath]]);
+		m_animations.push_back(m_animations[m_modelNames[a_filePath]]);
+
+		//Add a new empty entry into each of this objects appropriate vectors.
+		if (m_textures.size() < m_numOfIndices.size())
+			m_textures.push_back(-1);
+		if (m_ambients.size() < m_numOfIndices.size())
+			m_ambients.push_back(-1);
+		if (m_normals.size() < m_numOfIndices.size())
+			m_normals.push_back(-1);
+		if (m_speculars.size() < m_numOfIndices.size())
+			m_speculars.push_back(-1);
+		if (m_mirrors.size() < m_numOfIndices.size())
+			m_mirrors.push_back(-1);
+		if (m_globals.size() < m_numOfIndices.size())
+			m_globals.push_back(glm::mat4());
+
+		if (a_texturePaths->size() > 0)
+		{
+			LoadTexture((*a_texturePaths)[0], m_numOfIndices.size() - 1);
+		}
+		if (a_normalMapPaths->size() > 0)
+		{
+			LoadNormalMap((*a_normalMapPaths)[0], m_numOfIndices.size() - 1);
+		}
+		if (a_specularMapPaths->size() > 0)
+		{
+			LoadSpecularMap((*a_specularMapPaths)[0], m_numOfIndices.size() - 1);
+		}
+
+		//Add new buffer variables to the vectors.
+		m_VAO.push_back(m_VAO[m_modelNames[a_filePath]]);
+		m_VBO.push_back(m_VBO[m_modelNames[a_filePath]]);
+		m_IBO.push_back(m_IBO[m_modelNames[a_filePath]]);
+
+		return m_numOfIndices.size() - 1;
+	}
 }
 
 unsigned int Renderer::LoadOBJ(const string& a_filePath)
 {
 	if (m_standardProgram == -1)
 		m_standardProgram = CreateProgram("../data/shaders/vert.txt", "../data/shaders/frag.txt");
-	
 
-	//Load file
-	std::ifstream file(a_filePath);
-	string currentLine;
-	
-	//Create vectors to push things into
-	std::vector<vec3> position;
-	std::vector<vec3> normal;
-	std::vector<glm::vec2> uv;
-
-	std::vector<Vertex> vertices;
-	std::vector<unsigned int> indices;
-
-	unsigned int testCounter = 0;
-
-	//Here is where I look at each line and read its values into the appropriate vector.
-	//NOTE: / and // symbols within the file are not currently accounted for. (http://en.wikipedia.org/wiki/Wavefront_.obj_file)
-	/*
-	v = position
-	vn = normals
-	vt = textureCoords
-	f = indices/uv/normals
-	*/
-
-	//I need to flip UVs.
-
-	while (std::getline(file, currentLine))
+	//If this model has not already been loaded in.
+	if (m_modelNames.find(a_filePath) == m_modelNames.end())
 	{
-		++testCounter;
-		if (currentLine[0] == 'v')
+		//Load file
+		std::ifstream file(a_filePath);
+		string currentLine;
+
+		//Create vectors to push things into
+		std::vector<vec3> position;
+		std::vector<vec3> normal;
+		std::vector<glm::vec2> uv;
+
+		std::vector<Vertex> vertices;
+		std::vector<unsigned int> indices;
+
+		//Here is where I look at each line and read its values into the appropriate vector.
+		//NOTE: / and // symbols within the file are not currently accounted for. (http://en.wikipedia.org/wiki/Wavefront_.obj_file)
+		/*
+		v = position
+		vn = normals
+		vt = textureCoords
+		f = indices/uv/normals
+		*/
+
+		while (std::getline(file, currentLine))
 		{
-			if (currentLine[1] == 't')			//UV
+			if (currentLine[0] == 'v')
 			{
-				unsigned int firstSpace = currentLine.find(' ', 3);
-		
-				string firstNum = currentLine.substr(2, firstSpace - 1);
-				string secondNum = currentLine.substr(firstSpace + 1, string::npos);
-		
-				uv.push_back(glm::vec2(std::stof(firstNum), 1 - std::stof(secondNum)));
+				if (currentLine[1] == 't')			//UV
+				{
+					unsigned int firstSpace = currentLine.find(' ', 3);
+
+					string firstNum = currentLine.substr(2, firstSpace - 1);
+					string secondNum = currentLine.substr(firstSpace + 1, string::npos);
+
+					uv.push_back(glm::vec2(std::stof(firstNum), 1 - std::stof(secondNum)));
+				}
+				else  if (currentLine[1] == 'n')	//Normal
+				{
+					unsigned int firstSpace = currentLine.find(' ', 3);
+					unsigned int secondSpace = currentLine.find(' ', firstSpace + 1);
+
+					string firstNum = currentLine.substr(2, firstSpace - 1);
+					string secondNum = currentLine.substr(firstSpace + 1, secondSpace - firstSpace);
+					string thirdNum = currentLine.substr(secondSpace + 1, string::npos);
+
+					normal.push_back(vec3(std::stof(firstNum), std::stof(secondNum), std::stof(thirdNum)));
+				}
+				else if (currentLine[1] == ' ')		//Position
+				{
+					unsigned int firstSpace = currentLine.find(' ', 2);
+					unsigned int secondSpace = currentLine.find(' ', firstSpace + 1);
+
+					string firstNum = currentLine.substr(2, firstSpace - 1);
+					string secondNum = currentLine.substr(firstSpace + 1, secondSpace - firstSpace);
+					string thirdNum = currentLine.substr(secondSpace + 1, string::npos);
+
+					position.push_back(vec3(std::stof(firstNum), std::stof(secondNum), std::stof(thirdNum)));
+				}
 			}
-			else  if (currentLine[1] == 'n')	//Normal
+			else if (currentLine[0] == 'f')			//Index
 			{
-				unsigned int firstSpace = currentLine.find(' ', 3);
-				unsigned int secondSpace = currentLine.find(' ', firstSpace + 1);
-		
-				string firstNum = currentLine.substr(2, firstSpace - 1);
-				string secondNum = currentLine.substr(firstSpace + 1, secondSpace - firstSpace);
-				string thirdNum = currentLine.substr(secondSpace + 1, string::npos);
-		
-				normal.push_back(vec3(std::stof(firstNum), std::stof(secondNum), std::stof(thirdNum)));
-			}
-			else if (currentLine[1] == ' ')		//Position
-			{
-				unsigned int firstSpace = currentLine.find(' ', 2);
-				unsigned int secondSpace = currentLine.find(' ', firstSpace + 1);
-		
-				string firstNum = currentLine.substr(2, firstSpace - 1);
-				string secondNum = currentLine.substr(firstSpace + 1, secondSpace - firstSpace);
-				string thirdNum = currentLine.substr(secondSpace + 1, string::npos);
-		
-				position.push_back(vec3(std::stof(firstNum), std::stof(secondNum), std::stof(thirdNum)));
-			}
-			else
-			{
-				std::cout << "Invalid line in OBJ file." << std::endl;
+				SplitIndex(currentLine, &vertices, &indices, &position, &normal, &uv);
 			}
 		}
-		else if (currentLine[0] == 'f')			//Index
+
+		file.close();
+
+		Vertex* aoVertices = new Vertex[vertices.size()];
+		std::vector<Vertex>::iterator iter = vertices.begin();
+		while (iter != vertices.end())
 		{
-			SplitIndex(currentLine, &vertices, &indices, &position, &normal, &uv);
+			//Look at the unsigned int part of the vertices.
+			//At that index, give a value of the vertex key.
+			aoVertices[iter - vertices.begin()] = (*iter);
+			++iter;
 		}
-		else
+
+
+		unsigned int* auiIndices = new unsigned int[indices.size()];
+		for (unsigned int i = 0; i < indices.size(); ++i)
 		{
-			std::cout << "Invalid line in OBJ file." << std::endl;
+			auiIndices[i] = indices[i];
 		}
-	}
 
-	file.close();
-	
-	Vertex* aoVertices = new Vertex[vertices.size()];
-	std::vector<Vertex>::iterator iter = vertices.begin();
-	while (iter != vertices.end())
+		LoadIntoOpenGL(aoVertices, vertices.size(), auiIndices, indices.size());
+
+		delete[] aoVertices;
+		delete[] auiIndices;
+
+		m_modelNames[a_filePath] = m_VAO.size() - 1;
+	}
+	else
 	{
-		//Look at the unsigned int part of the vertices.
-		//At that index, give a value of the vertex key.
-		aoVertices[iter - vertices.begin()] = (*iter);
-		++iter;
-	}
+		//This model has already been loaded in, fill in all of its details with duplicates of the existing ones data.
 
+		//Add the newest number of indices to the vector.
+		m_numOfIndices.push_back(m_numOfIndices[m_modelNames[a_filePath]]);
+
+		//Add whether the object being loaded is animated.
+		m_skeletons.push_back(nullptr);
+		m_animations.push_back(nullptr);
+
+		//Add a new empty entry into each of this objects appropriate vectors.
+		if (m_textures.size() < m_numOfIndices.size())
+			m_textures.push_back(-1);
+		if (m_ambients.size() < m_numOfIndices.size())
+			m_ambients.push_back(-1);
+		if (m_normals.size() < m_numOfIndices.size())
+			m_normals.push_back(-1);
+		if (m_speculars.size() < m_numOfIndices.size())
+			m_speculars.push_back(-1);
+		if (m_mirrors.size() < m_numOfIndices.size())
+			m_mirrors.push_back(-1);
+		if (m_globals.size() < m_numOfIndices.size())
+			m_globals.push_back(glm::mat4());
+
+		//Add new buffer variables to the vectors.
+		m_VAO.push_back(m_VAO[m_modelNames[a_filePath]]);
+		m_VBO.push_back(m_VBO[m_modelNames[a_filePath]]);
+		m_IBO.push_back(m_IBO[m_modelNames[a_filePath]]);
+	}
 	
-	unsigned int* auiIndices = new unsigned int[indices.size()];
-	for (unsigned int i = 0; i < indices.size(); ++i)
-	{
-		auiIndices[i] = indices[i];
-	}
-
-	LoadIntoOpenGL(aoVertices, vertices.size(), auiIndices, indices.size());
-
-	delete[] aoVertices;
-	delete[] auiIndices;
-
 	return m_numOfIndices.size() - 1;
 }
 
@@ -1419,8 +1532,7 @@ void Renderer::Draw()
 		glEnable(GL_CULL_FACE);
 
 		//Draw each type of light.
-		if (m_dirLightToggle)
-			DrawDirectionalLight();
+		DrawDirectionalLight();
 		DrawPointLights();
 
 		glDisable(GL_BLEND);
@@ -1520,6 +1632,7 @@ void Renderer::DrawDirectionalLight()
 	glUniform3f((m_uniformLocations[m_dirLightProgram])[LIGHT_COLOUR], m_lightColour.x, m_lightColour.y, m_lightColour.z);
 	glUniform3fv((m_uniformLocations[m_dirLightProgram])[CAMERA_POS], 1, &(m_cameras[0]->GetWorldTransform()[3][0]));
 	glUniform1f((m_uniformLocations[m_dirLightProgram])[SPEC_POW], m_specPow);
+	glUniform1f((m_uniformLocations[m_dirLightProgram])[LIGHT_MATRIX], m_dirLightStrength);
 
 	glBindVertexArray(m_VAO[0]);
 	glDrawElements(GL_TRIANGLES, m_numOfIndices[0], GL_UNSIGNED_INT, nullptr);
@@ -1946,7 +2059,7 @@ void Renderer::LoadIntoOpenGL(const Vertex* const a_verticesArray, const unsigne
 	//Add the newest number of indices to the vector.
 	m_numOfIndices.push_back(a_numOfIndices);
 
-	//Add whether the object being loaded is animated.
+	//Add empty values to the animation-related variables. These will be filled in after this function has finished if this model is animated.
 	m_skeletons.push_back(nullptr);
 	m_animations.push_back(nullptr);
 

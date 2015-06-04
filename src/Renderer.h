@@ -61,6 +61,10 @@ struct Vertex
 class Renderer
 {
 private:
+	//Stores the names of each loaded model and the index of that model's VAO within the m_VAO vector.
+	//TODO: Support model reuse for FBX models with multiple meshes per model.
+	std::map<std::string, unsigned int>  m_modelNames;
+
 	//Vector of vertex array objects.
 	std::vector<unsigned int> m_VAO;
 	//Vector of vertex buffer objects.
@@ -95,6 +99,9 @@ private:
 
 	//Uniform Locations. Indexed with program id, then uniform type.
 	std::vector<std::vector<unsigned int>> m_uniformLocations;
+
+	//Stores the names of each texture and the OpenGL handle to that texture.
+	std::map<std::string, unsigned int> m_textureNames;
 
 	//Vector containing all of the textures (diffuse maps) associated with this renderer.
 	std::vector<unsigned int> m_textures;
@@ -160,7 +167,7 @@ private:
 	TwBar* m_bar;
 
 	//Whether or not the directional light should be on.
-	bool m_dirLightToggle;
+	float m_dirLightStrength;
 	//The direction that light is coming from.
 	vec3 m_lightDir;
 	//The colour of the light.
@@ -296,6 +303,7 @@ public:
 	void DestroyEmitter(const unsigned int a_emitterIndex, const bool a_gpuBased);
 
 	//Function for loading an FBX model. Returns the index of the model.
+	//TODO: Include a variable for ambients.
 	unsigned int LoadFBX(const std::string& a_filePath, const std::vector<std::string>* const a_texturePaths, const std::vector<std::string>* const a_normalMapPaths, const std::vector<std::string>* const a_specularMapPaths);
 	
 	//Method for loading an OBJ model. Returns the index of the model, for use in texturing.
