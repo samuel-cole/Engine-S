@@ -3,7 +3,7 @@
 #include <fstream>
 
 GPUParticleEmitter::GPUParticleEmitter() : m_particles(nullptr), m_maxParticles(0), m_position(0, 0, 0), m_drawProgram(0), m_updateProgram(0), m_lastDrawTime(0), 
-										   m_deltaTimeUniformLocation(-1), m_emitterPositionUniformLocation(-1), m_timeUniformLocation(-1), m_directionUniformLocation(-1)
+										   m_deltaTimeUniformLocation(-1), m_emitterPositionUniformLocation(-1), m_emitterPosition2UniformLocation(-1), m_timeUniformLocation(-1), m_directionUniformLocation(-1)
 {
 	m_vao[0] = 0;
 	m_vao[1] = 0;
@@ -14,7 +14,7 @@ GPUParticleEmitter::GPUParticleEmitter() : m_particles(nullptr), m_maxParticles(
 GPUParticleEmitter::GPUParticleEmitter(const unsigned int a_maxParticles, const float a_lifeSpanMin, const float a_lifeSpanMax,
 									   const float a_velocityMin, const float a_velocityMax, const float a_startSize, const float a_endSize,
 									   const  vec4& a_startColour, const vec4& a_endColour, const vec3& a_direction, const float a_directionVariance) 
-									   : m_deltaTimeUniformLocation(-1), m_emitterPositionUniformLocation(-1), m_timeUniformLocation(-1), m_directionUniformLocation(-1)
+									   : m_deltaTimeUniformLocation(-1), m_emitterPositionUniformLocation(-1), m_emitterPosition2UniformLocation(-1), m_timeUniformLocation(-1), m_directionUniformLocation(-1)
 
 {
 	m_startColour = a_startColour;
@@ -34,6 +34,7 @@ GPUParticleEmitter::GPUParticleEmitter(const unsigned int a_maxParticles, const 
 	if (m_direction.z == 0)
 		m_direction.z += 0.000001f;
 	m_directionVariation = a_directionVariance;
+	m_position = vec3(0, 0, 0);
 
 	m_particles = new GPUParticle[a_maxParticles];
 
@@ -54,7 +55,7 @@ GPUParticleEmitter::GPUParticleEmitter(const unsigned int a_maxParticles, const 
 GPUParticleEmitter::GPUParticleEmitter(const unsigned int a_maxParticles, const float a_lifeSpanMin, const float a_lifeSpanMax,
 									   const float a_velocityMin, const float a_velocityMax, const float a_startSize, const float a_endSize,
 									   const  vec4& a_startColour, const vec4& a_endColour, const vec3& a_direction, const float a_directionVariance, TwBar* const a_bar, const unsigned int a_emitterID)
-									   : m_deltaTimeUniformLocation(-1), m_emitterPositionUniformLocation(-1), m_timeUniformLocation(-1), m_directionUniformLocation(-1)
+									   : m_deltaTimeUniformLocation(-1), m_emitterPositionUniformLocation(-1), m_emitterPosition2UniformLocation(-1), m_timeUniformLocation(-1), m_directionUniformLocation(-1)
 
 {
 	m_startColour = a_startColour;
@@ -183,6 +184,7 @@ void GPUParticleEmitter::CreateUpdateProgram()
 	m_timeUniformLocation = glGetUniformLocation(m_updateProgram, "Time");
 	m_deltaTimeUniformLocation = glGetUniformLocation(m_updateProgram, "DeltaTime");
 	m_emitterPositionUniformLocation = glGetUniformLocation(m_updateProgram, "EmitterPosition");
+	m_emitterPosition2UniformLocation = glGetUniformLocation(m_updateProgram, "OtherEmitterPosition");
 	m_directionUniformLocation = glGetUniformLocation(m_updateProgram, "EmitterDirection");
 }
 
@@ -277,6 +279,7 @@ void GPUParticleEmitter::Draw(const float a_time, const glm::mat4& a_cameraTrans
 	glUniform1f(m_timeUniformLocation, a_time);
 	glUniform1f(m_deltaTimeUniformLocation, deltaTime);
 	glUniform3fv(m_emitterPositionUniformLocation, 1, &m_position[0]);
+	glUniform3fv(m_emitterPosition2UniformLocation, 1, &m_position2[0]);
 	glUniform3fv(m_directionUniformLocation, 1, &m_direction[0]);
 
 	//Don't use the rasterizer, go to the buffer instead.

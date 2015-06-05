@@ -1,0 +1,63 @@
+﻿Build started 5/06/2015 8:55:39 AM.
+     1>Project "C:\Users\samuel.cole\Documents\IntroToOpenGL\IntroToOpenGL\IntroToOpenGL.vcxproj" on node 2 (Build target(s)).
+     1>ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /Zi /nologo /W3 /WX- /O2 /Oi /Oy- /GL /D WIN32 /D NDEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm- /EHsc /MD /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Release\\" /Fd"Release\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt ..\dep\aieutilities\Gizmos.cpp ..\src\Application.cpp ..\src\Camera.cpp ..\src\checkersTest\CheckersMover.cpp ..\src\checkersTest\CheckersTest1.cpp ..\src\FlyCamera.cpp ..\src\GPUParticle.cpp ..\src\InputManager.cpp ..\src\main.cpp ..\src\mirrorTesting\mirrorTest1.cpp ..\src\Particle.cpp ..\src\physX\Physics1.cpp ..\src\Renderer.cpp ..\src\StaticCamera.cpp ..\src\tut10\Tutorial10.cpp ..\src\tut11\Tutorial11.cpp ..\src\tut12\Tutorial12.cpp ..\src\tut13\Tutorial13.cpp ..\src\tut2\Tutorial2.cpp ..\src\tut3\Tutorial3.cpp ..\src\tut4\Tutorial4.cpp ..\src\tut5\Tutorial5.cpp ..\src\tut6\Tutorial6.cpp ..\src\tut7\Tutorial7.cpp ..\src\tut8\Tutorial8.cpp ..\src\tut9\Tutorial9.cpp ..\src\Tutorial1.cpp
+         Gizmos.cpp
+     1>c:\users\samuel.cole\documents\introtoopengl\dep\aieutilities\Gizmos.h(3): fatal error C1083: Cannot open include file: 'glm/glm.hpp': No such file or directory
+         Application.cpp
+     1>c:\users\samuel.cole\documents\introtoopengl\src\Application.h(4): fatal error C1083: Cannot open include file: 'AntTweakBar.h': No such file or directory
+         Camera.cpp
+     1>c:\users\samuel.cole\documents\introtoopengl\src\Camera.h(4): fatal error C1083: Cannot open include file: 'glm\glm.hpp': No such file or directory
+         CheckersMover.cpp
+         CheckersTest1.cpp
+     1>c:\users\samuel.cole\documents\introtoopengl\src\checkerstest\CheckersTest1.h(4): fatal error C1083: Cannot open include file: 'Application.h': No such file or directory
+         FlyCamera.cpp
+     1>..\src\FlyCamera.cpp(2): fatal error C1083: Cannot open include file: 'glm\ext.hpp': No such file or directory
+         GPUParticle.cpp
+     1>c:\users\samuel.cole\documents\introtoopengl\src\GPUParticle.h(5): fatal error C1083: Cannot open include file: 'glm\glm.hpp': No such file or directory
+         InputManager.cpp
+     1>c:\users\samuel.cole\documents\introtoopengl\src\InputManager.h(4): fatal error C1083: Cannot open include file: 'glm\glm.hpp': No such file or directory
+         main.cpp
+     1>c:\users\samuel.cole\documents\introtoopengl\src\Application.h(4): fatal error C1083: Cannot open include file: 'AntTweakBar.h': No such file or directory
+         mirrorTest1.cpp
+     1>c:\users\samuel.cole\documents\introtoopengl\src\mirrortesting\MirrorTest1.h(4): fatal error C1083: Cannot open include file: 'Application.h': No such file or directory
+         Particle.cpp
+     1>c:\users\samuel.cole\documents\introtoopengl\src\Particle.h(4): fatal error C1083: Cannot open include file: 'glm\glm.hpp': No such file or directory
+         Physics1.cpp
+     1>c:\users\samuel.cole\documents\introtoopengl\src\physx\Physics1.h(4): fatal error C1083: Cannot open include file: 'Application.h': No such file or directory
+         Renderer.cpp
+     1>c:\users\samuel.cole\documents\introtoopengl\src\Renderer.h(4): fatal error C1083: Cannot open include file: 'glm\glm.hpp': No such file or directory
+         StaticCamera.cpp
+     1>c:\users\samuel.cole\documents\introtoopengl\src\Camera.h(4): fatal error C1083: Cannot open include file: 'glm\glm.hpp': No such file or directory
+         Tutorial10.cpp
+     1>c:\users\samuel.cole\documents\introtoopengl\src\tut10\Tutorial10.h(4): fatal error C1083: Cannot open include file: 'Application.h': No such file or directory
+         Tutorial11.cpp
+     1>c:\users\samuel.cole\documents\introtoopengl\src\tut11\Tutorial11.h(4): fatal error C1083: Cannot open include file: 'Application.h': No such file or directory
+         Tutorial12.cpp
+     1>c:\users\samuel.cole\documents\introtoopengl\src\tut12\Tutorial12.h(4): fatal error C1083: Cannot open include file: 'Application.h': No such file or directory
+         Tutorial13.cpp
+     1>c:\users\samuel.cole\documents\introtoopengl\src\tut13\Tutorial13.h(4): fatal error C1083: Cannot open include file: 'Application.h': No such file or directory
+         Tutorial2.cpp
+     1>c:\users\samuel.cole\documents\introtoopengl\src\tut2\Tutorial2.h(4): fatal error C1083: Cannot open include file: 'Application.h': No such file or directory
+         Tutorial3.cpp
+     1>c:\users\samuel.cole\documents\introtoopengl\src\tut3\Tutorial3.h(4): fatal error C1083: Cannot open include file: 'Application.h': No such file or directory
+         Compiling...
+         Tutorial4.cpp
+     1>c:\users\samuel.cole\documents\introtoopengl\src\tut4\Tutorial4.h(4): fatal error C1083: Cannot open include file: 'Application.h': No such file or directory
+         Tutorial5.cpp
+     1>c:\users\samuel.cole\documents\introtoopengl\src\tut5\Tutorial5.h(4): fatal error C1083: Cannot open include file: 'Application.h': No such file or directory
+         Tutorial6.cpp
+     1>c:\users\samuel.cole\documents\introtoopengl\src\tut6\Tutorial6.h(4): fatal error C1083: Cannot open include file: 'Application.h': No such file or directory
+         Tutorial7.cpp
+     1>c:\users\samuel.cole\documents\introtoopengl\src\tut7\Tutorial7.h(4): fatal error C1083: Cannot open include file: 'Application.h': No such file or directory
+         Tutorial8.cpp
+     1>c:\users\samuel.cole\documents\introtoopengl\src\tut8\Tutorial8.h(4): fatal error C1083: Cannot open include file: 'Application.h': No such file or directory
+         Tutorial9.cpp
+     1>c:\users\samuel.cole\documents\introtoopengl\src\tut9\Tutorial9.h(4): fatal error C1083: Cannot open include file: 'Application.h': No such file or directory
+         Tutorial1.cpp
+     1>c:\users\samuel.cole\documents\introtoopengl\src\Application.h(4): fatal error C1083: Cannot open include file: 'AntTweakBar.h': No such file or directory
+     1>Done Building Project "C:\Users\samuel.cole\Documents\IntroToOpenGL\IntroToOpenGL\IntroToOpenGL.vcxproj" (Build target(s)) -- FAILED.
+
+Build FAILED.
+
+Time Elapsed 00:00:01.28

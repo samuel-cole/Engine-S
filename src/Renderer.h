@@ -296,6 +296,8 @@ public:
 
 	//Sets the position of the emitter at the specified index to the position indicated.
 	void SetEmitterPosition(const unsigned int a_index, const bool a_gpuBased, const vec3& a_position);
+	//Sets the position of the emitter at the specified index to the position indicated. Overload for setting the area in which particles spawn in- particles will spawn between the two points indicated. Only works for gpu particles.
+	void SetEmitterPosition(const unsigned int a_index, const bool a_gpuBased, const vec3& a_position, const vec3& a_position2);
 	//Returns the position of the emitter at the specified index.
 	const vec3& GetEmitterPosition(const unsigned int a_index, const bool a_gpuBased);
 

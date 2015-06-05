@@ -40,6 +40,13 @@ public:
 	inline void SetPosition(const vec3& a_position)
 	{
 		m_position = a_position;
+		m_position2 = a_position;
+	}
+	//Function for setting the two positions used to make a cube that particles can spawn in.
+	inline void SetPosition(const vec3& a_position, const vec3& a_position2)
+	{
+		m_position = a_position;
+		m_position2 = a_position2;
 	}
 	inline const vec3& GetDirection()
 	{
@@ -70,6 +77,8 @@ private:
 	float m_directionVariation;
 
 	vec3 m_position;
+	//Position2 is used for creating cubes that the particle can spawn in- particles will be spawned at a random point in-between m_position and m_position2.
+	vec3 m_position2;
 	vec3 m_direction;
 
 	float m_lifeSpanMin, m_lifeSpanMax;
@@ -84,7 +93,7 @@ private:
 	unsigned int m_drawProgram, m_updateProgram;
 
 	//Update program uniform locations
-	unsigned int m_timeUniformLocation, m_deltaTimeUniformLocation, m_emitterPositionUniformLocation, m_directionUniformLocation;
+	unsigned int m_timeUniformLocation, m_deltaTimeUniformLocation, m_emitterPositionUniformLocation, m_emitterPosition2UniformLocation, m_directionUniformLocation;
 	//Draw program uniform locations
 	unsigned int m_projectionViewUniformLocation, m_cameraTransformUniformLocation;
 

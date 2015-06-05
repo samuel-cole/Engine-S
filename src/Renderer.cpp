@@ -979,6 +979,21 @@ void Renderer::SetEmitterPosition(const unsigned int a_index, const bool a_gpuBa
 	}
 }
 
+void Renderer::SetEmitterPosition(const unsigned int a_index, const bool a_gpuBased, const vec3& a_position, const vec3& a_position2)
+{
+	if (a_gpuBased)
+	{
+		if (m_gpuEmitters[a_index] != nullptr)
+			m_gpuEmitters[a_index]->SetPosition(a_position, a_position2);
+		else
+			std::cout << "Error: invalid emitter index!" << std::endl;
+	}
+	else
+	{
+		std::cout << "Error: can only set emission areas for GPU-based particles!" << std::endl;
+	}
+}
+
 const vec3& Renderer::GetEmitterPosition(const unsigned int a_index, const bool a_gpuBased)
 {
 	if (a_gpuBased)

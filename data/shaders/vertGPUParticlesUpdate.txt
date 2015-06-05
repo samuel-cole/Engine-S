@@ -18,6 +18,7 @@ uniform float VelocityMin;
 uniform float VelocityMax;
 uniform float DirectionVariance;
 uniform vec3 EmitterPosition;
+uniform vec3 OtherEmitterPosition;
 uniform vec3 EmitterDirection;
 
 const float INVERSE_MAX_UINT = 1.0f / 4294967295.0f;
@@ -44,26 +45,30 @@ void main()
 	{
 		uint seed = uint(Time * 1000) + uint(gl_VertexID);
 
-		float randAngle = rand(seed++, 2 * PI);
-		float randMagnitude = rand(seed++, DirectionVariance);
-		float randX = randMagnitude * cos(randAngle);
-		float randY = randMagnitude * sin(randAngle);
-		//Possibly change this line, not sure if correct.
-		vec3 randDir = vec3(cos(randX), 0, sin(randX)) + vec3(cos(randY), sin(randY), 0);
-		
+		//Pick a random, uniformly distributed point on a circle.
+		float randX = rand(seed++, DirectionVariance * 2) - DirectionVariance;
+		float randY = rand(seed++, DirectionVariance * 2) - DirectionVariance;
+		while (randX * randX + randY * randY > DirectionVariance * DirectionVariance)
+		{
+			randX = rand(seed++, DirectionVariance * 2) - DirectionVariance;
+			randY = rand(seed++, DirectionVariance * 2) - DirectionVariance;
+		}
+
+		vec3 randDir = vec3(cos(randY) * cos(randX), sin(randY), sin(randX));
+
 		vec3 right = cross(vec3(0, 1, 0), EmitterDirection);
 		vec3 up = cross(EmitterDirection, right);
 		//Renormalize for incase warping has occured.
 		right = normalize(right);
 		up = normalize(up);
-		mat3 transformMatrix = mat3(right, up, EmitterDirection);
+		mat3 transformMatrix = mat3(EmitterDirection, up, right);
 		vVelocity = vec3(transformMatrix * randDir);
 
 		//Maybe I could fix this by multiplying by another matrix after transformMatrix.
 
 
 		vVelocity = (rand(seed++, VelocityMax - VelocityMin) + VelocityMin) * normalize(vVelocity);
-		vPosition = EmitterPosition;
+		vPosition = EmitterPosition + (OtherEmitterPosition - EmitterPosition) * vec3(rand(seed++, 1), rand(seed++, 1), rand(seed++, 1));
 		vLifeTime = 0;
 		vLifeSpan = rand(seed++, LifeMax - LifeMin) + LifeMin;
 	}

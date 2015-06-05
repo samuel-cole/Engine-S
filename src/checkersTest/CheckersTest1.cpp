@@ -55,18 +55,18 @@ int CheckersTest::Init()
 	for (unsigned int i = 0; i < 24; ++i)
 	{
 		unsigned int emitter = m_infoForBar.renderer->CreateEmitter(1000, //Max particles
-			0.2f,			//Lifespan minimum 
-			2.0f,			//Lifespan maximum
-			0.05f,			//Velocity minimum
-			5.0f,			//Velocity maximum
-			1.0f,			//Start size
-			0.1f,			//End size
-			((i < 12) ? vec4(1, 0, 0, 1) : vec4(0, 0, 1, 1)), //Start colour
-			((i < 12) ? vec4(1, 1, 0, 1) : vec4(0, 1, 1, 1)), //End colour
-			vec3(1, 0, 0),	//Direction
-			3.14159265358979f,//Direction variance
-			true,
-			m_debugBar);			//GPU based
+			0.2f,														  //Lifespan minimum 
+			2.0f,														  //Lifespan maximum
+			0.05f,														  //Velocity minimum
+			5.0f,														  //Velocity maximum
+			1.0f,														  //Start size
+			0.1f,														  //End size
+			((i < 12) ? vec4(1, 0, 0, 1) : vec4(0, 0, 1, 1)),			  //Start colour
+			((i < 12) ? vec4(1, 1, 0, 1) : vec4(0, 1, 1, 1)),			  //End colour
+			vec3(1, 0, 0),												  //Direction
+			3.14159265358979f,											  //Direction variance
+			true,														  //GPU based
+			m_debugBar);			
 
 		m_emitters.push_back(emitter);
 
@@ -77,11 +77,33 @@ int CheckersTest::Init()
 	for (unsigned int i = 0; i < 16; ++i)
 	{
 		unsigned int loc = m_infoForBar.renderer->LoadOBJ("../data/teleporter/teleporter.obj");
-		m_infoForBar.renderer->LoadTexture("../data/teleporter/teleporter.jpg", loc);
-		m_infoForBar.renderer->LoadAmbient("../data/teleporter/teleporter.jpg", loc);
-		m_infoForBar.renderer->LoadSpecularMap("../data/teleporter/teleporter.jpg", loc);
-		
-		m_infoForBar.renderer->SetTransform(glm::translate(vec3(M_TILE_WIDTH * -3.5f + (i%8) * M_TILE_WIDTH, 5, M_TILE_WIDTH * (i < 8?4.5f:-4.5f))), loc);
+		unsigned int light;
+		unsigned int emitter;
+		if (i < 8)
+		{
+			m_infoForBar.renderer->LoadTexture("../data/teleporter/teleporter.jpg", loc);
+			m_infoForBar.renderer->LoadAmbient("../data/teleporter/teleporter.jpg", loc);
+			m_infoForBar.renderer->LoadSpecularMap("../data/teleporter/teleporter.jpg", loc);
+
+			light = m_infoForBar.renderer->CreatePointLight(vec3(0, 0.1f, 1), 14.0f, false);
+
+			emitter = m_infoForBar.renderer->CreateEmitter(1000, 1.0f, 2.0f, 0.1f, 4.0f, 1.0f, 1.0f, vec4(0, 0.5f, 1, 1), vec4(0, 0, 0.5f, 1), vec3(0, 0, -1), 3.141592f / 4.0f, true, m_debugBar);
+		}
+		else
+		{
+			m_infoForBar.renderer->LoadTexture("../data/teleporter/teleporterRed.jpg", loc);
+			m_infoForBar.renderer->LoadAmbient("../data/teleporter/teleporterRed.jpg", loc);
+			m_infoForBar.renderer->LoadSpecularMap("../data/teleporter/teleporterRed.jpg", loc);
+
+			light = m_infoForBar.renderer->CreatePointLight(vec3(1, 0.1f, 0), 14.0f, false);
+
+			emitter = m_infoForBar.renderer->CreateEmitter(1000, 1.0f, 2.0f, 0.1f, 4.0f, 1.0f, 1.0f, vec4(1, 0.5f, 0, 1), vec4(1.0f, 0.0f, 0, 1), vec3(0, 0, 1), 3.141592f / 4.0f, true, m_debugBar);
+		}
+		m_infoForBar.renderer->SetLightPosition(light, vec3(M_TILE_WIDTH * -3.5f + (i % 8) * M_TILE_WIDTH, 13.0f, M_TILE_WIDTH * (i < 8 ? 4.0f : -4.0f)));
+		m_infoForBar.renderer->SetTransform(glm::translate(vec3(M_TILE_WIDTH * -3.5f + (i % 8) * M_TILE_WIDTH, 0, M_TILE_WIDTH * (i < 8 ? 4.3f : -4.3f))) * glm::scale(vec3(2, 2, 2)), loc);
+		m_infoForBar.renderer->SetEmitterPosition(emitter, true, 
+												  vec3(M_TILE_WIDTH * -3.25f + (i % 8) * M_TILE_WIDTH, 2.0f, M_TILE_WIDTH * (i < 8 ? 4.3f : -4.3f)),
+												  vec3(M_TILE_WIDTH * -3.75f + (i % 8) * M_TILE_WIDTH, 13.0f, M_TILE_WIDTH * (i < 8 ? 4.3f : -4.3f)));
 	}
 
 	for (unsigned int i = 0; i < 8; ++i)
@@ -141,6 +163,8 @@ int CheckersTest::Init()
 	m_positionLight2 = m_infoForBar.renderer->CreatePointLight(vec3(1, 1, 1), 15, false);
 	m_infoForBar.renderer->SetLightPosition(m_positionLight2, vec3(M_TILE_WIDTH * 3.5f, 12, M_TILE_WIDTH * 3.5f));
 	m_colourTimer = 0.1f;
+
+
 
 
 	m_inputTimer = 0;

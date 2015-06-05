@@ -41,9 +41,13 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
+    <IncludePath>C:\PhysX\Include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\PhysX\Lib\vc12win32;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
+    <IncludePath>C:\PhysX\Include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\PhysX\Lib\vc12win32;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -58,7 +62,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)dep\AntTweakBar\lib;$(SolutionDir)dep\fbx;$(SolutionDir)dep\glfw-3.1.bin.WIN32\lib-vc2013;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>glfw3.lib;opengl32.lib;FBXLoader_d.lib;AntTweakBar.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glfw3.lib;opengl32.lib;FBXLoader_d.lib;AntTweakBar.lib;PhysX3DEBUG_x86.lib;PhysX3CharacterKinematicDEBUG_x86.lib;PhysX3CommonDEBUG_x86.lib;PhysX3CookingDEBUG_x86.lib;PhysX3ExtensionsDEBUG.lib;PhysX3GpuDEBUG_x86.lib;PhysX3VehicleDEBUG.lib;PhysXVisualDebuggerSDKDEBUG.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -76,6 +80,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>glfw3.lib;opengl32.lib;FBXLoader.lib;AntTweakBar.lib;PhysX3_x86.lib;PhysX3CharacterKinematic_x86.lib;PhysX3Common_x86.lib;PhysX3Cooking_x86.lib;PhysX3Extensions.lib;PhysX3Gpu_x86.lib;PhysX3Vehicle.lib;PhysXVisualDebuggerSDK.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -91,6 +96,7 @@
     <ClCompile Include="..\src\main.cpp" />
     <ClCompile Include="..\src\mirrorTesting\mirrorTest1.cpp" />
     <ClCompile Include="..\src\Particle.cpp" />
+    <ClCompile Include="..\src\physX\Physics1.cpp" />
     <ClCompile Include="..\src\Renderer.cpp" />
     <ClCompile Include="..\src\StaticCamera.cpp" />
     <ClCompile Include="..\src\tut10\Tutorial10.cpp" />
@@ -119,6 +125,7 @@
     <ClInclude Include="..\src\InputManager.h" />
     <ClInclude Include="..\src\mirrorTesting\mirrorTest1.h" />
     <ClInclude Include="..\src\Particle.h" />
+    <ClInclude Include="..\src\physX\Physics1.h" />
     <ClInclude Include="..\src\Renderer.h" />
     <ClInclude Include="..\src\StaticCamera.h" />
     <ClInclude Include="..\src\tut10\Tutorial10.h" />
