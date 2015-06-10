@@ -3,7 +3,7 @@
 #include <fstream>
 
 GPUParticleEmitter::GPUParticleEmitter() : m_particles(nullptr), m_maxParticles(0), m_position(0, 0, 0), m_drawProgram(0), m_updateProgram(0), m_lastDrawTime(0), 
-										   m_deltaTimeUniformLocation(-1), m_emitterPositionUniformLocation(-1), m_emitterPosition2UniformLocation(-1), m_timeUniformLocation(-1), m_directionUniformLocation(-1)
+m_deltaTimeUniformLocation(-1), m_emitterPositionUniformLocation(-1), m_emitterPosition2UniformLocation(-1), m_timeUniformLocation(-1), m_directionUniformLocation(-1), m_depthTextureUniformLocation(-1)
 {
 	m_vao[0] = 0;
 	m_vao[1] = 0;
@@ -14,7 +14,7 @@ GPUParticleEmitter::GPUParticleEmitter() : m_particles(nullptr), m_maxParticles(
 GPUParticleEmitter::GPUParticleEmitter(const unsigned int a_maxParticles, const float a_lifeSpanMin, const float a_lifeSpanMax,
 									   const float a_velocityMin, const float a_velocityMax, const float a_startSize, const float a_endSize,
 									   const  vec4& a_startColour, const vec4& a_endColour, const vec3& a_direction, const float a_directionVariance) 
-									   : m_deltaTimeUniformLocation(-1), m_emitterPositionUniformLocation(-1), m_emitterPosition2UniformLocation(-1), m_timeUniformLocation(-1), m_directionUniformLocation(-1)
+									   : m_deltaTimeUniformLocation(-1), m_emitterPositionUniformLocation(-1), m_emitterPosition2UniformLocation(-1), m_timeUniformLocation(-1), m_directionUniformLocation(-1), m_depthTextureUniformLocation(-1)
 
 {
 	m_startColour = a_startColour;
@@ -55,7 +55,7 @@ GPUParticleEmitter::GPUParticleEmitter(const unsigned int a_maxParticles, const 
 GPUParticleEmitter::GPUParticleEmitter(const unsigned int a_maxParticles, const float a_lifeSpanMin, const float a_lifeSpanMax,
 									   const float a_velocityMin, const float a_velocityMax, const float a_startSize, const float a_endSize,
 									   const  vec4& a_startColour, const vec4& a_endColour, const vec3& a_direction, const float a_directionVariance, TwBar* const a_bar, const unsigned int a_emitterID)
-									   : m_deltaTimeUniformLocation(-1), m_emitterPositionUniformLocation(-1), m_emitterPosition2UniformLocation(-1), m_timeUniformLocation(-1), m_directionUniformLocation(-1)
+									   : m_deltaTimeUniformLocation(-1), m_emitterPositionUniformLocation(-1), m_emitterPosition2UniformLocation(-1), m_timeUniformLocation(-1), m_directionUniformLocation(-1), m_depthTextureUniformLocation(-1)
 
 {
 	m_startColour = a_startColour;
@@ -213,7 +213,7 @@ void GPUParticleEmitter::CreateDrawProgram()
 		glGetProgramiv(m_drawProgram, GL_INFO_LOG_LENGTH, &infoLogLength);
 		char* infoLog = new char[infoLogLength];
 
-		glGetShaderInfoLog(m_drawProgram, infoLogLength, 0, infoLog);
+		glGetProgramInfoLog(m_drawProgram, infoLogLength, 0, infoLog);
 		printf("Error: Failed to link shader program!\n");
 		printf("%s\n", infoLog);
 		delete[] infoLog;
@@ -234,6 +234,7 @@ void GPUParticleEmitter::CreateDrawProgram()
 	//Set the location of uniforms that will change.
 	m_cameraTransformUniformLocation = glGetUniformLocation(m_drawProgram, "CameraTransform");
 	m_projectionViewUniformLocation = glGetUniformLocation(m_drawProgram, "ProjectionView");
+	m_depthTextureUniformLocation = glGetUniformLocation(m_drawProgram, "DepthTexture");
 }
 
 unsigned int GPUParticleEmitter::LoadShader(const std::string& a_path, const unsigned int a_type)
@@ -269,7 +270,7 @@ unsigned int GPUParticleEmitter::LoadShader(const std::string& a_path, const uns
 	return shader;
 }
 
-void GPUParticleEmitter::Draw(const float a_time, const glm::mat4& a_cameraTransform, const glm::mat4& a_projectionView)
+void GPUParticleEmitter::Draw(const float a_time, const glm::mat4& a_cameraTransform, const glm::mat4& a_projectionView, const unsigned int a_depthTexture)
 {
 	glUseProgram(m_updateProgram);
 
@@ -303,6 +304,14 @@ void GPUParticleEmitter::Draw(const float a_time, const glm::mat4& a_cameraTrans
 	
 
 	glUseProgram(m_drawProgram);
+
+	if (a_depthTexture != -1)
+	{
+		//Diffuse
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, a_depthTexture);
+		glUniform1i(m_depthTextureUniformLocation, 0);
+	}
 
 	glUniformMatrix4fv(m_projectionViewUniformLocation, 1, false, &a_projectionView[0][0]);
 	glUniformMatrix4fv(m_cameraTransformUniformLocation, 1, false, &a_cameraTransform[0][0]);

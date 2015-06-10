@@ -134,24 +134,27 @@ void Renderer::SetupGpass()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
-	//Render buffer stuff.
-	glGenRenderbuffers(1, &m_gpassDepth);
-	glBindRenderbuffer(GL_RENDERBUFFER, m_gpassDepth);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, 1280, 720);
-
+	//Set up depth texture.
+	glGenTextures(1, &m_gpassDepth);
+	glBindTexture(GL_TEXTURE_2D, m_gpassDepth);
+	glTexStorage2D(GL_TEXTURE_2D, 1, GL_DEPTH_COMPONENT32F, 1280, 720);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	
-	//In case I forget : a frame buffer is essentially just a collection of pointers to render buffers and textures.Render buffers are actual collections of pixels.
+	
+	//In case I forget : a frame buffer is essentially just a collection of pointers to render buffers and textures. Render buffers are actual collections of pixels.
 	//Set textures for the frame buffer.
 	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, m_diffuseTexture, 0);
 	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, m_ambientTexture, 0);
 	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, m_specularTexture,0);
 	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, m_positionTexture,0);
 	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT4, m_normalTexture,  0);
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_gpassDepth);
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,  m_gpassDepth,	 0);
 
-	GLenum gpassTargets[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4 };
+	GLenum gpassTargets[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4, GL_NONE };
 
-	glDrawBuffers(5, gpassTargets);
+	glDrawBuffers(6, gpassTargets);
+
 
 	//Check for errors
 	unsigned int status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
@@ -1580,12 +1583,12 @@ void Renderer::Draw()
 		glBindTexture(GL_TEXTURE_2D, m_specularTexture);
 		glUniform1i((m_uniformLocations[m_compositeProgram])[SPECULAR], 2);
 
-		//Light
+		//Diffuse Light
 		glActiveTexture(GL_TEXTURE3);
 		glBindTexture(GL_TEXTURE_2D, m_lightDiffuseTexture);
 		glUniform1i((m_uniformLocations[m_compositeProgram])[LIGHT_COLOUR], 3);
 
-		//Light
+		//Specular Light
 		glActiveTexture(GL_TEXTURE4);
 		glBindTexture(GL_TEXTURE_2D, m_lightSpecularTexture);
 		glUniform1i((m_uniformLocations[m_compositeProgram])[SPEC_POW], 4);
@@ -1595,7 +1598,6 @@ void Renderer::Draw()
 		glDrawElements(GL_TRIANGLES, m_numOfIndices[0], GL_UNSIGNED_INT, nullptr);
 
 #pragma endregion COMPOSITE
-
 #pragma region PARTICLES
 
 		//CPU Particles
@@ -1617,11 +1619,12 @@ void Renderer::Draw()
 		{
 			if (m_gpuEmitters[i] != nullptr)
 			{
-				m_gpuEmitters[i]->Draw((float)glfwGetTime(), m_cameras[0]->GetWorldTransform(), m_cameras[0]->GetProjectionView());
+				m_gpuEmitters[i]->Draw((float)glfwGetTime(), m_cameras[0]->GetWorldTransform(), m_cameras[0]->GetProjectionView(), m_gpassDepth);
 			}
 		}
 
 #pragma endregion PARTICLES
+
 #pragma endregion DEFERRED_CODE
 	}
 }
@@ -2138,12 +2141,33 @@ void Renderer::LoadIntoOpenGL(const Vertex* const a_verticesArray, const unsigne
 
 void Renderer::DestroyObject(const unsigned int a_index)
 {
+	std::map<std::string, unsigned int>::iterator iter = m_modelNames.begin();
+	while (iter != m_modelNames.end())
+	{
+		if (iter->second == a_index)
+		{
+			iter = m_textureNames.erase(iter);
+		}
+		++iter;
+		
+	}
+
 	glDeleteVertexArrays(1, &m_VAO[a_index]);
 	m_VAO[a_index] = -1;
 	glDeleteBuffers(1, &m_VBO[a_index]);
 	m_VBO[a_index] = -1;
 	glDeleteBuffers(1, &m_IBO[a_index]);
 	m_IBO[a_index] = -1;
+
+	iter = m_textureNames.begin();
+	while (iter != m_textureNames.end())
+	{
+		if (iter->second == m_textures[a_index] || iter->second == m_ambients[a_index] || iter->second == m_normals[a_index] || iter->second == m_speculars[a_index])
+		{
+			iter = m_textureNames.erase(iter);
+		}
+		++iter;
+	}
 
 	glDeleteTextures(1, &m_textures[a_index]);
 	m_textures[a_index] = -1;

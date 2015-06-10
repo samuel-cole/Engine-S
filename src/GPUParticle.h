@@ -31,7 +31,8 @@ public:
 					   const vec4& a_startColour, const vec4& a_endColour, const vec3& a_direction, const float a_directionVariance, TwBar* const a_bar, const unsigned int a_emitterID);
 	~GPUParticleEmitter();
 
-	void Draw(const float a_time, const glm::mat4& a_cameraTransform, const glm::mat4& a_projectionView);
+	//Draw function. The optional depthTexture argument is for depth testing to make sure particles don't draw over everything else in deferred rendering..
+	void Draw(const float a_time, const glm::mat4& a_cameraTransform, const glm::mat4& a_projectionView, const unsigned int a_depthTexture = -1);
 
 	inline const vec3& GetPosition()
 	{
@@ -95,7 +96,7 @@ private:
 	//Update program uniform locations
 	unsigned int m_timeUniformLocation, m_deltaTimeUniformLocation, m_emitterPositionUniformLocation, m_emitterPosition2UniformLocation, m_directionUniformLocation;
 	//Draw program uniform locations
-	unsigned int m_projectionViewUniformLocation, m_cameraTransformUniformLocation;
+	unsigned int m_projectionViewUniformLocation, m_cameraTransformUniformLocation, m_depthTextureUniformLocation;
 
 
 	float m_lastDrawTime;

@@ -17,31 +17,46 @@ uniform float SizeEnd;
 uniform vec4  ColourStart;
 uniform vec4  ColourEnd;
 
+uniform sampler2D DepthTexture;
+
 void main()
 {
-	vColour = mix(ColourStart, ColourEnd, vLifeTime[0] / vLifeSpan[0]);
+	//Check to see if this particle should be drawn.
 	
-	float halfSize = mix(SizeStart, SizeEnd, vLifeTime[0] / vLifeSpan[0]) * 0.5f;
+	//For starters, need to get this particle into camera space (projection view space?) so that I can convert it into a UV.
+	vec3 uv = vec3(ProjectionView * vec4(vPosition[0], 1));
 	
-	vec3 corners[4];
-	corners[0] = vec3(  halfSize, -halfSize, 0);
-	corners[1] = vec3(  halfSize,  halfSize, 0);
-	corners[2] = vec3( -halfSize, -halfSize, 0);
-	corners[3] = vec3( -halfSize,  halfSize, 0);
-	
-	//Billboarding
-	vec3 zAxis = normalize( CameraTransform[3].xyz - vPosition[0] );
-	vec3 xAxis = cross( CameraTransform[1].xyz, zAxis );
-	vec3 yAxis = cross( zAxis, xAxis );
-	mat3 billboard = mat3(xAxis, yAxis, zAxis);
-	
-	//Make a quad
-	gl_Position = ProjectionView * vec4( billboard * corners[0] + vPosition[0], 1 );
-	EmitVertex();
-	gl_Position = ProjectionView * vec4( billboard * corners[1] + vPosition[0], 1 );
-	EmitVertex();
-	gl_Position = ProjectionView * vec4( billboard * corners[2] + vPosition[0], 1 );
-	EmitVertex();
-	gl_Position = ProjectionView * vec4( billboard * corners[3] + vPosition[0], 1 );
-	EmitVertex();
+	//Get the uv in the range of [0, 1]. Not sure why it seems to be in the range [0, 100], but it is.
+	vec3 uvInRange = vec3(uv.x + 100.0f, uv.y + 100.0f, uv.z + 100.0f) / 200.0f;
+
+	//if (uvInRange.z < texture(DepthTexture, vec2(uvInRange)).r)
+	//{
+		//vColour = mix(ColourStart, ColourEnd, vLifeTime[0] / vLifeSpan[0]);
+		vColour = texture(DepthTexture, vec2(uv));
+		//vColour = vec4(uvInRange, 1);
+
+		float halfSize = mix(SizeStart, SizeEnd, vLifeTime[0] / vLifeSpan[0]) * 0.5f;
+		
+		vec3 corners[4];
+		corners[0] = vec3(  halfSize, -halfSize, 0);
+		corners[1] = vec3(  halfSize,  halfSize, 0);
+		corners[2] = vec3( -halfSize, -halfSize, 0);
+		corners[3] = vec3( -halfSize,  halfSize, 0);
+		
+		//Billboarding
+		vec3 zAxis = normalize( CameraTransform[3].xyz - vPosition[0] );
+		vec3 xAxis = cross( CameraTransform[1].xyz, zAxis );
+		vec3 yAxis = cross( zAxis, xAxis );
+		mat3 billboard = mat3(xAxis, yAxis, zAxis);
+		
+		//Make a quad
+		gl_Position = ProjectionView * vec4( billboard * corners[0] + vPosition[0], 1 );
+		EmitVertex();
+		gl_Position = ProjectionView * vec4( billboard * corners[1] + vPosition[0], 1 );
+		EmitVertex();
+		gl_Position = ProjectionView * vec4( billboard * corners[2] + vPosition[0], 1 );
+		EmitVertex();
+		gl_Position = ProjectionView * vec4( billboard * corners[3] + vPosition[0], 1 );
+		EmitVertex();
+	//}
 }

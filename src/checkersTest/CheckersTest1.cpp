@@ -195,9 +195,6 @@ void CheckersTest::Update(float a_deltaTime)
 	Don't select a piece at all it cannot make a move
 	*/
 
-	//if (aiThread.joinable())
-	//	aiThread.join();
-
 	m_inputTimer -= a_deltaTime;
 	m_colourTimer -= a_deltaTime;
 
