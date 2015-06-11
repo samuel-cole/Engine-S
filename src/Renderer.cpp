@@ -137,7 +137,7 @@ void Renderer::SetupGpass()
 	//Set up depth texture.
 	glGenTextures(1, &m_gpassDepth);
 	glBindTexture(GL_TEXTURE_2D, m_gpassDepth);
-	glTexStorage2D(GL_TEXTURE_2D, 1, GL_DEPTH_COMPONENT32F, 1280, 720);
+	glTexStorage2D(GL_TEXTURE_2D, 1, GL_DEPTH_COMPONENT32, 1280, 720);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	

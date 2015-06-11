@@ -254,7 +254,6 @@ public:
 	//Generates a perlin noise map. Pass the index of the model to have a perlin-based transform added to it into a_index. Note that perlin maps are not supported for animated models. a_octaves determines how bumpy the map will be.
 	void GeneratePerlinNoiseMap(const unsigned int a_rows, const unsigned int a_columns, const unsigned int a_octaves, const float a_amplitude, const float a_persistence, const unsigned int a_index, const unsigned int a_seed, const bool a_tileable);
 
-	//TODO: Allow users to use an already loaded-in diffuse, normal or specular map, instead of having to load it in a second time.
 	//Method for loading in a texture. Pass the index of the model to be textured into a_index.
 	void LoadTexture(const std::string& a_filePath, const unsigned int a_index);
 	//Method for loading in a texture that has already been created (used in conjunction with LoadFrameBuffer to create render targets).
