@@ -10,11 +10,12 @@ class Renderer;
 #include <PxScene.h>
 #include <pvd/PxVisualDebugger.h>
 #include <vector>
+#include "glm/vec3.hpp"
 
 using namespace physx;
+using glm::vec3;
 
 //Rigid Body Dynamics Tutorial.
-
 class Physics2 : public Application
 {
 private:
@@ -39,12 +40,16 @@ private:
 	PxMaterial* g_boxMaterial;
 	PxMaterial* g_sphereMaterial;
 	PxMaterial* g_capsuleMaterial;
+	PxMaterial* g_noBounceMaterial;
 	PxCooking* g_physicsCooker;
 
 	std::vector<PxRigidActor*> g_physicsActors;
 	//End of physics variables
 
+	//The models of each of the physics actors.
 	std::vector<unsigned int> m_models;
+	//The scale that each model should be at.
+	std::vector<vec3> m_scales;
 
 	FlyCamera* m_camera;
 	Renderer* m_renderer;

@@ -1193,7 +1193,6 @@ unsigned int Renderer::LoadOBJ(const string& a_filePath)
 		std::vector<unsigned int> indices;
 
 		//Here is where I look at each line and read its values into the appropriate vector.
-		//NOTE: / and // symbols within the file are not currently accounted for. (http://en.wikipedia.org/wiki/Wavefront_.obj_file)
 		/*
 		v = position
 		vn = normals

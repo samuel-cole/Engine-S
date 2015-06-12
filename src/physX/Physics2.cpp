@@ -2,6 +2,8 @@
 #include "glm\ext.hpp"
 #include "FlyCamera.h"
 #include "Renderer.h"
+//This is included for its Add Light function.
+#include "tut13\Tutorial13.h"
 
 #include <iostream>
 
@@ -36,20 +38,23 @@ int Physics2::Init()
 	SetUpPhysX();
 
 	//Add a plane
-	PxTransform pose = PxTransform(PxVec3(0.0f, 0.0f, 0.0f), PxQuat(PxHalfPi * 0.5f, PxVec3(0.0f, 0.0f, 1.0f)));
+	PxTransform pose = PxTransform(PxVec3(0.0f, 0.0f, 0.0f), PxQuat(PxHalfPi * 1.0f, PxVec3(0.0f, 0.0f, 1.0f)));
 	PxRigidStatic* plane = PxCreateStatic(*g_physics, pose, PxPlaneGeometry(), *g_physicsMaterial);
 	g_physicsScene->addActor(*plane);
 
-	//Add a box
-	float density = 10;
-	PxBoxGeometry box(2, 2, 2);
-	PxTransform transform(PxVec3(0, 5, 0));
-	PxRigidDynamic* dynamicActor = PxCreateDynamic(*g_physics, transform, box, *g_physicsMaterial, density);
+	for (int i = 0; i < 20; ++i)
+	{
+		AddBox(g_boxMaterial, 10, vec3(8, 8, 8), vec3(i * 16, 8, 0));
+	}
 
-	//Add it to the physX scene
-	g_physicsScene->addActor(*dynamicActor);
+	AddBox(g_noBounceMaterial, 10, vec3(2, 2, 2), vec3(2, 20, 0));
+
+	//AddBox(g_noBounceMaterial, 10, vec3(100, 100, 100), vec3(0, 100, 0));
 
 	spawnTimer = 0.0f;
+
+	TwAddSeparator(m_debugBar, "Lights", "");
+	TwAddButton(m_debugBar, "AddLight", AddLight, (void*)(m_renderer), "");
 
 	return 0;
 }
@@ -58,41 +63,16 @@ void Physics2::Update(float a_deltaTime)
 {
 	UpdatePhysX(a_deltaTime);
 
-	spawnTimer += a_deltaTime;
+	spawnTimer += a_deltaTime;		
 
-	if (spawnTimer > 1.0f)
+	if (spawnTimer >= 1.0f)
 	{
-		spawnTimer = 0.0f;
+		//AddBox(g_capsuleMaterial, 10, vec3(2, 2, 2), vec3(((float)rand() / (float)RAND_MAX) * 20.0f, ((float)rand() / (float)RAND_MAX) * 20.0f + 20.0f, ((float)rand() / (float)RAND_MAX) * 20.0f));
 
-		PxRigidDynamic* dynamicActor;
-
-		if (rand() % 2 == 0)
-		{
-			//Add a box
-			float density = 10;
-			PxBoxGeometry box(2, 2, 2);
-			PxTransform transform(PxVec3(((float)rand() / (float)RAND_MAX) * 20, ((float)rand() / (float)RAND_MAX) * 20, ((float)rand() / (float)RAND_MAX) * 20));
-			dynamicActor = PxCreateDynamic(*g_physics, transform, box, *g_boxMaterial, density);
-		}
-		else if (rand() % 2 == 0)
-		{
-			float density = 100;
-			PxCapsuleGeometry capsule(2, 2);
-			PxTransform transform(PxVec3(((float)rand() / (float)RAND_MAX) * 20, ((float)rand() / (float)RAND_MAX) * 20, ((float)rand() / (float)RAND_MAX) * 20));
-			dynamicActor = PxCreateDynamic(*g_physics, transform, capsule, *g_capsuleMaterial, density);
-		}
-		else
-		{
-			float density = 100;
-			PxSphereGeometry sphere(2);
-			PxTransform transform(PxVec3(((float)rand() / (float)RAND_MAX) * 20, ((float)rand() / (float)RAND_MAX) * 20, ((float)rand() / (float)RAND_MAX) * 20));
-			dynamicActor = PxCreateDynamic(*g_physics, transform, sphere, *g_sphereMaterial, density);
-		}
-
-
-		//Add it to the physX scene
-		g_physicsScene->addActor(*dynamicActor);
+		spawnTimer = 0;
 	}
+
+	m_camera->Update(a_deltaTime);
 }
 
 void Physics2::Draw()
@@ -120,9 +100,10 @@ void Physics2::SetUpPhysX()
 	g_physics = PxCreatePhysics(PX_PHYSICS_VERSION, *g_physicsFoundation, PxTolerancesScale());
 	PxInitExtensions(*g_physics);
 	g_physicsMaterial = g_physics->createMaterial(0.5f, 0.5f, 0.5f);
-	g_boxMaterial = g_physics->createMaterial(0.1f, 0.1f, 10.0f);
+	g_boxMaterial = g_physics->createMaterial(0.1f, 0.1f, 0.9f);
 	g_capsuleMaterial = g_physics->createMaterial(0.5f, 0.5f, 0.5f);
 	g_sphereMaterial = g_physics->createMaterial(0.9f, 0.9f, 0.1f);
+	g_noBounceMaterial = g_physics->createMaterial(0.9f, 0.9f, 0.0f);
 	PxSceneDesc sceneDesc(g_physics->getTolerancesScale());
 	sceneDesc.gravity = PxVec3(0, -10.0f, 0);
 	sceneDesc.filterShader = &physx::PxDefaultSimulationFilterShader;
@@ -162,7 +143,28 @@ void Physics2::UpdatePhysX(float a_deltaTime)
 	g_physicsScene->simulate(a_deltaTime);
 	while (g_physicsScene->fetchResults() == false)
 	{
-		//Fill in later.
+		//Represent all physics objects in the scene.
+		for (unsigned int i = 0; i < g_physicsActors.size(); ++i)
+		{
+			PxRigidActor* actor = g_physicsActors[i];
+
+			PxU32 shapesIndex = actor->getNbShapes();
+			PxShape** shapes = new PxShape*[shapesIndex];
+			
+			actor->getShapes(shapes, shapesIndex);
+			--shapesIndex;
+
+			PxMat44 m(PxShapeExt::getGlobalPose(*shapes[shapesIndex], *actor));
+			glm::mat4 transform(m.column0.x, m.column0.y, m.column0.z, m.column0.w,
+				m.column1.x, m.column1.y, m.column1.z, m.column1.w,
+				m.column2.x, m.column2.y, m.column2.z, m.column2.w,
+				m.column3.x, m.column3.y, m.column3.z, m.column3.w);
+			
+			m_renderer->SetTransform(glm::scale(transform, vec3(m_scales[i])), m_models[i]);
+
+			delete[] shapes;
+		}
+
 	}
 }
 
@@ -170,17 +172,13 @@ void Physics2::AddBox(PxMaterial* a_material, float a_density, vec3 a_dimensions
 {
 	PxBoxGeometry box(a_dimensions.x, a_dimensions.y, a_dimensions.z);
 	PxTransform position(PxVec3(a_position.x, a_position.y, a_position.z));
-	PxRigidDynamic *dynamicActor = PxCreateDynamic(*g_physics, position, box, *a_material, a_density);
+	PxCreateDynamic(*g_physics, position, box, *a_material, a_density);
+	g_physicsActors.push_back(PxCreateDynamic(*g_physics, position, box, *a_material, a_density));
+	g_physicsScene->addActor(*g_physicsActors[g_physicsActors.size() - 1]);
 
-
-	unsigned int cube = m_renderer->LoadOBJ("../data/cube.obj");
+	unsigned int cube = m_renderer->LoadOBJ("../data/cube2.obj");
 	m_renderer->LoadTexture("../data/crate.png", cube);
 	m_renderer->LoadAmbient("../data/crate.png", cube);
 	m_models.push_back(cube);
-
-	PxMat44 m(PxShapeExt::getGlobalPose(*box, *dynamicActor));
-	glm::mat4 transform(m.column0.x, m.column0.y, m.column0.z, m.column0.w,
-						m.column1.x, m.column1.y, m.column1.z, m.column1.w,
-						m.column2.x, m.column2.y, m.column2.z, m.column2.w,
-						m.column3.x, m.column3.y, m.column3.z, m.column3.w);	m_renderer->SetTransform(transform, cube);
+	m_scales.push_back(a_dimensions);
 }
