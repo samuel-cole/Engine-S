@@ -19,7 +19,7 @@ uniform mat4 Global;
 void main() {
 
 	vPosition = (Global * Position).xyz;
-	vNormal = normalize(Normal).xyz;
+	vNormal = normalize(Global * Normal).xyz;
 	vTangent = normalize(Tangent).xyz;
 	vBiTangent = cross(vNormal, vTangent);
 	vUV = UV;

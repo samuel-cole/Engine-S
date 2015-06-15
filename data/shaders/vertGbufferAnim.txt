@@ -23,7 +23,7 @@ uniform mat4 Bones[MAX_BONES];
 void main() {
 
 	
-	vNormal = normalize(Normal).xyz;
+	vNormal = normalize(Global * Normal).xyz;
 	vTangent = normalize(Tangent).xyz;
 	vBiTangent = cross(vNormal, vTangent);
 	vUV = UV;

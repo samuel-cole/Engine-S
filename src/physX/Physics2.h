@@ -28,6 +28,7 @@ private:
 	void SetUpVisualDebugger();
 	void UpdatePhysX(float a_deltaTime);
 	void AddBox(PxMaterial* a_material, float a_density, vec3 a_dimensions, vec3 a_position);
+	void AddSphere(PxMaterial* a_material, float a_density, float a_radius, vec3 a_position);
 
 	//Physics Variables
 	PxFoundation* g_physicsFoundation;

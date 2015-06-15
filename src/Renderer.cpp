@@ -86,7 +86,7 @@ m_standardProgram(-1), m_particleProgram(-1), m_animatedProgram(-1), m_postProce
 	SetupPointLights();
 	m_dirLightProgram = CreateProgram("../data/shaders/vertPostProcessing.txt", "../data/shaders/fragLightDir.txt");
 	m_compositeProgram = CreateProgram("../data/shaders/vertPostProcessing.txt", "../data/shaders/fragComposite.txt");
-	TwAddButton(a_bar, "Switch Deferred/Forward Rendering", ChangeDeferred, (void*)this, "");
+	TwAddButton(a_bar, "Switch to Forward Rendering", ChangeDeferred, (void*)this, "");
 	/////////End of Deferred Rendering Stuff///
 
 	//glEnable(GL_BLEND);
@@ -265,6 +265,7 @@ void Renderer::SetupPointLights()
 void Renderer::SwitchDeferred()
 {
 	m_deferredRenderMode = !m_deferredRenderMode;
+	TwRemoveVar(m_bar, "Switch to Forward Rendering");
 }
 
 unsigned int Renderer::CreateProgram(const string& a_vertPath, const string& a_fragPath)

@@ -42,12 +42,12 @@ int Physics2::Init()
 	PxRigidStatic* plane = PxCreateStatic(*g_physics, pose, PxPlaneGeometry(), *g_physicsMaterial);
 	g_physicsScene->addActor(*plane);
 
-	for (int i = 0; i < 20; ++i)
-	{
-		AddBox(g_boxMaterial, 10, vec3(8, 8, 8), vec3(i * 16, 8, 0));
-	}
-
-	AddBox(g_noBounceMaterial, 10, vec3(2, 2, 2), vec3(2, 20, 0));
+	//for (int i = 0; i < 20; ++i)
+	//{
+	//	AddBox(g_boxMaterial, 10, vec3(8, 8, 8), vec3(i * 16, 8, 0));
+	//}
+	//
+	//AddBox(g_noBounceMaterial, 10, vec3(2, 2, 2), vec3(2, 20, 0));
 
 	//AddBox(g_noBounceMaterial, 10, vec3(100, 100, 100), vec3(0, 100, 0));
 
@@ -67,7 +67,10 @@ void Physics2::Update(float a_deltaTime)
 
 	if (spawnTimer >= 1.0f)
 	{
-		//AddBox(g_capsuleMaterial, 10, vec3(2, 2, 2), vec3(((float)rand() / (float)RAND_MAX) * 20.0f, ((float)rand() / (float)RAND_MAX) * 20.0f + 20.0f, ((float)rand() / (float)RAND_MAX) * 20.0f));
+		if (rand() % 2 == 0)
+			AddBox(g_capsuleMaterial, 10.0f, vec3(2.0f, 2.0f, 2.0f), vec3(((float)rand() / (float)RAND_MAX) * 20.0f, ((float)rand() / (float)RAND_MAX) * 20.0f + 20.0f, ((float)rand() / (float)RAND_MAX) * 20.0f));
+		else
+			AddSphere(g_sphereMaterial, 10.0f, 2.0f, vec3(((float)rand() / (float)RAND_MAX) * 20.0f, ((float)rand() / (float)RAND_MAX) * 20.0f + 20.0f, ((float)rand() / (float)RAND_MAX) * 20.0f));
 
 		spawnTimer = 0;
 	}
@@ -176,9 +179,26 @@ void Physics2::AddBox(PxMaterial* a_material, float a_density, vec3 a_dimensions
 	g_physicsActors.push_back(PxCreateDynamic(*g_physics, position, box, *a_material, a_density));
 	g_physicsScene->addActor(*g_physicsActors[g_physicsActors.size() - 1]);
 
-	unsigned int cube = m_renderer->LoadOBJ("../data/cube2.obj");
+	unsigned int cube = m_renderer->LoadOBJ("../data/cube.obj");
 	m_renderer->LoadTexture("../data/crate.png", cube);
 	m_renderer->LoadAmbient("../data/crate.png", cube);
 	m_models.push_back(cube);
 	m_scales.push_back(a_dimensions);
+	m_renderer->SetTransform(glm::translate(a_position) * glm::scale(a_dimensions), cube);
+}
+
+void Physics2::AddSphere(PxMaterial* a_material, float a_density, float a_radius, vec3 a_position)
+{
+	PxSphereGeometry sphere(a_radius);
+	PxTransform position(PxVec3(a_position.x, a_position.y, a_position.z));
+	PxCreateDynamic(*g_physics, position, sphere, *a_material, a_density);
+	g_physicsActors.push_back(PxCreateDynamic(*g_physics, position, sphere, *a_material, a_density));
+	g_physicsScene->addActor(*g_physicsActors[g_physicsActors.size() - 1]);
+
+	unsigned int renderSphere = m_renderer->LoadOBJ("../data/sphere/sphere.obj");
+	m_renderer->LoadTexture("../data/crate.png", renderSphere);
+	m_renderer->LoadAmbient("../data/crate.png", renderSphere);
+	m_models.push_back(renderSphere);
+	m_scales.push_back(vec3(a_radius, a_radius, a_radius));
+	m_renderer->SetTransform(glm::translate(a_position) * glm::scale(vec3(a_radius, a_radius, a_radius)), renderSphere);
 }
