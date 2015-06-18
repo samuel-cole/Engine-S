@@ -98,6 +98,8 @@
     <ClCompile Include="..\src\Particle.cpp" />
     <ClCompile Include="..\src\physX\Physics1.cpp" />
     <ClCompile Include="..\src\physX\Physics2.cpp" />
+    <ClCompile Include="..\src\physX\PhysicsBase.cpp" />
+    <ClCompile Include="..\src\physX\PhysicsConcrete1.cpp" />
     <ClCompile Include="..\src\Renderer.cpp" />
     <ClCompile Include="..\src\StaticCamera.cpp" />
     <ClCompile Include="..\src\tut10\Tutorial10.cpp" />
@@ -128,6 +130,8 @@
     <ClInclude Include="..\src\Particle.h" />
     <ClInclude Include="..\src\physX\Physics1.h" />
     <ClInclude Include="..\src\physX\Physics2.h" />
+    <ClInclude Include="..\src\physX\PhysicsBase.h" />
+    <ClInclude Include="..\src\physX\PhysicsConcrete1.h" />
     <ClInclude Include="..\src\Renderer.h" />
     <ClInclude Include="..\src\StaticCamera.h" />
     <ClInclude Include="..\src\tut10\Tutorial10.h" />

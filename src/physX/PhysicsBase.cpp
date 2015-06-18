@@ -1,0 +1,191 @@
+#include "PhysicsBase.h"
+#include "glm\ext.hpp"
+#include "FlyCamera.h"
+#include "Renderer.h"
+#include "InputManager.h"
+
+#include <iostream>
+
+
+class myAllocator : public PxAllocatorCallback
+{
+public:
+	virtual ~myAllocator() {}
+	virtual void* allocate(size_t a_size, const char* a_typeName, const char* a_fileName, int a_line)
+	{
+		void* pointer = _aligned_malloc(a_size, 16);
+		return pointer;
+	}
+	virtual void deallocate(void* a_ptr)
+	{
+		_aligned_free(a_ptr);
+	}
+};
+
+int PhysicsBase::Init()
+{
+	int baseInit = Application::Init();
+	if (baseInit != 0)
+		return baseInit;
+
+	m_camera = new FlyCamera(m_debugBar);
+	m_camera->SetPerspective(glm::pi<float>() * 0.25f, 16.0f / 9.0f, 0.1f, 10000.0f);
+	m_camera->SetLookAt(vec3(10, 10, 10), vec3(0, 0, 0), vec3(0, 1, 0));
+	
+	m_renderer = new Renderer(m_camera, m_debugBar);
+
+	SetUpPhysX();
+
+	return 0;
+}
+
+void PhysicsBase::Update(float a_deltaTime)
+{
+	UpdatePhysX(a_deltaTime);
+
+	m_camera->Update(a_deltaTime);
+}
+
+void PhysicsBase::Draw()
+{
+	m_renderer->Draw();
+}
+
+int PhysicsBase::Deinit()
+{
+	delete m_camera;
+
+	m_renderer->CleanupBuffers();
+
+	g_physicsScene->release();
+	g_physics->release();
+	g_physicsFoundation->release();
+
+	return Application::Deinit();
+}
+
+void PhysicsBase::SetUpPhysX()
+{
+	PxAllocatorCallback *myCallback = new myAllocator();
+	g_physicsFoundation = PxCreateFoundation(PX_PHYSICS_VERSION, *myCallback, g_defaultErrorCallback);
+	g_physics = PxCreatePhysics(PX_PHYSICS_VERSION, *g_physicsFoundation, PxTolerancesScale());
+	PxInitExtensions(*g_physics);
+	PxSceneDesc sceneDesc(g_physics->getTolerancesScale());
+	sceneDesc.gravity = PxVec3(0, -10.0f, 0);
+	sceneDesc.filterShader = &physx::PxDefaultSimulationFilterShader;
+	sceneDesc.cpuDispatcher = PxDefaultCpuDispatcherCreate(1);
+	g_physicsScene = g_physics->createScene(sceneDesc);
+
+	SetUpVisualDebugger();
+}
+
+void PhysicsBase::SetUpVisualDebugger()
+{
+	//Check if the pbdconnection manager is available on this platform.
+	if (g_physics->getPvdConnectionManager() == NULL)
+	{
+		std::cout << "Error: PhysX Visual Debugger not working." << std::endl;
+		return;
+	}
+	//Setup connection parameters
+	//IP of the PC which is running PVD
+	const char* pvdHostIP = "127.0.0.1";
+	//TCP port to connect to, where PVD is listening
+	int port = 5425;
+	//Timeout in milliseconds to wait for PVD to respond, consoles and remote PC's need a higher timeout.
+	unsigned int timeout = 100;
+
+	PxVisualDebuggerConnectionFlags connectionFlags = PxVisualDebuggerExt::getAllConnectionFlags();
+	//And now try to connect.
+	auto connection = PxVisualDebuggerExt::createConnection(g_physics->getPvdConnectionManager(), pvdHostIP, port, timeout, connectionFlags);
+}
+
+void PhysicsBase::UpdatePhysX(float a_deltaTime)
+{
+	if (a_deltaTime <= 0)
+	{
+		return;
+	}
+	g_physicsScene->simulate(a_deltaTime);
+	while (g_physicsScene->fetchResults() == false)
+	{
+		//Represent all physics objects in the scene.
+		for (unsigned int i = 0; i < g_physicsActors.size(); ++i)
+		{
+			if (m_models[i] == -1)
+				continue;
+
+			PxRigidActor* actor = g_physicsActors[i];
+			if (actor->isRigidDynamic())
+			{
+				if (((PxRigidDynamic*)actor)->isSleeping())
+					continue;
+			}
+
+			PxU32 shapesIndex = actor->getNbShapes();
+			PxShape** shapes = new PxShape*[shapesIndex];
+
+			actor->getShapes(shapes, shapesIndex);
+			--shapesIndex;
+
+			PxMat44 m(PxShapeExt::getGlobalPose(*shapes[shapesIndex], *actor));
+			glm::mat4 transform(m.column0.x, m.column0.y, m.column0.z, m.column0.w,
+				m.column1.x, m.column1.y, m.column1.z, m.column1.w,
+				m.column2.x, m.column2.y, m.column2.z, m.column2.w,
+				m.column3.x, m.column3.y, m.column3.z, m.column3.w);
+
+			m_renderer->SetTransform(glm::scale(transform, vec3(m_scales[i])), m_models[i]);
+
+			delete[] shapes;
+		}
+
+	}
+}
+
+void PhysicsBase::AddBox(PxMaterial* a_material, float a_density, vec3 a_dimensions, vec3 a_position, bool a_visible)
+{
+	PxBoxGeometry box(a_dimensions.x, a_dimensions.y, a_dimensions.z);
+	PxTransform position(PxVec3(a_position.x, a_position.y, a_position.z));
+	PxCreateDynamic(*g_physics, position, box, *a_material, a_density);
+	g_physicsActors.push_back(PxCreateDynamic(*g_physics, position, box, *a_material, a_density));
+	g_physicsScene->addActor(*g_physicsActors[g_physicsActors.size() - 1]);
+
+	if (a_visible)
+	{
+		unsigned int cube = m_renderer->LoadOBJ("../data/cube.obj");
+		m_renderer->LoadTexture("../data/crate.png", cube);
+		m_renderer->LoadAmbient("../data/crate.png", cube);
+		m_models.push_back(cube);
+		m_scales.push_back(a_dimensions);
+		m_renderer->SetTransform(glm::translate(a_position) * glm::scale(a_dimensions), cube);
+	}
+	else
+	{
+		m_models.push_back(-1);
+		m_scales.push_back(vec3(-1, -1, -1));
+	}
+}
+
+void PhysicsBase::AddSphere(PxMaterial* a_material, float a_density, float a_radius, vec3 a_position, bool a_visible)
+{
+	PxSphereGeometry sphere(a_radius);
+	PxTransform position(PxVec3(a_position.x, a_position.y, a_position.z));
+	PxCreateDynamic(*g_physics, position, sphere, *a_material, a_density);
+	g_physicsActors.push_back(PxCreateDynamic(*g_physics, position, sphere, *a_material, a_density));
+	g_physicsScene->addActor(*g_physicsActors[g_physicsActors.size() - 1]);
+
+	if (a_visible)
+	{
+		unsigned int renderSphere = m_renderer->LoadOBJ("../data/sphere/sphere.obj");
+		m_renderer->LoadTexture("../data/crate.png", renderSphere);
+		m_renderer->LoadAmbient("../data/crate.png", renderSphere);
+		m_models.push_back(renderSphere);
+		m_scales.push_back(vec3(a_radius, a_radius, a_radius));
+		m_renderer->SetTransform(glm::translate(a_position) * glm::scale(vec3(a_radius, a_radius, a_radius)), renderSphere);
+	}
+	else
+	{
+		m_models.push_back(-1);
+		m_scales.push_back(vec3(-1, -1, -1));
+	}
+}

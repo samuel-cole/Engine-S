@@ -56,6 +56,10 @@ private:
 	Renderer* m_renderer;
 
 	float spawnTimer;
+	float shootTimer;
+
+	unsigned int m_gun;
+	unsigned int m_playerLight;
 };
 
 #endif

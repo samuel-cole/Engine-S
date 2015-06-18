@@ -26,6 +26,7 @@ class InputManager
 public:
 	static bool GetKey(const Keys a_key);
 
+	//Get whether the mouse button passed in as an argument is being pressed. Starts at 0 (for left click).
 	static bool GetMouseDown(const int a_mouseButton);
 
 	static void SetMousePos(const glm::vec2& a_pos);

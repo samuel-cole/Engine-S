@@ -33,7 +33,7 @@ m_standardProgram(-1), m_particleProgram(-1), m_animatedProgram(-1), m_postProce
 	m_dirLightStrength = 0.1f;
 	m_lightColour = vec3(1, 1, 1);
 	m_lightDir = vec3(1, -1, 1);
-	m_specPow = 2.0f;
+	m_specPow = 1.0f;
 
 	TwAddVarRW(m_bar, "Directional Light Strength", TW_TYPE_FLOAT, &m_dirLightStrength, "step=0.01");
 	TwAddVarRW(m_bar, "Light Colour", TW_TYPE_COLOR3F, &m_lightColour[0], "");
@@ -947,20 +947,43 @@ unsigned int Renderer::CreateEmitter(const unsigned int a_maxParticles, const fl
 
 void Renderer::SetLightPosition(const unsigned int a_index, const vec3& a_position)
 {
-	std::list<vec3>::iterator iter = std::next(m_pointPositions.begin(), a_index);
-	(*iter) = a_position;
+	if (a_index < m_pointPositions.size())
+	{
+		std::list<vec3>::iterator iter = std::next(m_pointPositions.begin(), a_index);
+		(*iter) = a_position;
+	}
+	else
+	{
+		std::cout << "Error: invalid light index used while setting position." << std::endl;
+	}
 }
 
-const vec3& Renderer::GetLightPosition(const unsigned int a_index)
+bool Renderer::GetLightPosition(const unsigned int a_index, vec3& a_returnValue)
 {
-	std::list<vec3>::iterator iter = std::next(m_pointPositions.begin(), a_index);
-	return (*iter);
+	if (a_index < m_pointPositions.size())
+	{
+		std::list<vec3>::iterator iter = std::next(m_pointPositions.begin(), a_index);
+		a_returnValue = *iter;
+		return true;
+	}
+	else
+	{
+		std::cout << "Error: invalid light index used while getting position." << std::endl;
+		return false;
+	}
 }
 
-void Renderer::SetLightColour(const unsigned int a_index, const vec3& a_position)
+void Renderer::SetLightColour(const unsigned int a_index, const vec3& a_colour)
 {
-	std::list<vec3>::iterator iter = std::next(m_pointColours.begin(), a_index);
-	(*iter) = a_position;
+	if (a_index < m_pointColours.size())
+	{
+		std::list<vec3>::iterator iter = std::next(m_pointColours.begin(), a_index);
+		(*iter) = a_colour;
+	}
+	else
+	{
+		std::cout << "Error: invalid light index used while setting light colour." << std::endl;
+	}
 }
 
 void Renderer::SetEmitterPosition(const unsigned int a_index, const bool a_gpuBased, const vec3& a_position)

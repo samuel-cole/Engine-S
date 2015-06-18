@@ -2,8 +2,10 @@
 #include "glm\ext.hpp"
 #include "FlyCamera.h"
 #include "Renderer.h"
+#include "InputManager.h"
 //This is included for its Add Light function.
 #include "tut13\Tutorial13.h"
+
 
 #include <iostream>
 
@@ -52,6 +54,14 @@ int Physics2::Init()
 	//AddBox(g_noBounceMaterial, 10, vec3(100, 100, 100), vec3(0, 100, 0));
 
 	spawnTimer = 0.0f;
+	shootTimer = 0.0f;
+
+	m_gun = m_renderer->LoadOBJ("../data/gun/crossbow.obj");
+	m_renderer->LoadTexture("../data/gun/texture.jpg", m_gun);
+	m_renderer->LoadAmbient("../data/gun/texture.jpg", m_gun);
+	m_renderer->LoadSpecularMap("../data/gun/specular.jpg", m_gun);
+
+	m_playerLight = m_renderer->CreatePointLight(vec3(0.3f, 0.3f, 0.3f), 4.0f, false);
 
 	TwAddSeparator(m_debugBar, "Lights", "");
 	TwAddButton(m_debugBar, "AddLight", AddLight, (void*)(m_renderer), "");
@@ -64,9 +74,11 @@ void Physics2::Update(float a_deltaTime)
 	UpdatePhysX(a_deltaTime);
 
 	spawnTimer += a_deltaTime;		
+	shootTimer -= a_deltaTime;
 
-	if (spawnTimer >= 1.0f)
+	if (spawnTimer >= 1.00f)
 	{
+		std::cout << m_models.size() << std::endl;
 		if (rand() % 2 == 0)
 			AddBox(g_capsuleMaterial, 10.0f, vec3(2.0f, 2.0f, 2.0f), vec3(((float)rand() / (float)RAND_MAX) * 20.0f, ((float)rand() / (float)RAND_MAX) * 20.0f + 20.0f, ((float)rand() / (float)RAND_MAX) * 20.0f));
 		else
@@ -76,6 +88,23 @@ void Physics2::Update(float a_deltaTime)
 	}
 
 	m_camera->Update(a_deltaTime);
+
+	//Shooting and moving the gun should happen after updating the camera.
+	m_renderer->SetTransform(glm::translate(glm::scale(glm::rotate(m_camera->GetWorldTransform(), 0.2f, vec3(1, 0, 0)), vec3(0.005f, 0.005f, 0.005f)), vec3(0.0f, -25.0f, -5.0f)), m_gun);
+	if (shootTimer > 0.0f)
+	{
+		//Move the gun back if reloading.
+		m_renderer->SetTransform(glm::translate(m_renderer->GetTransform(m_gun), vec3(0, 0, 5 * shootTimer)), m_gun);
+	}
+
+	m_renderer->SetLightPosition(m_playerLight, vec3(m_camera->GetWorldTransform()[3]));
+	if (InputManager::GetMouseDown(0) && shootTimer < 0.0f)
+	{
+		shootTimer = 0.5f;
+		AddSphere(g_sphereMaterial, 10.0f, 2.0f, vec3(m_camera->GetWorldTransform()[3]));
+		vec3 forward = glm::rotateY(vec3(m_camera->GetWorldTransform()[2]), -0.2f);
+		((PxRigidDynamic*)(g_physicsActors[g_physicsActors.size() - 1]))->setLinearVelocity(PxVec3(forward.x, forward.y, forward.z) * -100.0f);
+	}
 }
 
 void Physics2::Draw()
@@ -150,6 +179,11 @@ void Physics2::UpdatePhysX(float a_deltaTime)
 		for (unsigned int i = 0; i < g_physicsActors.size(); ++i)
 		{
 			PxRigidActor* actor = g_physicsActors[i];
+			if (actor->isRigidDynamic())
+			{
+				if (((PxRigidDynamic*)actor)->isSleeping())
+					continue;
+			}
 
 			PxU32 shapesIndex = actor->getNbShapes();
 			PxShape** shapes = new PxShape*[shapesIndex];

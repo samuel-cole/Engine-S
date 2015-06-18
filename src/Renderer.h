@@ -288,8 +288,8 @@ public:
 
 	//Sets the position of the emitter at the specified index to the position indicated.
 	void SetLightPosition(const unsigned int a_index, const vec3& a_position);
-	//Returns the position of the emitter at the specified index.
-	const vec3& GetLightPosition(const unsigned int a_index);
+	//Sets the 'returnValue' argument to the position of the emitter at the specified index. Returns true if the index is valid, false if it isn't.
+	bool GetLightPosition(const unsigned int a_index, vec3& a_returnValue);
 	//Sets the colour of the emitter at the specified index to the colour indicated.
 	void SetLightColour(const unsigned int a_index, const vec3& a_colour);
 
