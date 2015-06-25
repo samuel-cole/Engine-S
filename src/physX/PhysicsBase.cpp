@@ -142,7 +142,7 @@ void PhysicsBase::UpdatePhysX(float a_deltaTime)
 	}
 }
 
-void PhysicsBase::AddBox(PxMaterial* a_material, float a_density, vec3 a_dimensions, vec3 a_position, bool a_visible)
+void PhysicsBase::AddBox(PxMaterial* a_material, float a_density, const vec3& a_dimensions, const vec3& a_position, bool a_visible)
 {
 	PxBoxGeometry box(a_dimensions.x, a_dimensions.y, a_dimensions.z);
 	PxTransform position(PxVec3(a_position.x, a_position.y, a_position.z));
@@ -166,7 +166,7 @@ void PhysicsBase::AddBox(PxMaterial* a_material, float a_density, vec3 a_dimensi
 	}
 }
 
-void PhysicsBase::AddSphere(PxMaterial* a_material, float a_density, float a_radius, vec3 a_position, bool a_visible)
+void PhysicsBase::AddSphere(PxMaterial* a_material, float a_density, float a_radius, const vec3& a_position, bool a_visible)
 {
 	PxSphereGeometry sphere(a_radius);
 	PxTransform position(PxVec3(a_position.x, a_position.y, a_position.z));
@@ -188,4 +188,78 @@ void PhysicsBase::AddSphere(PxMaterial* a_material, float a_density, float a_rad
 		m_models.push_back(-1);
 		m_scales.push_back(vec3(-1, -1, -1));
 	}
+}
+
+unsigned int PhysicsBase::AddProceduralPlane(unsigned int a_dimensions, unsigned int a_noiseMapDimensions,
+											 unsigned int a_stretch, const vec3& a_position, PxMaterial* a_material,
+											 float a_amplitude, unsigned int a_seed, unsigned int a_octaves, float a_persistence)
+{
+	std::vector<float> proceduralHeights;
+
+	unsigned int object = m_renderer->GenerateGrid(a_dimensions, a_dimensions);
+	m_renderer->GeneratePerlinNoiseMap(a_noiseMapDimensions, a_noiseMapDimensions, a_octaves, a_amplitude, a_persistence, object, a_seed, false, proceduralHeights);
+	m_renderer->SetTransform(glm::scale(glm::translate(a_position), vec3(a_stretch, 1, a_stretch)), object);
+
+	//This is used for getting the maximum possible precision from PhysX for my heightmap.
+	//This is the highest number that I can use.
+	float maxNumber = (1 << (sizeof(PxI16)* 8)) / 2 - 1;
+
+	float highestHeight = -9999999.9f;
+	for (unsigned int i = 0; i < proceduralHeights.size(); ++i)
+	{
+		if (proceduralHeights[i] > highestHeight)
+		{
+			highestHeight = proceduralHeights[i];
+		}
+	}
+
+	if (highestHeight == -9999999.9f)
+	{
+		std::cout << "Error: Sending invalid perlin heights to PhysX." << std::endl;
+	}
+	else
+	{
+		//PhysX uses a short to store heights, so I use this to find the largest possible number that I can multiply by without losing wrapping around.
+		float multiplier = (maxNumber / highestHeight);
+
+		//Get the heights of the procedural terrain into a form accepted by PhysX.
+		PxHeightFieldSample* data = new PxHeightFieldSample[proceduralHeights.size()];
+		unsigned int counter = 0;
+		for (unsigned int i = a_dimensions; i < proceduralHeights.size(); --i)
+		{
+
+			data[counter].height = (short)(proceduralHeights[i] * multiplier);
+			data[counter].materialIndex0 = 0;
+			data[counter].materialIndex1 = 0;
+
+			if (i % 100 == 0)
+			{
+				i += 200;
+			}
+			counter++;
+		}
+
+		//Generate the height
+		PxHeightFieldDesc heightFieldDesc;
+		heightFieldDesc.format = PxHeightFieldFormat::eS16_TM;
+		heightFieldDesc.nbColumns = a_dimensions + 1;
+		heightFieldDesc.nbRows = a_dimensions + 1;
+		heightFieldDesc.samples.data = data;
+		heightFieldDesc.samples.stride = sizeof(PxHeightFieldSample);
+		heightFieldDesc.thickness = -100.0f;
+
+		//Make the physics representation of the heightfield.
+		PxHeightField* heightField = g_physics->createHeightField(heightFieldDesc);
+		PxHeightFieldGeometry heightFieldGeometry(heightField, PxMeshGeometryFlags(), 1.0f / multiplier, a_stretch, a_stretch);
+		float translate = (a_dimensions + 1) * a_stretch / 2.0f;
+		PxTransform pose = PxTransform(PxVec3(translate, 0.0f, -translate) + PxVec3(a_position.x, a_position.y, a_position.z), PxQuat(PxHalfPi, PxVec3(0, -1, 0)));
+
+		PxShape* heightFieldShape = g_physics->createShape(heightFieldGeometry, *a_material);
+		PxRigidStatic* terrain = PxCreateStatic(*g_physics, pose, *heightFieldShape);
+		g_physicsScene->addActor(*terrain);
+
+		delete[] data;
+	}
+
+	return object;
 }

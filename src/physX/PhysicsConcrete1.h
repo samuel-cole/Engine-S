@@ -14,7 +14,9 @@ private:
 	PxMaterial* g_physicsMaterial;
 
 	float m_spawnTimer;
+
 	float m_shootTimer;
+	float m_shootForce;
 
 	unsigned int m_gun;
 

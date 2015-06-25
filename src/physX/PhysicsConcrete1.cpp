@@ -4,8 +4,6 @@
 #include "InputManager.h"
 //Used for addlight function
 #include "tut13\Tutorial13.h"
-//Used for generate checkers board function
-#include "checkersTest\CheckersTest1.h"
 
 #include <iostream>
 
@@ -18,9 +16,9 @@ int PhysicsConcrete1::Init()
 	g_physicsMaterial = g_physics->createMaterial(0.5f, 0.5f, 0.5f);
 
 	//Add a plane
-	PxTransform pose = PxTransform(PxVec3(0.0f, 0.0f, 0.0f), PxQuat(PxHalfPi * 1.0f, PxVec3(0.0f, 0.0f, 1.0f)));
-	PxRigidStatic* plane = PxCreateStatic(*g_physics, pose, PxPlaneGeometry(), *g_physicsMaterial);
-	g_physicsScene->addActor(*plane);
+	//PxTransform pose = PxTransform(PxVec3(0.0f, 0.0f, 0.0f), PxQuat(PxHalfPi * 1.0f, PxVec3(0.0f, 0.0f, 1.0f)));
+	//PxRigidStatic* plane = PxCreateStatic(*g_physics, pose, PxPlaneGeometry(), *g_physicsMaterial);
+	//g_physicsScene->addActor(*plane);
 
 	m_gun = m_renderer->LoadOBJ("../data/gun/crossbow.obj");
 	m_renderer->LoadTexture("../data/gun/texture.jpg", m_gun);
@@ -29,17 +27,21 @@ int PhysicsConcrete1::Init()
 
 	m_spawnTimer = 0.0f;
 	m_shootTimer = 0.0f;
+	m_shootForce = 100.0f;
 
-	unsigned int object = m_renderer->GenerateGrid(800, 800);
+	//unsigned int object = AddProceduralPlane(99, 100, 8, vec3(0, 0, 0), g_physicsMaterial, 100);
+	unsigned int object = AddProceduralPlane(99, 9, 9, vec3(0, -300, 0), g_physicsMaterial, 100);
 	m_renderer->LoadTexture("../data/checkerboard.png", object);
 	m_renderer->LoadAmbient("../data/checkerboard.png", object);
+
+	TwAddVarRW(m_debugBar, "Shoot Force", TW_TYPE_FLOAT, &m_shootForce, "");
 
 	TwAddSeparator(m_debugBar, "Lights", "");
 	TwAddButton(m_debugBar, "AddLight", AddLight, (void*)(m_renderer), "");
 
-	PxBoxGeometry box(1, 2, 1);
-	PxTransform position(PxVec3(0, 0, 0));
-	m_player = PxCreateDynamic(*g_physics, position, box, *g_physicsMaterial, 10);
+	PxBoxGeometry playerBox(1, 2, 1);
+	PxTransform playerPos(PxVec3(0, 0, 0));
+	m_player = PxCreateDynamic(*g_physics, playerPos, playerBox, *g_physicsMaterial, 10);
 	m_player->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
 	g_physicsScene->addActor(*m_player);
 
@@ -65,7 +67,7 @@ void PhysicsConcrete1::Update(float a_deltaTime)
 	{
 		std::cout << m_models.size() << std::endl;
 
-		vec3 randPos = vec3(((float)rand() / (float)RAND_MAX) * 20.0f, ((float)rand() / (float)RAND_MAX) * 20.0f + 20.0f, ((float)rand() / (float)RAND_MAX) * 20.0f);
+		vec3 randPos = vec3(((float)rand() / (float)RAND_MAX) * 20.0f, ((float)rand() / (float)RAND_MAX) * 20.0f + 200.0f, ((float)rand() / (float)RAND_MAX) * 20.0f);
 
 		if (rand() % 2 == 0)
 			AddBox(g_physicsMaterial, 10.0f, vec3(2.0f, 2.0f, 2.0f), randPos, true);
@@ -87,10 +89,11 @@ void PhysicsConcrete1::Update(float a_deltaTime)
 
 	if (InputManager::GetMouseDown(0) && m_shootTimer < 0.0f)
 	{
-		m_shootTimer = 0.1f;
+		//Shoot
+		m_shootTimer = 0.5f;
 		AddSphere(g_physicsMaterial, 10.0f, 2.0f, vec3(cameraWorld[3]) + vec3(cameraWorld[2]) * -5.0f, true);
 		vec3 forward = glm::rotateY(vec3(cameraWorld[2]), -0.2f);
-		((PxRigidDynamic*)(g_physicsActors[g_physicsActors.size() - 1]))->setLinearVelocity(PxVec3(forward.x, forward.y, forward.z) * -100.0f);
+		((PxRigidDynamic*)(g_physicsActors[g_physicsActors.size() - 1]))->setLinearVelocity(PxVec3(forward.x, forward.y, forward.z) * -1 * m_shootForce);
 
 		m_lights.push_back(m_renderer->CreatePointLight(vec3(((float)rand() / (float)RAND_MAX), ((float)rand() / (float)RAND_MAX), ((float)rand() / (float)RAND_MAX)), 20, false, vec3(cameraWorld[3])));
 	}

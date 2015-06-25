@@ -40,7 +40,6 @@ enum UniformTypes
 
 struct Vertex
 {
-	//TODO: change these to vec3s- the fourth variable i just being dropped in the vert shader anyway.
 	//Used in all vertices
 	vec4 position;
 	vec4 colour;
@@ -252,7 +251,8 @@ public:
 	//Creates a shadow map. Setting light width to a high number gives a large area that shadows can be created within, while setting it to a low number generates higher quality shadow maps.
 	void GenerateShadowMap(const float a_lightWidth);
 	//Generates a perlin noise map. Pass the index of the model to have a perlin-based transform added to it into a_index. Note that perlin maps are not supported for animated models. a_octaves determines how bumpy the map will be.
-	void GeneratePerlinNoiseMap(const unsigned int a_rows, const unsigned int a_columns, const unsigned int a_octaves, const float a_amplitude, const float a_persistence, const unsigned int a_index, const unsigned int a_seed, const bool a_tileable);
+	//a_heights is used for passing out the heights of each vertex on the object after being modified by the Perlin Noise map.
+	void GeneratePerlinNoiseMap(const unsigned int a_rows, const unsigned int a_columns, const unsigned int a_octaves, const float a_amplitude, const float a_persistence, const unsigned int a_index, const unsigned int a_seed, const bool a_tileable, std::vector<float>& a_heights = std::vector<float>());
 
 	//Method for loading in a texture. Pass the index of the model to be textured into a_index.
 	void LoadTexture(const std::string& a_filePath, const unsigned int a_index);

@@ -20,7 +20,7 @@ void TW_CALL BoardGenerate(void* a_clientData)
 	infoForBar->renderer->GeneratePerlinNoiseMap(9, 9, 6, infoForBar->amplitude, infoForBar->persistence, infoForBar->object, infoForBar->seed, false);
 }
 
-int CheckersTest::Init()
+int CheckersTest1::Init()
 {
 	int baseInit = Application::Init();
 	if (baseInit != 0)
@@ -39,8 +39,6 @@ int CheckersTest::Init()
 	m_infoForBar.renderer->LoadTexture("../data/checkerboard.png", m_infoForBar.object);
 	m_infoForBar.renderer->LoadAmbient("../data/checkerboard.png", m_infoForBar.object);
 	m_infoForBar.renderer->GeneratePerlinNoiseMap(9, 9, 6, m_infoForBar.amplitude, m_infoForBar.persistence, m_infoForBar.object, m_infoForBar.seed, false);
-
-	//M_TILE_WIDTH = 100.0f / 8.0f;
 	
 	TwAddSeparator(m_debugBar, "Plane", "");
 	TwAddVarRW(m_debugBar, "Amplitude", TW_TYPE_FLOAT, &m_infoForBar.amplitude, "");
@@ -179,17 +177,15 @@ int CheckersTest::Init()
 	return 0;
 }
 
-void CheckersTest::Update(float a_deltaTime)
+void CheckersTest1::Update(float a_deltaTime)
 {
 	/*Stuff to add:
-	Actual Game
 	Pieces change height based on board
 	Networked multiplayer
 	Framebuffers as pieces
 	Pieces lerp to position instead of just blink
 	Proper input handling instead of a timer
 	Line up taken pieces
-	Special effects for multiple pieces taken in one turn.
 	Provide options, eg: must take if you can on/off, etc.
 	Show which pieces can be taken
 	Don't select a piece at all it cannot make a move
@@ -265,7 +261,7 @@ void CheckersTest::Update(float a_deltaTime)
 		}
 		else if (m_threadFinished)
 		{
-			std::thread thr(&CheckersTest::UseAIMove, this);
+			std::thread thr(&CheckersTest1::UseAIMove, this);
 			std::swap(thr, m_aiThread);
 			m_aiThread.detach();
 		}
@@ -282,12 +278,12 @@ void CheckersTest::Update(float a_deltaTime)
 	m_camera->Update(a_deltaTime);
 }
 
-void CheckersTest::Draw()
+void CheckersTest1::Draw()
 {
 	m_infoForBar.renderer->Draw();
 }
 
-int CheckersTest::Deinit()
+int CheckersTest1::Deinit()
 {
 	delete m_camera;
 
@@ -296,7 +292,7 @@ int CheckersTest::Deinit()
 	return Application::Deinit();
 }
 
-void CheckersTest::HandleEnter(int(&a_board)[8][8], const unsigned int a_xPos, const unsigned int a_yPos, unsigned int &a_prevX, unsigned int &a_prevY, bool &a_turn, const bool a_changeEmitters, unsigned int& a_pieceSelected)
+void CheckersTest1::HandleEnter(int(&a_board)[8][8], const unsigned int a_xPos, const unsigned int a_yPos, unsigned int &a_prevX, unsigned int &a_prevY, bool &a_turn, const bool a_changeEmitters, unsigned int& a_pieceSelected)
 {
 	if (a_pieceSelected == -1)
 	{
@@ -468,7 +464,7 @@ void CheckersTest::HandleEnter(int(&a_board)[8][8], const unsigned int a_xPos, c
 	}
 }
 
-bool CheckersTest::ValidMove(const int a_board[8][8], const unsigned int a_xPos, const unsigned int a_yPos, const unsigned int a_prevX, const unsigned int a_prevY, const bool a_turn, bool a_changeEmitters)
+bool CheckersTest1::ValidMove(const int a_board[8][8], const unsigned int a_xPos, const unsigned int a_yPos, const unsigned int a_prevX, const unsigned int a_prevY, const bool a_turn, bool a_changeEmitters)
 {
 	//I should later account for kings or whatever the upgraded checker pieces are called.
 
@@ -564,7 +560,7 @@ bool CheckersTest::ValidMove(const int a_board[8][8], const unsigned int a_xPos,
 
 }
 
-void CheckersTest::AIMove(int(&a_board)[8][8], const bool a_turn, const unsigned int a_difficulty)
+void CheckersTest1::AIMove(int(&a_board)[8][8], const bool a_turn, const unsigned int a_difficulty)
 {
 	std::vector<std::vector<std::vector<int>>> actions;
 	std::vector<int> scores;
@@ -626,7 +622,7 @@ void CheckersTest::AIMove(int(&a_board)[8][8], const bool a_turn, const unsigned
 	}
 }
 
-std::vector<std::vector<std::vector<int>>> CheckersTest::GetPossibleMoves(const int a_board[8][8], const bool a_turn)
+std::vector<std::vector<std::vector<int>>> CheckersTest1::GetPossibleMoves(const int a_board[8][8], const bool a_turn)
 {
 	std::vector<std::vector<std::vector<int>>> results;
 
@@ -783,7 +779,7 @@ std::vector<std::vector<std::vector<int>>> CheckersTest::GetPossibleMoves(const 
 	return results;
 }
 
-int CheckersTest::PlayUntilEnd(std::vector<std::vector<int>> a_board, const bool a_turn)
+int CheckersTest1::PlayUntilEnd(std::vector<std::vector<int>> a_board, const bool a_turn)
 {
 	int board[8][8];
 	for (int i = 0; i < 8; ++i)
@@ -849,7 +845,7 @@ int CheckersTest::PlayUntilEnd(std::vector<std::vector<int>> a_board, const bool
 
 }
 
-void CheckersTest::UseAIMove()
+void CheckersTest1::UseAIMove()
 {
 	m_threadFinished = false;
 	std::vector<bool> emittersMoved;

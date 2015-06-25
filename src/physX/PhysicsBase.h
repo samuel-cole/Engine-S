@@ -27,8 +27,23 @@ protected:
 	void SetUpPhysX();
 	void SetUpVisualDebugger();
 	void UpdatePhysX(float a_deltaTime);
-	void AddBox(PxMaterial* a_material, float a_density, vec3 a_dimensions, vec3 a_position, bool a_visible);
-	void AddSphere(PxMaterial* a_material, float a_density, float a_radius, vec3 a_position, bool a_visible);
+	void AddBox(PxMaterial* a_material, float a_density, const vec3& a_dimensions, const vec3& a_position, bool a_visible);
+	void AddSphere(PxMaterial* a_material, float a_density, float a_radius, const vec3& a_position, bool a_visible);
+
+	//Function used for adding a procedurally generated plane.
+	//a_dimensions determines how many rows/columns the created mesh should have (also sets the size).
+	//a_noiseMapDimensions determines how many rows/columns the perlin noise mesh should have. Set to the same value as a_dimensions for most purposes, use a smaller value for a 'blocky' look.
+	//a_stretch determines how much the mesh should be scaled by.
+	//a_position determines the position of the center of the plane.
+	//a_material sets the physics material for the plane.
+	//a_amplitude determines how high the plane should be deformed.
+	//a_seed is used to seed the random generation. Different values result in a different randomly generated plane.
+	//a_octaves determines how bumpy the plane should be- higher numbers are bumpier, but take longer to generate.
+	//a_persistence determines how quickly the height deformation should fall-off during generation.
+	//Returns the index of the plane within m_renderer. NOTE: DO NOT USE THIS INDEX FOR MOVING THIS PLANE. THE PHYSICS PLANE WILL NOT MOVE WITH IT.
+	unsigned int AddProceduralPlane(unsigned int a_dimensions, unsigned int a_noiseMapDimensions, 
+							unsigned int a_stretch, const vec3& a_position, PxMaterial* a_material,
+							float a_amplitude, unsigned int a_seed = rand(), unsigned int a_octaves = 6, float a_persistence = 0.3f);
 
 	//Physics Variables
 	PxFoundation* g_physicsFoundation;

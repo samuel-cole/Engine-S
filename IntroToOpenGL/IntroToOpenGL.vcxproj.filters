@@ -108,6 +108,9 @@
     <ClCompile Include="..\src\physX\PhysicsConcrete1.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\checkersTest\CheckersTest2.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\gl_core_4_4.h">
@@ -198,6 +201,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\src\physX\PhysicsConcrete1.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\checkersTest\CheckersTest2.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -18,7 +18,7 @@ struct InfoForBar {
 	unsigned int object;
 };
 
-class CheckersTest : public Application
+class CheckersTest1 : public Application
 {
 private:
 	int Init();

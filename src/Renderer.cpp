@@ -442,7 +442,7 @@ void Renderer::GenerateShadowMap(const float a_lightWidth)
 	m_lightProjection = glm::ortho<float>(-a_lightWidth, a_lightWidth, -a_lightWidth, a_lightWidth, -a_lightWidth, a_lightWidth);
 }
 
-void Renderer::GeneratePerlinNoiseMap(const unsigned int a_rows, const unsigned int a_columns, const unsigned int a_octaves, const float a_amplitude, const float a_persistence, const unsigned int a_index, const unsigned int a_seed, const bool a_tileable)
+void Renderer::GeneratePerlinNoiseMap(const unsigned int a_rows, const unsigned int a_columns, const unsigned int a_octaves, const float a_amplitude, const float a_persistence, const unsigned int a_index, const unsigned int a_seed, const bool a_tileable, std::vector<float>& a_heights)
 {
 	if (a_index >= m_numOfIndices.size() || m_numOfIndices[a_index] == -1)
 	{
@@ -500,7 +500,7 @@ void Renderer::GeneratePerlinNoiseMap(const unsigned int a_rows, const unsigned 
 					//At the moment, repeating textures do not use a seed- fix this later.
 					perlinSample = glm::perlin(perlinInput);
 				}
-				perlinSample *= 0.5f + 0.5f;
+				perlinSample = perlinSample * 0.5f + 0.5f;
 				perlinData[i * a_columns + j] += perlinSample * amplitude;
 				amplitude *= a_persistence;
 			}
@@ -515,12 +515,18 @@ void Renderer::GeneratePerlinNoiseMap(const unsigned int a_rows, const unsigned 
 	int verticesSize;
 	glGetBufferParameteriv(GL_ARRAY_BUFFER, GL_BUFFER_SIZE, &verticesSize);
 	verticesSize /= sizeof(Vertex);
+
+	std::vector<unsigned int> perlinIndices;
 	
 	for (int i = 0; i < verticesSize; ++i)
 	{
-		vertices[i].position += vertices[i].normal * perlinData[(unsigned int)(vertices[i].uv.x * (a_rows - 1)) * a_columns + (unsigned int)(vertices[i].uv.y * (a_columns - 1))];
+		float perlinValue = perlinData[(unsigned int)(vertices[i].uv.x * (a_rows - 1)) * a_columns + (unsigned int)(vertices[i].uv.y * (a_columns - 1))];
+ 		vertices[i].position += vertices[i].normal * perlinValue;
+
+		a_heights.push_back(perlinValue);
+		//a_heights.push_back(vertices[i].position.y);
 	}
-	
+
 	//Cleanup the vertex buffer.
 	glUnmapBuffer(GL_ARRAY_BUFFER);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -1399,7 +1405,7 @@ void Renderer::Draw()
 	if (!m_deferredRenderMode)
 	{
 #pragma region FORWARD_CODE
-		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 		if (m_shadowGenProgram != -1)
 		{
@@ -1459,7 +1465,7 @@ void Renderer::Draw()
 
 		//Do stuff to render the framebuffer used for post processing.
 
-		//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glViewport(0, 0, 1280, 720);
 		glClear(GL_DEPTH_BUFFER_BIT);

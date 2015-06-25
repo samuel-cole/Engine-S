@@ -89,6 +89,7 @@
     <ClCompile Include="..\src\Camera.cpp" />
     <ClCompile Include="..\src\checkersTest\CheckersMover.cpp" />
     <ClCompile Include="..\src\checkersTest\CheckersTest1.cpp" />
+    <ClCompile Include="..\src\checkersTest\CheckersTest2.cpp" />
     <ClCompile Include="..\src\FlyCamera.cpp" />
     <ClCompile Include="..\src\gl_core_4_4.c" />
     <ClCompile Include="..\src\GPUParticle.cpp" />
@@ -122,6 +123,7 @@
     <ClInclude Include="..\src\Camera.h" />
     <ClInclude Include="..\src\checkersTest\CheckersMover.h" />
     <ClInclude Include="..\src\checkersTest\CheckersTest1.h" />
+    <ClInclude Include="..\src\checkersTest\CheckersTest2.h" />
     <ClInclude Include="..\src\FlyCamera.h" />
     <ClInclude Include="..\src\gl_core_4_4.h" />
     <ClInclude Include="..\src\GPUParticle.h" />
