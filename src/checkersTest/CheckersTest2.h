@@ -5,17 +5,45 @@
 
 #include <thread>
 
-struct InfoForBar2 {
-	Renderer* renderer;
-	float amplitude;
-	float persistence;
-	unsigned int seed;
-	unsigned int object;
-	PxRigidStatic* physicsObject;
-};
-
 class CheckersTest2 : public PhysicsBase
 {
+public:
+	inline float const GetAmplitude()
+	{
+		return m_amplitude;
+	}
+	inline unsigned int const GetSeed()
+	{
+		return m_seed;
+	}
+	inline float const GetPersistence()
+	{
+		return m_persistence;
+	}
+	inline Renderer* const GetRenderer()
+	{
+		return m_renderer;
+	}
+	inline unsigned int const GetProceduralPlane()
+	{
+		return m_proceduralPlane;
+	}
+	inline PxMaterial* GetPhysicsMaterial()
+	{
+		return g_physicsMaterial;
+	}
+	inline void SetProceduralPlane(unsigned int a_object)
+	{
+		m_proceduralPlane = a_object;
+	}
+	//See PhysicsBase.h for an explanation of these arguments.
+	inline unsigned int GenerateProceduralPlane(unsigned int a_dimensions, unsigned int a_noiseMapDimensions,
+		   unsigned int a_stretch, const vec3& a_position, PxMaterial* a_material,
+		   float a_amplitude, unsigned int a_seed = rand(), unsigned int a_octaves = 6, float a_persistence = 0.3f)
+	{
+		return AddProceduralPlane(a_dimensions, a_noiseMapDimensions, a_stretch, a_position, a_material, a_amplitude, a_seed, a_octaves, a_persistence);
+	}
+
 private:
 	int Init();
 	int Deinit();
@@ -23,8 +51,11 @@ private:
 	void Draw();
 
 	PxMaterial* g_physicsMaterial;
+	PxController* g_playerController;
 
 	float m_spawnTimer;
+
+	float m_walkSpeed;
 
 	float m_shootTimer;
 	float m_shootForce;
@@ -33,10 +64,13 @@ private:
 
 	std::vector<unsigned int> m_physicsLights;
 
-	PxRigidDynamic* m_player;
+	//PxRigidDynamic* m_player;
 
-	InfoForBar2 m_infoForBar;
 
+	float m_amplitude;
+	float m_persistence;
+	unsigned int m_seed;
+	unsigned int m_proceduralPlane;
 
 #pragma region Checkers Member Variables and Methods
 	void CheckersUpdate(float a_deltaTime);

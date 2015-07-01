@@ -1,6 +1,6 @@
 #include "PhysicsConcrete1.h"
 #include "Renderer.h"
-#include "FlyCamera.h"
+#include "WalkCamera.h"
 #include "InputManager.h"
 //Used for addlight function
 #include "tut13\Tutorial13.h"

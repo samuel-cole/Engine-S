@@ -1,20 +1,44 @@
 #include "CheckersTest2.h"
 #include "Renderer.h"
-#include "FlyCamera.h"
+#include "WalkCamera.h"
 #include "InputManager.h"
 //Used for addlight function
 #include "tut13\Tutorial13.h"
 
 #include <iostream>
 
-//void TW_CALL BoardGenerate2(void* a_clientData)
-//{
-//	InfoForBar2* infoForBar = (InfoForBar2*)a_clientData;
-//
-//	infoForBar->renderer->DestroyObject(infoForBar->object);
-//	infoForBar->physicsObject->release();
-//	infoForBar->object = 
-//}
+void TW_CALL BoardGenerate2(void* a_clientData)
+{
+	CheckersTest2* checkers = (CheckersTest2*)a_clientData;
+
+	Renderer* renderer = checkers->GetRenderer();
+
+	(renderer)->DestroyObject(checkers->GetProceduralPlane());
+	checkers->SetProceduralPlane(checkers->GenerateProceduralPlane(99, 100, 1, vec3(0, 0, 0), checkers->GetPhysicsMaterial(), checkers->GetAmplitude(), checkers->GetSeed(), 6, checkers->GetPersistence()));
+	renderer->LoadTexture("../data/checkerboard.png", checkers->GetProceduralPlane());
+	renderer->LoadAmbient("../data/checkerboard.png", checkers->GetProceduralPlane());
+}
+
+class PlayerCollisions : public PxControllerBehaviorCallback
+{
+	PxControllerBehaviorFlags getBehaviorFlags(const PxShape &shape, const PxActor &actor)
+	{
+		if (actor.isRigidDynamic())
+		{
+			PxRigidDynamic* object = (PxRigidDynamic*)(&actor);
+			object->addForce(PxVec3(100, 0, 0));
+		}
+		return PxControllerBehaviorFlags(PxControllerBehaviorFlag::eCCT_CAN_RIDE_ON_OBJECT);
+	}
+	PxControllerBehaviorFlags getBehaviorFlags(const PxController &controller) 
+	{
+		return PxControllerBehaviorFlags(PxControllerBehaviorFlag::eCCT_CAN_RIDE_ON_OBJECT);
+	}
+	PxControllerBehaviorFlags getBehaviorFlags(const PxObstacle &obstacle)
+	{
+		return PxControllerBehaviorFlags(PxControllerBehaviorFlag::eCCT_CAN_RIDE_ON_OBJECT);
+	}
+};
 
 int CheckersTest2::Init()
 {
@@ -22,7 +46,7 @@ int CheckersTest2::Init()
 	if (baseInit != 0)
 		return baseInit;
 
-	g_physicsMaterial = g_physics->createMaterial(0.5f, 0.5f, 0.5f);
+	g_physicsMaterial = g_physics->createMaterial(0.9f, 0.9f, 0.2f);
 
 	m_gun = m_renderer->LoadOBJ("../data/gun/crossbow.obj");
 	m_renderer->LoadTexture("../data/gun/texture.jpg", m_gun);
@@ -30,41 +54,56 @@ int CheckersTest2::Init()
 	m_renderer->LoadSpecularMap("../data/gun/specular.jpg", m_gun);
 
 	m_spawnTimer = 0.0f;
+	m_walkSpeed = 1.0f;
 	m_shootTimer = 0.0f;
 	m_shootForce = 100.0f;
 
-	//unsigned int object = AddProceduralPlane(99, 100, 8, vec3(0, 0, 0), g_physicsMaterial, 100);
-	m_infoForBar.object = AddProceduralPlane(99, 9, 1, vec3(0, 0, 0), g_physicsMaterial, m_infoForBar.amplitude, 0, 6, m_infoForBar.persistence);
-	m_renderer->LoadTexture("../data/checkerboard.png", m_infoForBar.object);
-	m_renderer->LoadAmbient("../data/checkerboard.png", m_infoForBar.object);
+	m_amplitude = 5.0f;
+	m_seed = 0;
+	m_persistence = 0.3f;
+
+	m_proceduralPlane = AddProceduralPlane(99, 100, 1, vec3(0, 0, 0), g_physicsMaterial, m_amplitude, 0, 6, m_persistence);
+	m_renderer->LoadTexture("../data/checkerboard.png", m_proceduralPlane);
+	m_renderer->LoadAmbient("../data/checkerboard.png", m_proceduralPlane);
 
 	TwAddVarRW(m_debugBar, "Shoot Force", TW_TYPE_FLOAT, &m_shootForce, "");
+	TwAddVarRW(m_debugBar, "Walk Speed", TW_TYPE_FLOAT, &m_walkSpeed, "");
 
 	TwAddSeparator(m_debugBar, "Lights", "");
 	TwAddButton(m_debugBar, "AddLight", AddLight, (void*)(m_renderer), "");
 
-	PxBoxGeometry playerBox(1, 2, 1);
-	PxTransform playerPos(PxVec3(0, 0, 0));
-	m_player = PxCreateDynamic(*g_physics, playerPos, playerBox, *g_physicsMaterial, 10);
-	m_player->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
-	g_physicsScene->addActor(*m_player);
-
-	m_infoForBar.renderer = m_renderer;
-	m_infoForBar.amplitude = 3.0f;
-	m_infoForBar.seed = 0;
-	m_infoForBar.persistence = 0.3f;
+	//Set up the player
+	PxControllerManager* controllerManager = PxCreateControllerManager(*g_physicsScene);
+	PxCapsuleControllerDesc desc;
+	desc.contactOffset = 0.05f;
+	desc.height = 3.0f;
+	desc.material = g_physicsMaterial;
+	desc.nonWalkableMode = PxControllerNonWalkableMode::ePREVENT_CLIMBING_AND_FORCE_SLIDING;
+	desc.climbingMode = PxCapsuleClimbingMode::eCONSTRAINED;
+	desc.position = PxExtendedVec3(0, 1000, 0);
+	desc.radius = 2.0f; 
+	desc.stepOffset = 0.1f;
+	PlayerCollisions collisions;
+	//This line causes the game to crash.  Not sure why yet.
+	//desc.behaviorCallback = &collisions;
+	g_playerController = controllerManager->createController(desc);
+	
+	//Add a plane
+	PxTransform pose = PxTransform(PxVec3(0.0f, 0.0f, 0.0f), PxQuat(PxHalfPi * 1.0f, PxVec3(0.0f, 0.0f, 1.0f)));
+	PxRigidStatic* plane = PxCreateStatic(*g_physics, pose, PxPlaneGeometry(), *g_physicsMaterial);
+	g_physicsScene->addActor(*plane);
 
 	TwAddSeparator(m_debugBar, "Plane", "");
-	TwAddVarRW(m_debugBar, "Amplitude", TW_TYPE_FLOAT, &m_infoForBar.amplitude, "");
-	TwAddVarRW(m_debugBar, "Persistence", TW_TYPE_FLOAT, &m_infoForBar.persistence, "");
-	TwAddVarRW(m_debugBar, "Seed", TW_TYPE_UINT32, &m_infoForBar.seed, "");
-	//TwAddButton(m_debugBar, "Re-generate", BoardGenerate, (void*)&m_infoForBar, "");
+	TwAddVarRW(m_debugBar, "Amplitude", TW_TYPE_FLOAT, &m_amplitude, "");
+	TwAddVarRW(m_debugBar, "Persistence", TW_TYPE_FLOAT, &m_persistence, "step=0.1");
+	TwAddVarRW(m_debugBar, "Seed", TW_TYPE_UINT32, &m_seed, "");
+	TwAddButton(m_debugBar, "Re-generate", BoardGenerate2, (void*)this, "");
 	TwAddVarRW(m_debugBar, "AI Difficulty", TW_TYPE_UINT32, &m_aiDifficulty, "");
 
 #pragma region Setup Checkers
 	for (unsigned int i = 0; i < 24; ++i)
 	{
-		unsigned int emitter = m_renderer->CreateEmitter(1000, //Max particles
+		unsigned int emitter = m_renderer->CreateEmitter(1000,			  //Max particles
 			0.2f,														  //Lifespan minimum 
 			2.0f,														  //Lifespan maximum
 			0.05f,														  //Velocity minimum
@@ -112,8 +151,13 @@ int CheckersTest2::Init()
 		m_renderer->SetLightPosition(light, vec3(M_TILE_WIDTH * -3.5f + (i % 8) * M_TILE_WIDTH, 13.0f, M_TILE_WIDTH * (i < 8 ? 4.0f : -4.0f)));
 		m_renderer->SetTransform(glm::translate(vec3(M_TILE_WIDTH * -3.5f + (i % 8) * M_TILE_WIDTH, 0, M_TILE_WIDTH * (i < 8 ? 4.3f : -4.3f))) * glm::scale(vec3(2, 2, 2)), loc);
 		m_renderer->SetEmitterPosition(emitter, true,
-			vec3(M_TILE_WIDTH * -3.25f + (i % 8) * M_TILE_WIDTH, 2.0f, M_TILE_WIDTH * (i < 8 ? 4.3f : -4.3f)),
-			vec3(M_TILE_WIDTH * -3.75f + (i % 8) * M_TILE_WIDTH, 13.0f, M_TILE_WIDTH * (i < 8 ? 4.3f : -4.3f)));
+									   vec3(M_TILE_WIDTH * -3.25f + (i % 8) * M_TILE_WIDTH, 2.0f, M_TILE_WIDTH * (i < 8 ? 4.3f : -4.3f)),
+									   vec3(M_TILE_WIDTH * -3.75f + (i % 8) * M_TILE_WIDTH, 13.0f, M_TILE_WIDTH * (i < 8 ? 4.3f : -4.3f)));
+
+		PxBoxGeometry teleporterBox(5.0f, 7.5f, 0.5f);
+		PxTransform teleporterPos(PxVec3(M_TILE_WIDTH * -3.5f + (i % 8) * M_TILE_WIDTH, 7.5f, M_TILE_WIDTH * (i < 8 ? 4.3f : -4.3f)));
+		PxRigidStatic* teleporterObject = PxCreateStatic(*g_physics, teleporterPos, teleporterBox, *g_physicsMaterial);
+		g_physicsScene->addActor(*teleporterObject);
 	}
 
 	for (unsigned int i = 0; i < 8; ++i)
@@ -204,15 +248,49 @@ void CheckersTest2::Update(float a_deltaTime)
 	m_spawnTimer += a_deltaTime;
 	m_shootTimer -= a_deltaTime;
 
+#pragma region Player Movement
 	glm::mat4 cameraWorld = m_camera->GetWorldTransform();
-	m_player->setKinematicTarget(PxTransform(PxVec3(cameraWorld[3].x, cameraWorld[3].y, cameraWorld[3].z)));
+	//m_player->setKinematicTarget(PxTransform(PxVec3(cameraWorld[3].x, cameraWorld[3].y, cameraWorld[3].z)));
+	PxVec3 displacement = PxVec3(0, 0, 0);
+	bool notZero = false;
+	if (InputManager::GetKey(Keys::W))
+	{
+		displacement -= PxVec3(cameraWorld[2].x, 0, cameraWorld[2].z);
+		notZero = true;
+	}
+	if (InputManager::GetKey(Keys::A))
+	{
+		displacement -= PxVec3(cameraWorld[0].x, 0, cameraWorld[0].z);
+		notZero = true;
+	}
+	if (InputManager::GetKey(Keys::S))
+	{
+		displacement += PxVec3(cameraWorld[2].x, 0, cameraWorld[2].z);
+		notZero = true;
+	}
+	if (InputManager::GetKey(Keys::D))
+	{
+		displacement += PxVec3(cameraWorld[0].x, 0, cameraWorld[0].z);
+		notZero = true;
+	}
+	if (notZero)
+		displacement = displacement.getNormalized() * m_walkSpeed;
+
+	displacement.y = -10.0f;
+	PxControllerFilters filters;
+	g_playerController->move(displacement, 0.01f, a_deltaTime, filters);
+
+	PxExtendedVec3 playerPos = g_playerController->getPosition();
+	PxExtendedVec3 footPos = g_playerController->getFootPosition();
+	//I do these calculations individually inside this vector constructor because PxEtendedVec3 doesn't contain some of the necessary operators to do this.
+	vec3 endPos = vec3(2.0f * playerPos.x - footPos.x, 2.0f * playerPos.y - footPos.y, 2.0f * playerPos.z - footPos.z);
+	m_camera->SetPosition(endPos);
+#pragma endregion
 
 #pragma region Spawn Physics Props
 	if (m_spawnTimer >= 1.0f)
 	{
-		std::cout << m_models.size() << std::endl;
-
-		vec3 randPos = vec3(((float)rand() / (float)RAND_MAX) * 20.0f, ((float)rand() / (float)RAND_MAX) * 20.0f + 200.0f, ((float)rand() / (float)RAND_MAX) * 20.0f);
+		vec3 randPos = vec3(((float)rand() / (float)RAND_MAX) * 20.0f + 200, ((float)rand() / (float)RAND_MAX) * 20.0f + 200.0f, ((float)rand() / (float)RAND_MAX) * 20.0f);
 
 		if (rand() % 2 == 0)
 			AddBox(g_physicsMaterial, 10.0f, vec3(2.0f, 2.0f, 2.0f), randPos, true);
@@ -226,6 +304,7 @@ void CheckersTest2::Update(float a_deltaTime)
 #pragma endregion
 
 #pragma region Shooting
+	cameraWorld[3] = vec4(endPos, 1);
 	m_renderer->SetTransform(glm::translate(glm::scale(glm::rotate(cameraWorld, 0.2f, vec3(1, 0, 0)), vec3(0.005f, 0.005f, 0.005f)), vec3(0.0f, -25.0f, -5.0f)), m_gun);
 	if (m_shootTimer > 0.0f)
 	{
@@ -275,14 +354,13 @@ void CheckersTest2::Update(float a_deltaTime)
 		delete[] shapes;
 
 	}
-}
 #pragma endregion
+}
 
 void CheckersTest2::Draw()
 {
 	PhysicsBase::Draw();
 }
-
 
 #pragma region Checkers Functions
 

@@ -3,7 +3,7 @@
 
 #include "Application.h"
 
-class FlyCamera;
+class WalkCamera;
 class Renderer;
 
 #include <PxPhysicsAPI.h>
@@ -62,7 +62,7 @@ protected:
 	//The scale that each model should be at.
 	std::vector<vec3> m_scales;
 
-	FlyCamera* m_camera;
+	WalkCamera* m_camera;
 	Renderer* m_renderer;
 };
 

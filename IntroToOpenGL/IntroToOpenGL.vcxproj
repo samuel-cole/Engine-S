@@ -116,6 +116,7 @@
     <ClCompile Include="..\src\tut8\Tutorial8.cpp" />
     <ClCompile Include="..\src\tut9\Tutorial9.cpp" />
     <ClCompile Include="..\src\Tutorial1.cpp" />
+    <ClCompile Include="..\src\WalkCamera.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\dep\aieutilities\Gizmos.h" />
@@ -149,6 +150,7 @@
     <ClInclude Include="..\src\tut8\Tutorial8.h" />
     <ClInclude Include="..\src\tut9\Tutorial9.h" />
     <ClInclude Include="..\src\Tutorial1.h" />
+    <ClInclude Include="..\src\WalkCamera.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\data\shaders\frag.txt" />
