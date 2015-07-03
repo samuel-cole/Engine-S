@@ -13,13 +13,20 @@ void TW_CALL BoardGenerate2(void* a_clientData)
 
 	Renderer* renderer = checkers->GetRenderer();
 
+	float maxHeight;
+
 	checkers->GetProceduralPhysics()->release();
 	renderer->DestroyObject(checkers->GetProceduralPlane());
 	unsigned int object;
-	checkers->SetProceduralPhysics(checkers->GenerateProceduralPlane(99, 100, 1, vec3(0, 0, 0), checkers->GetPhysicsMaterial(), object, checkers->GetAmplitude(), checkers->GetSeed(), 6, checkers->GetPersistence()));
+	checkers->SetProceduralPhysics(checkers->GenerateProceduralPlane(99, 100, 1, vec3(0, 0, 0), checkers->GetPhysicsMaterial(), object, maxHeight, checkers->GetAmplitude(), checkers->GetSeed(), 6, checkers->GetPersistence()));
 	checkers->SetProceduralPlane(object);
 	renderer->LoadTexture("../data/checkerboard.png", checkers->GetProceduralPlane());
 	renderer->LoadAmbient("../data/checkerboard.png", checkers->GetProceduralPlane());
+
+	PxController* player = checkers->GetPlayer();
+	PxExtendedVec3 pos = player->getPosition();
+	if (pos.x > -51 && pos.x < 51 && pos.z > -51 && pos.z < 51 && pos.y <= maxHeight)
+		player->setPosition(PxExtendedVec3(pos.x, maxHeight + 10.0f, pos.z));
 }
 
 class PlayerCollisions : public PxUserControllerHitReport
@@ -82,7 +89,8 @@ int CheckersTest2::Init()
 	m_seed = 0;
 	m_persistence = 0.3f;
 
-	g_proceduralPhysics = AddProceduralPlane(99, 100, 1.0f, vec3(0, 0, 0), g_physicsMaterial, m_proceduralPlane, m_amplitude, 0, 6, m_persistence);
+	float buffer;
+	g_proceduralPhysics = AddProceduralPlane(99, 100, 1.0f, vec3(0, 0, 0), g_physicsMaterial, m_proceduralPlane, buffer, m_amplitude, 0, 6, m_persistence);
 	m_renderer->LoadTexture("../data/checkerboard.png", m_proceduralPlane);
 	m_renderer->LoadAmbient("../data/checkerboard.png", m_proceduralPlane);
 

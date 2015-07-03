@@ -34,9 +34,13 @@ public:
 	{
 		return g_proceduralPhysics;
 	}
-	inline PxMaterial* GetPhysicsMaterial()
+	inline PxMaterial* const GetPhysicsMaterial()
 	{
 		return g_physicsMaterial;
+	}
+	inline PxController* const GetPlayer()
+	{
+		return g_playerController;
 	}
 	inline void SetProceduralPlane(unsigned int a_object)
 	{
@@ -48,10 +52,10 @@ public:
 	}
 	//See PhysicsBase.h for an explanation of these arguments.
 	inline PxRigidStatic* GenerateProceduralPlane(unsigned int a_dimensions, unsigned int a_noiseMapDimensions,
-												  float a_stretch, const vec3& a_position, PxMaterial* a_material, unsigned int& a_rendererIndex,
+												  float a_stretch, const vec3& a_position, PxMaterial* a_material, unsigned int& a_rendererIndex, float& a_maxHeight,
 												  float a_amplitude, unsigned int a_seed = rand(), unsigned int a_octaves = 6, float a_persistence = 0.3f)
 	{
-		return AddProceduralPlane(a_dimensions, a_noiseMapDimensions, a_stretch, a_position, a_material, a_rendererIndex, a_amplitude, a_seed, a_octaves, a_persistence);
+		return AddProceduralPlane(a_dimensions, a_noiseMapDimensions, a_stretch, a_position, a_material, a_rendererIndex, a_maxHeight, a_amplitude, a_seed, a_octaves, a_persistence);
 	}
 
 private:

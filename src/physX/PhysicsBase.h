@@ -27,8 +27,8 @@ protected:
 	void SetUpPhysX();
 	void SetUpVisualDebugger();
 	void UpdatePhysX(float a_deltaTime);
-	void AddBox(PxMaterial* a_material, float a_density, const vec3& a_dimensions, const vec3& a_position, bool a_visible);
-	void AddSphere(PxMaterial* a_material, float a_density, float a_radius, const vec3& a_position, bool a_visible);
+	void AddBox(PxMaterial* const a_material, const float a_density, const vec3& a_dimensions, const vec3& a_position, const bool a_visible);
+	void AddSphere(PxMaterial* const a_material, const float a_density, const float a_radius, const vec3& a_position, const bool a_visible);
 
 	//Function used for adding a procedurally generated plane.
 	//a_dimensions determines how many rows/columns the created mesh should have (also sets the size).
@@ -36,15 +36,16 @@ protected:
 	//a_stretch determines how much the mesh should be scaled by.
 	//a_position determines the position of the center of the plane.
 	//a_material sets the physics material for the plane.
-	//a_rendererIndex is the index of this object within the renderer. Note that if this object is transformed in any way in the renderer, the physics object will no longer be valid.
+	//a_rendererIndex is used to output the index of this object within the renderer. Note that if this object is transformed in any way in the renderer, the physics object will no longer be valid.
+	//a_maxHeight is used to output the highest height that the procedural plane reaches.
 	//a_amplitude determines how high the plane should be deformed.
 	//a_seed is used to seed the random generation. Different values result in a different randomly generated plane.
 	//a_octaves determines how bumpy the plane should be- higher numbers are bumpier, but take longer to generate.
 	//a_persistence determines how quickly the height deformation should fall-off during generation.
 	//Returns the physics object of the plane.
-	PxRigidStatic* AddProceduralPlane(unsigned int a_dimensions, unsigned int a_noiseMapDimensions,
-							float a_stretch, const vec3& a_position, PxMaterial* a_material, unsigned int& a_rendererIndex,
-							float a_amplitude, unsigned int a_seed = rand(), unsigned int a_octaves = 6, float a_persistence = 0.3f);
+	PxRigidStatic* AddProceduralPlane(const unsigned int a_dimensions, const unsigned int a_noiseMapDimensions,
+									  const float a_stretch, const vec3& a_position, PxMaterial* const a_material, unsigned int& a_rendererIndex, float& a_maxHeight,
+									  float a_amplitude, unsigned int a_seed = rand(), unsigned int a_octaves = 6, float a_persistence = 0.3f);
 
 	//Physics Variables
 	PxFoundation* g_physicsFoundation;

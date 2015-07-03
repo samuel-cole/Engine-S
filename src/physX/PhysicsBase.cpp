@@ -143,7 +143,7 @@ void PhysicsBase::UpdatePhysX(float a_deltaTime)
 	}
 }
 
-void PhysicsBase::AddBox(PxMaterial* a_material, float a_density, const vec3& a_dimensions, const vec3& a_position, bool a_visible)
+void PhysicsBase::AddBox(PxMaterial* const a_material, const float a_density, const vec3& a_dimensions, const vec3& a_position, const bool a_visible)
 {
 	PxBoxGeometry box(a_dimensions.x, a_dimensions.y, a_dimensions.z);
 	PxTransform position(PxVec3(a_position.x, a_position.y, a_position.z));
@@ -167,7 +167,7 @@ void PhysicsBase::AddBox(PxMaterial* a_material, float a_density, const vec3& a_
 	}
 }
 
-void PhysicsBase::AddSphere(PxMaterial* a_material, float a_density, float a_radius, const vec3& a_position, bool a_visible)
+void PhysicsBase::AddSphere(PxMaterial* const a_material, const float a_density, const float a_radius, const vec3& a_position, const bool a_visible)
 {
 	PxSphereGeometry sphere(a_radius);
 	PxTransform position(PxVec3(a_position.x, a_position.y, a_position.z));
@@ -191,9 +191,9 @@ void PhysicsBase::AddSphere(PxMaterial* a_material, float a_density, float a_rad
 	}
 }
 
-PxRigidStatic* PhysicsBase::AddProceduralPlane(unsigned int a_dimensions, unsigned int a_noiseMapDimensions,
-											   float a_stretch, const vec3& a_position, PxMaterial* a_material, unsigned int& a_rendererIndex,
-											   float a_amplitude, unsigned int a_seed, unsigned int a_octaves, float a_persistence)
+PxRigidStatic* PhysicsBase::AddProceduralPlane(const unsigned int a_dimensions, const unsigned int a_noiseMapDimensions,
+											   const float a_stretch, const vec3& a_position, PxMaterial* const a_material, unsigned int& a_rendererIndex, float& a_maxHeight,
+											   const float a_amplitude, const unsigned int a_seed, const unsigned int a_octaves, const float a_persistence)
 {
 	std::vector<float> proceduralHeights;
 
@@ -205,16 +205,16 @@ PxRigidStatic* PhysicsBase::AddProceduralPlane(unsigned int a_dimensions, unsign
 	//This is the highest number that I can use.
 	float maxNumber = (1 << (sizeof(PxI16)* 8)) / 2 - 1;
 
-	float highestHeight = -9999999.9f;
+	a_maxHeight = -9999999.9f;
 	for (unsigned int i = 0; i < proceduralHeights.size(); ++i)
 	{
-		if (proceduralHeights[i] > highestHeight)
+		if (proceduralHeights[i] > a_maxHeight)
 		{
-			highestHeight = proceduralHeights[i];
+			a_maxHeight = proceduralHeights[i];
 		}
 	}
 
-	if (highestHeight == -9999999.9f)
+	if (a_maxHeight == -9999999.9f)
 	{
 		std::cout << "Error: Sending invalid perlin heights to PhysX." << std::endl;
 		return nullptr;
@@ -222,30 +222,43 @@ PxRigidStatic* PhysicsBase::AddProceduralPlane(unsigned int a_dimensions, unsign
 	else
 	{
 		//PhysX uses a short to store heights, so I use this to find the largest possible number that I can multiply by without losing wrapping around.
-		float multiplier = (maxNumber / highestHeight);
+		float multiplier = (maxNumber / a_maxHeight);
 
-		//Get the heights of the procedural terrain into a form accepted by PhysX.
-		PxHeightFieldSample* data = new PxHeightFieldSample[proceduralHeights.size()];
+
+		//I could do row stuff with maths, but this makes the logic a lot more human-readable.
+		unsigned int row = 0;
+		//+1 to get from a_dimensions into the intuitive definition of dimensions (human readability), +2 more to add padding.
+		unsigned int paddedDimensions = a_dimensions + 3;
+		//Get the heights of the procedural terrain into a form accepted by PhysX. Extra spacing added for outside row.
+		PxHeightFieldSample* data = new PxHeightFieldSample[proceduralHeights.size() + paddedDimensions * 4 - 4];
 		unsigned int counter = 0;
-		for (unsigned int i = a_dimensions; i < proceduralHeights.size(); --i)
-		{
 
-			data[counter].height = (short)(proceduralHeights[i] * multiplier);
+		for (unsigned int i = paddedDimensions - 1; i < proceduralHeights.size() + paddedDimensions * 4 - 4; --i)
+		{
+			unsigned int nonPaddedIndex = i - a_dimensions - 2 * row;
+			unsigned int paddedColumn = (i % paddedDimensions);
+
+			if (nonPaddedIndex < 0 || nonPaddedIndex > proceduralHeights.size() - 1 || paddedColumn == 0 || paddedColumn == paddedDimensions - 1)
+				data[counter].height = (short)0;
+			else
+				data[counter].height = (short)(proceduralHeights[nonPaddedIndex] * multiplier);
 			data[counter].materialIndex0 = 0;
 			data[counter].materialIndex1 = 0;
 
-			if (i % (a_dimensions + 1) == 0)
+			if (i % paddedDimensions == 0)
 			{
-				i += (a_dimensions + 1) * 2;
+				//This number is one higher than the wanted value, however this will be fixed because of the --i in the for loop.
+				i += paddedDimensions * 2;
+				++row;
 			}
-			counter++;
+			++counter;
 		}
 
 		//Generate the height
 		PxHeightFieldDesc heightFieldDesc;
 		heightFieldDesc.format = PxHeightFieldFormat::eS16_TM;
-		heightFieldDesc.nbColumns = a_dimensions + 1;
-		heightFieldDesc.nbRows = a_dimensions + 1;
+		heightFieldDesc.nbColumns = paddedDimensions;
+		heightFieldDesc.nbRows = paddedDimensions;
 		heightFieldDesc.samples.data = data;
 		heightFieldDesc.samples.stride = sizeof(PxHeightFieldSample);
 		heightFieldDesc.thickness = -100.0f;
@@ -253,7 +266,7 @@ PxRigidStatic* PhysicsBase::AddProceduralPlane(unsigned int a_dimensions, unsign
 		//Make the physics representation of the heightfield.
 		PxHeightField* heightField = g_physics->createHeightField(heightFieldDesc);
 		PxHeightFieldGeometry heightFieldGeometry(heightField, PxMeshGeometryFlags(), 1.0f / multiplier, a_stretch, a_stretch);
-		float translate = (a_dimensions + 1) * a_stretch / 2.0f;
+		float translate = paddedDimensions * a_stretch / 2.0f;
 		PxTransform pose = PxTransform(PxVec3(translate, 0.0f, -translate) + PxVec3(a_position.x, a_position.y, a_position.z), PxQuat(PxHalfPi, PxVec3(0, -1, 0)));
 
 		PxShape* heightFieldShape = g_physics->createShape(heightFieldGeometry, *a_material);

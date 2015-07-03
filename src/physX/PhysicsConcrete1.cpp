@@ -25,7 +25,8 @@ int PhysicsConcrete1::Init()
 	m_shootForce = 100.0f;
 
 	unsigned int proceduralPlane;
-	AddProceduralPlane(99, 9, 9, vec3(0, -300, 0), g_physicsMaterial, proceduralPlane, 100);
+	float buffer;
+	AddProceduralPlane(99, 9, 9, vec3(0, -300, 0), g_physicsMaterial, proceduralPlane, buffer, 100);
 	m_renderer->LoadTexture("../data/checkerboard.png", proceduralPlane);
 	m_renderer->LoadAmbient("../data/checkerboard.png", proceduralPlane);
 
