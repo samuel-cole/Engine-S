@@ -5,6 +5,8 @@
 
 #include <thread>
 
+class PlayerCollisions;
+
 class CheckersTest2 : public PhysicsBase
 {
 public:
@@ -28,6 +30,10 @@ public:
 	{
 		return m_proceduralPlane;
 	}
+	inline PxRigidStatic* const GetProceduralPhysics()
+	{
+		return g_proceduralPhysics;
+	}
 	inline PxMaterial* GetPhysicsMaterial()
 	{
 		return g_physicsMaterial;
@@ -36,12 +42,16 @@ public:
 	{
 		m_proceduralPlane = a_object;
 	}
-	//See PhysicsBase.h for an explanation of these arguments.
-	inline unsigned int GenerateProceduralPlane(unsigned int a_dimensions, unsigned int a_noiseMapDimensions,
-		   unsigned int a_stretch, const vec3& a_position, PxMaterial* a_material,
-		   float a_amplitude, unsigned int a_seed = rand(), unsigned int a_octaves = 6, float a_persistence = 0.3f)
+	inline void SetProceduralPhysics(PxRigidStatic* a_proceduralPhysics)
 	{
-		return AddProceduralPlane(a_dimensions, a_noiseMapDimensions, a_stretch, a_position, a_material, a_amplitude, a_seed, a_octaves, a_persistence);
+		g_proceduralPhysics = a_proceduralPhysics;
+	}
+	//See PhysicsBase.h for an explanation of these arguments.
+	inline PxRigidStatic* GenerateProceduralPlane(unsigned int a_dimensions, unsigned int a_noiseMapDimensions,
+												  float a_stretch, const vec3& a_position, PxMaterial* a_material, unsigned int& a_rendererIndex,
+												  float a_amplitude, unsigned int a_seed = rand(), unsigned int a_octaves = 6, float a_persistence = 0.3f)
+	{
+		return AddProceduralPlane(a_dimensions, a_noiseMapDimensions, a_stretch, a_position, a_material, a_rendererIndex, a_amplitude, a_seed, a_octaves, a_persistence);
 	}
 
 private:
@@ -52,20 +62,23 @@ private:
 
 	PxMaterial* g_physicsMaterial;
 	PxController* g_playerController;
+	PlayerCollisions* g_playerCollisions;
+	PxRigidStatic* g_proceduralPhysics;
+
+	float m_animationTimer;
 
 	float m_spawnTimer;
 
 	float m_walkSpeed;
-
+	float m_verticleSpeed;
+	
 	float m_shootTimer;
 	float m_shootForce;
 
 	unsigned int m_gun;
+	unsigned int m_animatedModel;
 
 	std::vector<unsigned int> m_physicsLights;
-
-	//PxRigidDynamic* m_player;
-
 
 	float m_amplitude;
 	float m_persistence;

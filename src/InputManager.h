@@ -35,6 +35,8 @@ public:
 
 	static glm::vec2 GetMousePos();
 
+	static void SetMouseVisibility(const bool a_visible);
+
 	inline static void SetWindow(GLFWwindow* a_window)
 	{
 		m_window = a_window;

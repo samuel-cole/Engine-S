@@ -19,7 +19,8 @@ public:
 	}
 private:
 	vec3 m_up;
-	bool m_viewButtonClicked;
+	//Whether this frame should be checking mouse offset, or resetting it.
+	int m_checkFrame;
 	glm::vec2 m_mouseStartPos;
 
 	void SetRotationFromMouseOffset(const glm::vec2& a_offset, float a_deltaTime);

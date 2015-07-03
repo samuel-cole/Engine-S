@@ -6,57 +6,33 @@
 
 using glm::vec4;
 
-WalkCamera::WalkCamera(TwBar* a_debugBar) : m_up(0, 1, 0), m_viewButtonClicked(false), m_mouseStartPos(0, 0)
+WalkCamera::WalkCamera(TwBar* a_debugBar) : m_up(0, 1, 0), m_checkFrame(-100), m_mouseStartPos(0, 0)
 {
 }
 
 void WalkCamera::Update(float a_deltaTime)
 {
-
-	vec3 rightVec = (vec3)GetWorldTransform()[0];
-	vec3 upVec = (vec3)GetWorldTransform()[1];
-	vec3 forwardVec = (vec3)GetWorldTransform()[2];
-
-	//vec3 moveDir(0.0f);
-	//if (/*InputManager::GetKey(Keys::UP) || */InputManager::GetKey(Keys::W))
-	//	moveDir -= forwardVec;
-	//if (/*InputManager::GetKey(Keys::DOWN) || */InputManager::GetKey(Keys::S))
-	//	moveDir += forwardVec;
-	//if (/*InputManager::GetKey(Keys::LEFT) || */InputManager::GetKey(Keys::A))
-	//	moveDir -= rightVec;
-	//if (/*InputManager::GetKey(Keys::RIGHT) || */InputManager::GetKey(Keys::D))
-	//	moveDir += rightVec;
-	//
-	//if (InputManager::GetKey(Keys::SPACE))
-	//	moveDir += m_up;
-	//
-	//float value = glm::length(moveDir);
-	//
-	//if (glm::length(moveDir) > 0.01f)
-	//	moveDir = glm::normalize(moveDir) * (float)a_deltaTime * m_speed;
-	//
-	//SetPosition((vec3)(GetWorldTransform()[3]) + moveDir);
-
-
-	if (InputManager::GetMouseDown(1))
+	if (!InputManager::GetMouseDown(1))
 	{
-		if (!m_viewButtonClicked)
+		InputManager::SetMouseVisibility(false);
+		if (m_checkFrame == 0)
 		{
-			//InputManager::SetMouseToCenter();
+			InputManager::SetMouseToCenter();
 			m_mouseStartPos = InputManager::GetMousePos();
-			m_viewButtonClicked = true;
 		}
-		else
+		else if (m_checkFrame == 2)
 		{
-			SetRotationFromMouseOffset(InputManager::GetMousePos() - m_mouseStartPos, a_deltaTime);
+			glm::vec2 offset = InputManager::GetMousePos() - m_mouseStartPos;
+			SetRotationFromMouseOffset(offset * 10.0f, a_deltaTime);
 		}
+		++m_checkFrame;
+		if (m_checkFrame == 3)
+			m_checkFrame = 0;
 	}
 	else
 	{
-		m_viewButtonClicked = false;
+		InputManager::SetMouseVisibility(true);
 	}
-
-
 }
 
 void WalkCamera::SetRotationFromMouseOffset(const glm::vec2& a_offset, float a_deltaTime)

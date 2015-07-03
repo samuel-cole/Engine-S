@@ -13,31 +13,27 @@ void TW_CALL BoardGenerate2(void* a_clientData)
 
 	Renderer* renderer = checkers->GetRenderer();
 
-	(renderer)->DestroyObject(checkers->GetProceduralPlane());
-	checkers->SetProceduralPlane(checkers->GenerateProceduralPlane(99, 100, 1, vec3(0, 0, 0), checkers->GetPhysicsMaterial(), checkers->GetAmplitude(), checkers->GetSeed(), 6, checkers->GetPersistence()));
+	checkers->GetProceduralPhysics()->release();
+	renderer->DestroyObject(checkers->GetProceduralPlane());
+	unsigned int object;
+	checkers->SetProceduralPhysics(checkers->GenerateProceduralPlane(99, 100, 1, vec3(0, 0, 0), checkers->GetPhysicsMaterial(), object, checkers->GetAmplitude(), checkers->GetSeed(), 6, checkers->GetPersistence()));
+	checkers->SetProceduralPlane(object);
 	renderer->LoadTexture("../data/checkerboard.png", checkers->GetProceduralPlane());
 	renderer->LoadAmbient("../data/checkerboard.png", checkers->GetProceduralPlane());
 }
 
-class PlayerCollisions : public PxControllerBehaviorCallback
+class PlayerCollisions : public PxUserControllerHitReport
 {
-	PxControllerBehaviorFlags getBehaviorFlags(const PxShape &shape, const PxActor &actor)
+	virtual void onShapeHit(const PxControllerShapeHit& a_hit)
 	{
-		if (actor.isRigidDynamic())
+		if (a_hit.actor->isRigidDynamic())
 		{
-			PxRigidDynamic* object = (PxRigidDynamic*)(&actor);
-			object->addForce(PxVec3(100, 0, 0));
-		}
-		return PxControllerBehaviorFlags(PxControllerBehaviorFlag::eCCT_CAN_RIDE_ON_OBJECT);
+			((PxRigidDynamic*)a_hit.actor)->addForce(a_hit.dir * 100);
+			((PxRigidDynamic*)a_hit.actor)->setAngularVelocity(-3.0f * a_hit.dir.cross(PxVec3(0, 1, 0)));
+		}	
 	}
-	PxControllerBehaviorFlags getBehaviorFlags(const PxController &controller) 
-	{
-		return PxControllerBehaviorFlags(PxControllerBehaviorFlag::eCCT_CAN_RIDE_ON_OBJECT);
-	}
-	PxControllerBehaviorFlags getBehaviorFlags(const PxObstacle &obstacle)
-	{
-		return PxControllerBehaviorFlags(PxControllerBehaviorFlag::eCCT_CAN_RIDE_ON_OBJECT);
-	}
+	virtual void onControllerHit(const PxControllersHit& a_hit)		{}
+	virtual void onObstacleHit(const PxControllerObstacleHit& a_hit){}
 };
 
 int CheckersTest2::Init()
@@ -46,6 +42,8 @@ int CheckersTest2::Init()
 	if (baseInit != 0)
 		return baseInit;
 
+	m_camera->SetLookAt(vec3(0, 10, 0), vec3(1, 0, 0), vec3(0, 1, 0));
+
 	g_physicsMaterial = g_physics->createMaterial(0.9f, 0.9f, 0.2f);
 
 	m_gun = m_renderer->LoadOBJ("../data/gun/crossbow.obj");
@@ -53,16 +51,38 @@ int CheckersTest2::Init()
 	m_renderer->LoadAmbient("../data/gun/texture.jpg", m_gun);
 	m_renderer->LoadSpecularMap("../data/gun/specular.jpg", m_gun);
 
+
+	std::vector<std::string> textures;
+	std::vector<std::string> normalMaps;
+	std::vector<std::string> specularMaps;
+
+	textures.push_back("../data/Enemyelite/EnemyElite3_D.tga");
+	textures.push_back("../data/Enemyelite/Alienrifle_D.png");
+	normalMaps.push_back("../data/Enemyelite/EnemyElite_N.tga");
+	normalMaps.push_back("../data/Enemyelite/Alienrifle_N.png");
+	specularMaps.push_back("../data/Enemyelite/EnemyElite_S.tga");
+	specularMaps.push_back("../data/Enemyelite/Alienrifle_S.tga");
+
+	m_animatedModel = m_renderer->LoadFBX("../data/Enemyelite/EnemyElite.fbx", &textures, &normalMaps, &specularMaps);
+	m_renderer->SetTransform(glm::rotate(glm::translate(m_renderer->GetTransform(m_animatedModel), vec3(-8000, 0, 0)), PxHalfPi, vec3(0, 1, 0)), m_animatedModel);
+	m_renderer->LoadAmbient("../data/Enemyelite/EnemyElite3_D.tga", m_animatedModel);
+
+	//Move the gun out of the way.
+	m_renderer->SetTransform(glm::translate(m_renderer->GetTransform(m_animatedModel), vec3(0, -2000000, 0)), m_animatedModel + 1);
+
+
 	m_spawnTimer = 0.0f;
 	m_walkSpeed = 1.0f;
+	m_verticleSpeed = -10.0f;
 	m_shootTimer = 0.0f;
 	m_shootForce = 100.0f;
+	m_animationTimer = 0.0f;
 
 	m_amplitude = 5.0f;
 	m_seed = 0;
 	m_persistence = 0.3f;
 
-	m_proceduralPlane = AddProceduralPlane(99, 100, 1, vec3(0, 0, 0), g_physicsMaterial, m_amplitude, 0, 6, m_persistence);
+	g_proceduralPhysics = AddProceduralPlane(99, 100, 1.0f, vec3(0, 0, 0), g_physicsMaterial, m_proceduralPlane, m_amplitude, 0, 6, m_persistence);
 	m_renderer->LoadTexture("../data/checkerboard.png", m_proceduralPlane);
 	m_renderer->LoadAmbient("../data/checkerboard.png", m_proceduralPlane);
 
@@ -83,9 +103,8 @@ int CheckersTest2::Init()
 	desc.position = PxExtendedVec3(0, 1000, 0);
 	desc.radius = 2.0f; 
 	desc.stepOffset = 0.1f;
-	PlayerCollisions collisions;
-	//This line causes the game to crash.  Not sure why yet.
-	//desc.behaviorCallback = &collisions;
+	g_playerCollisions = new PlayerCollisions();
+	desc.reportCallback = g_playerCollisions;
 	g_playerController = controllerManager->createController(desc);
 	
 	//Add a plane
@@ -236,6 +255,8 @@ int CheckersTest2::Init()
 
 int CheckersTest2::Deinit()
 {
+	delete g_playerCollisions;
+
 	return PhysicsBase::Deinit();
 }
 
@@ -243,10 +264,11 @@ void CheckersTest2::Update(float a_deltaTime)
 {
 	PhysicsBase::Update(a_deltaTime);
 
-	CheckersUpdate(a_deltaTime);
+	m_camera->Update(a_deltaTime);
+	m_renderer->UpdateAnimation(m_animationTimer, m_animatedModel);
+	m_animationTimer += a_deltaTime;
 
-	m_spawnTimer += a_deltaTime;
-	m_shootTimer -= a_deltaTime;
+	CheckersUpdate(a_deltaTime);
 
 #pragma region Player Movement
 	glm::mat4 cameraWorld = m_camera->GetWorldTransform();
@@ -276,7 +298,19 @@ void CheckersTest2::Update(float a_deltaTime)
 	if (notZero)
 		displacement = displacement.getNormalized() * m_walkSpeed;
 
-	displacement.y = -10.0f;
+	if (InputManager::GetKey(Keys::SPACE))
+	{
+		PxControllerState state;
+		g_playerController->getState(state);	
+		if (state.collisionFlags > 0)
+			m_verticleSpeed = 0.5f;
+	}
+
+	if (m_verticleSpeed > -10.0f)
+		m_verticleSpeed -= a_deltaTime;
+
+	displacement.y = m_verticleSpeed;
+
 	PxControllerFilters filters;
 	g_playerController->move(displacement, 0.01f, a_deltaTime, filters);
 
@@ -288,6 +322,8 @@ void CheckersTest2::Update(float a_deltaTime)
 #pragma endregion
 
 #pragma region Spawn Physics Props
+	m_spawnTimer += a_deltaTime;
+
 	if (m_spawnTimer >= 1.0f)
 	{
 		vec3 randPos = vec3(((float)rand() / (float)RAND_MAX) * 20.0f + 200, ((float)rand() / (float)RAND_MAX) * 20.0f + 200.0f, ((float)rand() / (float)RAND_MAX) * 20.0f);
@@ -304,6 +340,8 @@ void CheckersTest2::Update(float a_deltaTime)
 #pragma endregion
 
 #pragma region Shooting
+	m_shootTimer -= a_deltaTime;
+
 	cameraWorld[3] = vec4(endPos, 1);
 	m_renderer->SetTransform(glm::translate(glm::scale(glm::rotate(cameraWorld, 0.2f, vec3(1, 0, 0)), vec3(0.005f, 0.005f, 0.005f)), vec3(0.0f, -25.0f, -5.0f)), m_gun);
 	if (m_shootTimer > 0.0f)
@@ -312,7 +350,7 @@ void CheckersTest2::Update(float a_deltaTime)
 		m_renderer->SetTransform(glm::translate(m_renderer->GetTransform(m_gun), vec3(0, 0, 5 * m_shootTimer)), m_gun);
 	}
 
-	if (InputManager::GetMouseDown(0) && m_shootTimer < 0.0f)
+	if (InputManager::GetMouseDown(0) && !InputManager::GetMouseDown(1) && m_shootTimer < 0.0f)
 	{
 		//Shoot
 		m_shootTimer = 0.5f;
@@ -447,8 +485,6 @@ void CheckersTest2::CheckersUpdate(float a_deltaTime)
 			m_inputTimer = 0.15f;
 		}
 	}
-
-	m_camera->Update(a_deltaTime);
 }
 
 void CheckersTest2::HandleEnter(int(&a_board)[8][8], const unsigned int a_xPos, const unsigned int a_yPos, unsigned int &a_prevX, unsigned int &a_prevY, bool &a_turn, const bool a_changeEmitters, unsigned int& a_pieceSelected)

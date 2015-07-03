@@ -48,7 +48,7 @@ m_standardProgram(-1), m_particleProgram(-1), m_animatedProgram(-1), m_postProce
 	unsigned int texture = LoadFrameBuffer(a_camera, vec4(0, 0, 1280, 720), vec3(0.25f, 0.25f, 0.75f));
 
 	//Make a fullscreen quad to render the post processing framebuffer stuff through.
-	glm::vec2 halfTexel = 1.0f / glm::vec2(1280, 720) * 0.5f;
+	glm::vec2 halfTexel = (1.0f / glm::vec2(1280, 720)) * 0.5f;
 	Vertex vertexArray[4];
 	vertexArray[0].position = vec4(-1, -1, 0, 1);
 	vertexArray[0].uv = glm::vec2(halfTexel.x, halfTexel.y);
@@ -88,9 +88,6 @@ m_standardProgram(-1), m_particleProgram(-1), m_animatedProgram(-1), m_postProce
 	m_compositeProgram = CreateProgram("../data/shaders/vertPostProcessing.txt", "../data/shaders/fragComposite.txt");
 	TwAddButton(a_bar, "Switch to Forward Rendering", ChangeDeferred, (void*)this, "");
 	/////////End of Deferred Rendering Stuff///
-
-	//glEnable(GL_BLEND);
-	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
 void Renderer::SetupGpass()
@@ -1401,11 +1398,10 @@ unsigned int Renderer::MakeMirror(const unsigned int a_width, const unsigned int
 
 void Renderer::Draw()
 {
-
 	if (!m_deferredRenderMode)
 	{
 #pragma region FORWARD_CODE
-		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 		if (m_shadowGenProgram != -1)
 		{
@@ -1465,7 +1461,7 @@ void Renderer::Draw()
 
 		//Do stuff to render the framebuffer used for post processing.
 
-		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glViewport(0, 0, 1280, 720);
 		glClear(GL_DEPTH_BUFFER_BIT);
@@ -1921,7 +1917,7 @@ void Renderer::DrawModels(const unsigned int j)
 	{
 		if (m_gpuEmitters[i] != nullptr)
 		{
-			m_gpuEmitters[i]->Draw((float)glfwGetTime(), m_cameras[j]->GetWorldTransform(), m_cameras[j]->GetProjectionView());
+			m_gpuEmitters[i]->Draw((float)glfwGetTime(), m_cameras[j]->GetWorldTransform(), m_cameras[j]->GetProjectionView(), m_defaultSpec);
 		}
 	}
 }

@@ -36,7 +36,7 @@ int Application::Init()
 	if (glfwInit() == false)
 		return -1;
 
-	m_window = glfwCreateWindow(1280, 720, "Test Window", nullptr, nullptr);
+	m_window = glfwCreateWindow(1280, 720, "Sam's Engine", nullptr, nullptr);
 
 	if (m_window == nullptr)
 	{

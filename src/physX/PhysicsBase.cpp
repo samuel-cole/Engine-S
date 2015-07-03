@@ -59,6 +59,7 @@ int PhysicsBase::Deinit()
 
 	g_physicsScene->release();
 	g_physics->release();
+	//TODO: Fix this line. It currently doesn't release the foundation 'due to pending module references.' 'Close/release all depending modules first.'
 	g_physicsFoundation->release();
 
 	return Application::Deinit();
@@ -190,15 +191,15 @@ void PhysicsBase::AddSphere(PxMaterial* a_material, float a_density, float a_rad
 	}
 }
 
-unsigned int PhysicsBase::AddProceduralPlane(unsigned int a_dimensions, unsigned int a_noiseMapDimensions,
-											 unsigned int a_stretch, const vec3& a_position, PxMaterial* a_material,
-											 float a_amplitude, unsigned int a_seed, unsigned int a_octaves, float a_persistence)
+PxRigidStatic* PhysicsBase::AddProceduralPlane(unsigned int a_dimensions, unsigned int a_noiseMapDimensions,
+											   float a_stretch, const vec3& a_position, PxMaterial* a_material, unsigned int& a_rendererIndex,
+											   float a_amplitude, unsigned int a_seed, unsigned int a_octaves, float a_persistence)
 {
 	std::vector<float> proceduralHeights;
 
-	unsigned int object = m_renderer->GenerateGrid(a_dimensions, a_dimensions);
-	m_renderer->GeneratePerlinNoiseMap(a_noiseMapDimensions, a_noiseMapDimensions, a_octaves, a_amplitude, a_persistence, object, a_seed, false, proceduralHeights);
-	m_renderer->SetTransform(glm::scale(glm::translate(a_position), vec3(a_stretch, 1, a_stretch)), object);
+	a_rendererIndex = m_renderer->GenerateGrid(a_dimensions, a_dimensions);
+	m_renderer->GeneratePerlinNoiseMap(a_noiseMapDimensions, a_noiseMapDimensions, a_octaves, a_amplitude, a_persistence, a_rendererIndex, a_seed, false, proceduralHeights);
+	m_renderer->SetTransform(glm::scale(glm::translate(a_position), vec3(a_stretch, 1, a_stretch)), a_rendererIndex);
 
 	//This is used for getting the maximum possible precision from PhysX for my heightmap.
 	//This is the highest number that I can use.
@@ -216,6 +217,7 @@ unsigned int PhysicsBase::AddProceduralPlane(unsigned int a_dimensions, unsigned
 	if (highestHeight == -9999999.9f)
 	{
 		std::cout << "Error: Sending invalid perlin heights to PhysX." << std::endl;
+		return nullptr;
 	}
 	else
 	{
@@ -232,9 +234,9 @@ unsigned int PhysicsBase::AddProceduralPlane(unsigned int a_dimensions, unsigned
 			data[counter].materialIndex0 = 0;
 			data[counter].materialIndex1 = 0;
 
-			if (i % 100 == 0)
+			if (i % (a_dimensions + 1) == 0)
 			{
-				i += 200;
+				i += (a_dimensions + 1) * 2;
 			}
 			counter++;
 		}
@@ -259,7 +261,7 @@ unsigned int PhysicsBase::AddProceduralPlane(unsigned int a_dimensions, unsigned
 		g_physicsScene->addActor(*terrain);
 
 		delete[] data;
-	}
 
-	return object;
+		return terrain;
+	}	
 }

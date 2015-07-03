@@ -15,11 +15,6 @@ int PhysicsConcrete1::Init()
 
 	g_physicsMaterial = g_physics->createMaterial(0.5f, 0.5f, 0.5f);
 
-	//Add a plane
-	//PxTransform pose = PxTransform(PxVec3(0.0f, 0.0f, 0.0f), PxQuat(PxHalfPi * 1.0f, PxVec3(0.0f, 0.0f, 1.0f)));
-	//PxRigidStatic* plane = PxCreateStatic(*g_physics, pose, PxPlaneGeometry(), *g_physicsMaterial);
-	//g_physicsScene->addActor(*plane);
-
 	m_gun = m_renderer->LoadOBJ("../data/gun/crossbow.obj");
 	m_renderer->LoadTexture("../data/gun/texture.jpg", m_gun);
 	m_renderer->LoadAmbient("../data/gun/texture.jpg", m_gun);
@@ -29,10 +24,10 @@ int PhysicsConcrete1::Init()
 	m_shootTimer = 0.0f;
 	m_shootForce = 100.0f;
 
-	//unsigned int object = AddProceduralPlane(99, 100, 8, vec3(0, 0, 0), g_physicsMaterial, 100);
-	unsigned int object = AddProceduralPlane(99, 9, 9, vec3(0, -300, 0), g_physicsMaterial, 100);
-	m_renderer->LoadTexture("../data/checkerboard.png", object);
-	m_renderer->LoadAmbient("../data/checkerboard.png", object);
+	unsigned int proceduralPlane;
+	AddProceduralPlane(99, 9, 9, vec3(0, -300, 0), g_physicsMaterial, proceduralPlane, 100);
+	m_renderer->LoadTexture("../data/checkerboard.png", proceduralPlane);
+	m_renderer->LoadAmbient("../data/checkerboard.png", proceduralPlane);
 
 	TwAddVarRW(m_debugBar, "Shoot Force", TW_TYPE_FLOAT, &m_shootForce, "");
 

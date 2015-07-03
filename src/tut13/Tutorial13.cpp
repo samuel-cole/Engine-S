@@ -102,21 +102,18 @@ int Tutorial13::Init()
 
 	//m_renderer->LoadOBJ("../data/teapot.obj");
 
-	//std::vector<std::string> textures;
-	//std::vector<std::string> normalMaps;
-	//std::vector<std::string> specularMaps;
-	//std::vector<bool> texChannels;
-	//std::vector<bool> normChannels;
-	//std::vector<bool> specularChannels;
-	//
-	//textures.push_back("../data/Enemyelite/EnemyElite3_D.tga");
-	//textures.push_back("../data/Enemyelite/Alienrifle_D.png");
-	//normalMaps.push_back("../data/Enemyelite/EnemyElite_N.tga");
-	//normalMaps.push_back("../data/Enemyelite/Alienrifle_N.png");
-	//specularMaps.push_back("../data/Enemyelite/EnemyElite_S.tga");
-	//specularMaps.push_back("../data/Enemyelite/Alienrifle_S.tga");
-    //
-	//m_model = m_renderer->LoadFBX("../data/Enemyelite/EnemyElite.fbx", &textures, &normalMaps, &specularMaps);
+	std::vector<std::string> textures;
+	std::vector<std::string> normalMaps;
+	std::vector<std::string> specularMaps;
+	
+	textures.push_back("../data/Enemyelite/EnemyElite3_D.tga");
+	textures.push_back("../data/Enemyelite/Alienrifle_D.png");
+	normalMaps.push_back("../data/Enemyelite/EnemyElite_N.tga");
+	normalMaps.push_back("../data/Enemyelite/Alienrifle_N.png");
+	specularMaps.push_back("../data/Enemyelite/EnemyElite_S.tga");
+	specularMaps.push_back("../data/Enemyelite/Alienrifle_S.tga");
+    
+	m_model = m_renderer->LoadFBX("../data/Enemyelite/EnemyElite.fbx", &textures, &normalMaps, &specularMaps);
 
 	m_renderer->GenerateShadowMap(50.0f);
 

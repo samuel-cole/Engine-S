@@ -36,13 +36,14 @@ protected:
 	//a_stretch determines how much the mesh should be scaled by.
 	//a_position determines the position of the center of the plane.
 	//a_material sets the physics material for the plane.
+	//a_rendererIndex is the index of this object within the renderer. Note that if this object is transformed in any way in the renderer, the physics object will no longer be valid.
 	//a_amplitude determines how high the plane should be deformed.
 	//a_seed is used to seed the random generation. Different values result in a different randomly generated plane.
 	//a_octaves determines how bumpy the plane should be- higher numbers are bumpier, but take longer to generate.
 	//a_persistence determines how quickly the height deformation should fall-off during generation.
-	//Returns the index of the plane within m_renderer. NOTE: DO NOT USE THIS INDEX FOR MOVING THIS PLANE. THE PHYSICS PLANE WILL NOT MOVE WITH IT.
-	unsigned int AddProceduralPlane(unsigned int a_dimensions, unsigned int a_noiseMapDimensions, 
-							unsigned int a_stretch, const vec3& a_position, PxMaterial* a_material,
+	//Returns the physics object of the plane.
+	PxRigidStatic* AddProceduralPlane(unsigned int a_dimensions, unsigned int a_noiseMapDimensions,
+							float a_stretch, const vec3& a_position, PxMaterial* a_material, unsigned int& a_rendererIndex,
 							float a_amplitude, unsigned int a_seed = rand(), unsigned int a_octaves = 6, float a_persistence = 0.3f);
 
 	//Physics Variables
@@ -52,7 +53,6 @@ protected:
 	PxDefaultErrorCallback g_defaultErrorCallback;
 	PxDefaultAllocator g_defaultAllocatorCallback;
 	PxSimulationFilterShader g_defaultFilterShader = PxDefaultSimulationFilterShader;
-	PxCooking* g_physicsCooker;
 
 	std::vector<PxRigidActor*> g_physicsActors;
 	//End of physics variables

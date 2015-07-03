@@ -16,6 +16,12 @@ void InputManager::SetMousePos(const glm::vec2& a_pos)
 	glfwSetCursorPos(m_window, (double)a_pos.x, (double)a_pos.y);
 }
 
+void InputManager::SetMouseVisibility(const bool a_visible)
+{
+	if ((glfwGetInputMode(m_window, GLFW_CURSOR) == GLFW_CURSOR_NORMAL) != a_visible)
+		glfwSetInputMode(m_window, GLFW_CURSOR, (a_visible ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED));
+}
+
 glm::vec2 InputManager::GetMousePos()
 {
 	double xPos, yPos;

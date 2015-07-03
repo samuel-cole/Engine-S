@@ -305,6 +305,8 @@ public:
 
 	//Function for loading an FBX model. Returns the index of the model.
 	//TODO: Include a variable for ambients.
+	//TODO: Make this work better with multiple meshes. Particularly, make sure that files with multiple meshes get correctly saved out for re-loading.
+	//TODO: Rework this function. Why do paths for textures need to be specified here, when for objs they are loaded seperately? Potentially return a vector of unsigned ints for each object loaded in.
 	unsigned int LoadFBX(const std::string& a_filePath, const std::vector<std::string>* const a_texturePaths, const std::vector<std::string>* const a_normalMapPaths, const std::vector<std::string>* const a_specularMapPaths);
 	
 	//Method for loading an OBJ model. Returns the index of the model, for use in texturing.
