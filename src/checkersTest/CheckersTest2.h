@@ -6,6 +6,7 @@
 #include <thread>
 
 class PlayerCollisions;
+class CheckersMover;
 
 class CheckersTest2 : public PhysicsBase
 {
@@ -68,6 +69,8 @@ private:
 	PxController* g_playerController;
 	PlayerCollisions* g_playerCollisions;
 	PxRigidStatic* g_proceduralPhysics;
+
+	CheckersMover* m_mover;
 
 	float m_animationTimer;
 

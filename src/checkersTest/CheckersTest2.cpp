@@ -2,6 +2,7 @@
 #include "Renderer.h"
 #include "WalkCamera.h"
 #include "InputManager.h"
+#include "CheckersMover.h"
 //Used for addlight function
 #include "tut13\Tutorial13.h"
 
@@ -77,6 +78,10 @@ int CheckersTest2::Init()
 	//Move the gun out of the way.
 	m_renderer->SetTransform(glm::translate(m_renderer->GetTransform(m_animatedModel), vec3(0, -2000000, 0)), m_animatedModel + 1);
 
+	AddBox(g_physicsMaterial, 100.0f, vec3(1, 1, 1), vec3(-10, 100, -10), true);
+	m_renderer->LoadTexture("../data/vanquish/upper_d.tga", m_models[m_models.size() - 1]);
+	m_renderer->LoadAmbient("../data/vanquish/upper_d.tga", m_models[m_models.size() - 1]);
+	m_mover = new CheckersMover(1000.0f, 0.1f, 1.0f, 0.1f, 1000000.0f, (PxRigidDynamic*)(g_physicsActors[g_physicsActors.size() - 1]));
 
 	m_spawnTimer = 0.0f;
 	m_walkSpeed = 1.0f;
@@ -264,6 +269,7 @@ int CheckersTest2::Init()
 int CheckersTest2::Deinit()
 {
 	delete g_playerCollisions;
+	delete m_mover;
 
 	return PhysicsBase::Deinit();
 }
@@ -277,6 +283,12 @@ void CheckersTest2::Update(float a_deltaTime)
 	m_animationTimer += a_deltaTime;
 
 	CheckersUpdate(a_deltaTime);
+
+#pragma region Checkers Mover
+	
+	m_mover->Update()
+
+#pragma endregion
 
 #pragma region Player Movement
 	glm::mat4 cameraWorld = m_camera->GetWorldTransform();
