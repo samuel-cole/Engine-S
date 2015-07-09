@@ -78,17 +78,14 @@ int CheckersTest2::Init()
 	//Move the gun out of the way.
 	m_renderer->SetTransform(glm::translate(m_renderer->GetTransform(m_animatedModel), vec3(0, -2000000, 0)), m_animatedModel + 1);
 
-	AddBox(g_physicsMaterial, 100.0f, vec3(1, 1, 1), vec3(-10, 100, -10), true);
-	m_renderer->LoadTexture("../data/vanquish/upper_d.tga", m_models[m_models.size() - 1]);
-	m_renderer->LoadAmbient("../data/vanquish/upper_d.tga", m_models[m_models.size() - 1]);
-	m_mover = new CheckersMover(1000.0f, 0.1f, 1.0f, 0.1f, 1000000.0f, (PxRigidDynamic*)(g_physicsActors[g_physicsActors.size() - 1]));
-
 	m_spawnTimer = 0.0f;
 	m_walkSpeed = 1.0f;
 	m_verticleSpeed = -10.0f;
 	m_shootTimer = 0.0f;
 	m_shootForce = 100.0f;
 	m_animationTimer = 0.0f;
+
+	m_canFly = false;
 
 	m_amplitude = 5.0f;
 	m_seed = 0;
@@ -98,9 +95,11 @@ int CheckersTest2::Init()
 	g_proceduralPhysics = AddProceduralPlane(99, 100, 1.0f, vec3(0, 0, 0), g_physicsMaterial, m_proceduralPlane, buffer, m_amplitude, 0, 6, m_persistence);
 	m_renderer->LoadTexture("../data/checkerboard.png", m_proceduralPlane);
 	m_renderer->LoadAmbient("../data/checkerboard.png", m_proceduralPlane);
+	
 
 	TwAddVarRW(m_debugBar, "Shoot Force", TW_TYPE_FLOAT, &m_shootForce, "");
 	TwAddVarRW(m_debugBar, "Walk Speed", TW_TYPE_FLOAT, &m_walkSpeed, "");
+	TwAddVarRW(m_debugBar, "Can Fly", TW_TYPE_BOOLCPP, &m_canFly, "");
 
 	TwAddSeparator(m_debugBar, "Lights", "");
 	TwAddButton(m_debugBar, "AddLight", AddLight, (void*)(m_renderer), "");
@@ -124,6 +123,16 @@ int CheckersTest2::Init()
 	PxTransform pose = PxTransform(PxVec3(0.0f, 0.0f, 0.0f), PxQuat(PxHalfPi * 1.0f, PxVec3(0.0f, 0.0f, 1.0f)));
 	PxRigidStatic* plane = PxCreateStatic(*g_physics, pose, PxPlaneGeometry(), *g_physicsMaterial);
 	g_physicsScene->addActor(*plane);
+
+	//Checkers Mover
+	for (int i = 0; i < 10; ++i)
+	{
+		AddBox(g_physicsMaterial, 2.0f, vec3(3, 3, 3), vec3(((float)rand() / (float)RAND_MAX) * 100.0f - 50.0f, 500, ((float)rand() / (float)RAND_MAX) * 100.0f - 50.0f), true);
+		m_renderer->LoadTexture("../data/vanquish/upper_d.tga", m_models[m_models.size() - 1]);
+		m_renderer->LoadAmbient("../data/vanquish/upper_d.tga", m_models[m_models.size() - 1]);
+		m_physicsLights.push_back(m_renderer->CreatePointLight(vec3(((float)rand() / (float)RAND_MAX), ((float)rand() / (float)RAND_MAX), ((float)rand() / (float)RAND_MAX)), 20, false, vec3(0, 10, 0)));
+		m_movers.push_back(new CheckersMover(5000.0f, 20.0f, (float)rand() / (float)RAND_MAX, (float)rand() / (float)RAND_MAX, (float)rand() / (float)RAND_MAX, 1000000.0f, (PxRigidDynamic*)(g_physicsActors[g_physicsActors.size() - 1])));
+	}
 
 	TwAddSeparator(m_debugBar, "Plane", "");
 	TwAddVarRW(m_debugBar, "Amplitude", TW_TYPE_FLOAT, &m_amplitude, "");
@@ -251,15 +260,13 @@ int CheckersTest2::Init()
 	m_colourTimer = 0.1f;
 
 
-
-
 	m_inputTimer = 0;
 
 	m_pieceSelected = -1;
 
 	m_turn = false;
 
-	m_threadFinished = true;
+	m_aiMoveFinished = true;
 	m_aiDifficulty = 10;
 #pragma endregion
 
@@ -269,7 +276,12 @@ int CheckersTest2::Init()
 int CheckersTest2::Deinit()
 {
 	delete g_playerCollisions;
-	delete m_mover;
+	
+	for (unsigned int i = 0; i < m_movers.size(); ++i)
+	{
+		delete m_movers[i];
+		m_movers[i] = nullptr;
+	}
 
 	return PhysicsBase::Deinit();
 }
@@ -284,11 +296,7 @@ void CheckersTest2::Update(float a_deltaTime)
 
 	CheckersUpdate(a_deltaTime);
 
-#pragma region Checkers Mover
-	
-	m_mover->Update()
 
-#pragma endregion
 
 #pragma region Player Movement
 	glm::mat4 cameraWorld = m_camera->GetWorldTransform();
@@ -297,22 +305,22 @@ void CheckersTest2::Update(float a_deltaTime)
 	bool notZero = false;
 	if (InputManager::GetKey(Keys::W))
 	{
-		displacement -= PxVec3(cameraWorld[2].x, 0, cameraWorld[2].z);
+		displacement -= PxVec3(cameraWorld[2].x, (m_canFly ? cameraWorld[2].y : 0), cameraWorld[2].z);
 		notZero = true;
 	}
 	if (InputManager::GetKey(Keys::A))
 	{
-		displacement -= PxVec3(cameraWorld[0].x, 0, cameraWorld[0].z);
+		displacement -= PxVec3(cameraWorld[0].x, (m_canFly ? cameraWorld[0].y : 0), cameraWorld[0].z);
 		notZero = true;
 	}
 	if (InputManager::GetKey(Keys::S))
 	{
-		displacement += PxVec3(cameraWorld[2].x, 0, cameraWorld[2].z);
+		displacement += PxVec3(cameraWorld[2].x, (m_canFly ? cameraWorld[2].y : 0), cameraWorld[2].z);
 		notZero = true;
 	}
 	if (InputManager::GetKey(Keys::D))
 	{
-		displacement += PxVec3(cameraWorld[0].x, 0, cameraWorld[0].z);
+		displacement += PxVec3(cameraWorld[0].x, (m_canFly ? cameraWorld[0].y : 0), cameraWorld[0].z);
 		notZero = true;
 	}
 	if (notZero)
@@ -322,14 +330,14 @@ void CheckersTest2::Update(float a_deltaTime)
 	{
 		PxControllerState state;
 		g_playerController->getState(state);	
-		if (state.collisionFlags > 0)
+		if (state.collisionFlags > 0 || m_canFly)
 			m_verticleSpeed = 0.5f;
 	}
 
-	if (m_verticleSpeed > -10.0f)
+	if (m_verticleSpeed > -10.0f && !m_canFly || m_verticleSpeed > 0 && m_canFly)
 		m_verticleSpeed -= a_deltaTime;
 
-	displacement.y = m_verticleSpeed;
+	displacement.y += m_verticleSpeed;
 
 	PxControllerFilters filters;
 	g_playerController->move(displacement, 0.01f, a_deltaTime, filters);
@@ -436,6 +444,41 @@ void CheckersTest2::CheckersUpdate(float a_deltaTime)
 		m_colourTimer = 0.1f;
 	}
 
+#pragma region Checkers Mover
+	for (unsigned int i = 0; i < m_movers.size(); ++i)
+	{
+		if (m_movers[i] != nullptr)
+		{
+			PxRigidDynamic* moverBody = m_movers[i]->GetPhysicsBody();
+			PxVec3 moverPos = moverBody->getGlobalPose().p;
+			PxVec3 closestPos(-9999999, -9999999, -9999999);
+			float closestDistance = 9999999.0f;
+			//This loop is for finding the closest physics body to the checkers mover.
+			for (unsigned int i = 0; i < g_physicsActors.size(); ++i)
+			{
+				//Don't consider the checkers mover within the calculation
+				if (g_physicsActors[i] != moverBody)
+				{
+					PxVec3 otherPos = g_physicsActors[i]->getGlobalPose().p;
+					float distance = (otherPos - moverPos).magnitudeSquared();
+					if (distance < closestDistance)
+					{
+						closestDistance = distance;
+						closestPos = otherPos;
+					}
+				}
+			}
+
+			if (m_movers[i]->Update(closestPos, PxVec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_xToMove, 5, M_TILE_WIDTH  * -3.5f + M_TILE_WIDTH * m_yToMove)))
+			{
+				UpdateBoard();
+				m_aiMoveFinished = true;
+				m_turn = !m_turn;
+			}
+		}
+	}
+#pragma endregion
+
 	if (m_inputTimer < 0)
 	{
 		if (InputManager::GetKey(Keys::LEFT))
@@ -490,7 +533,7 @@ void CheckersTest2::CheckersUpdate(float a_deltaTime)
 				m_inputTimer = 0.15f;
 			}
 		}
-		else if (m_threadFinished)
+		else if (m_aiMoveFinished)
 		{
 			std::thread thr(&CheckersTest2::UseAIMove, this);
 			std::swap(thr, m_aiThread);
@@ -789,7 +832,8 @@ void CheckersTest2::AIMove(int(&a_board)[8][8], const bool a_turn, const unsigne
 		}
 	}
 
-	actions = GetPossibleMoves(cloneBoard, a_turn);
+	std::vector<std::tuple<unsigned int, unsigned int>> piecesMoved;
+	actions = GetPossibleMoves(cloneBoard, a_turn, piecesMoved);
 
 	//If there is only one action, do that action.
 	if (actions.size() == 1)
@@ -834,10 +878,12 @@ void CheckersTest2::AIMove(int(&a_board)[8][8], const bool a_turn, const unsigne
 				a_board[i][j] = actions[highestScoreIndex][i][j];
 			}
 		}
+		m_xToMove = std::get<0>(piecesMoved[highestScoreIndex]);
+		m_yToMove = std::get<1>(piecesMoved[highestScoreIndex]);
 	}
 }
 
-std::vector<std::vector<std::vector<int>>> CheckersTest2::GetPossibleMoves(const int a_board[8][8], const bool a_turn)
+std::vector<std::vector<std::vector<int>>> CheckersTest2::GetPossibleMoves(const int a_board[8][8], const bool a_turn, std::vector<std::tuple<unsigned int, unsigned int>>& a_pieceToMove)
 {
 	std::vector<std::vector<std::vector<int>>> results;
 
@@ -857,12 +903,13 @@ std::vector<std::vector<std::vector<int>>> CheckersTest2::GetPossibleMoves(const
 				(i > 1 && j > 1 && a_board[i - 1][j - 1] < 12 && a_board[i - 1][j - 1] != -1 && a_board[i - 2][j - 2] == -1))))	//...or backwards and to the other side... 
 			{
 				captureMovePossible = i * 8 + j;
-				goto outsideLoop;	//This goes here	-->--->--->---->---->--->--|
-			}																	 /*|*/
-		}																		 /*|*/
-	}																			 /*|*/
-	//This outsideLoop bit is used for breaking out of the nested for loops.	   |
-outsideLoop: //<--<--<--<--<--<--<---<--<--<--<--<--<--<--<--<--<--<--<--<--<--<
+
+				//Break out of both loops.
+				i = 8;
+				j = 8;
+			}																	
+		}																		
+	}																			
 
 	for (int i = (captureMovePossible == -1 ? 0 : captureMovePossible / 8); i < 8; ++i)
 	{
@@ -892,6 +939,7 @@ outsideLoop: //<--<--<--<--<--<--<---<--<--<--<--<--<--<--<--<--<--<--<--<--<--<
 					newResult[i + 1][j + moveDirection] = newResult[i][j];
 					newResult[i][j] = -1;
 
+					a_pieceToMove.push_back(std::make_tuple((unsigned int)i, (unsigned int)j));
 					results.push_back(newResult);
 				}
 				//Normal Move other direction
@@ -913,6 +961,7 @@ outsideLoop: //<--<--<--<--<--<--<---<--<--<--<--<--<--<--<--<--<--<--<--<--<--<
 					newResult[i - 1][j + moveDirection] = newResult[i][j];
 					newResult[i][j] = -1;
 
+					a_pieceToMove.push_back(std::make_tuple((unsigned int)i, (unsigned int)j));
 					results.push_back(newResult);
 				}
 				//Jump Move
@@ -935,6 +984,7 @@ outsideLoop: //<--<--<--<--<--<--<---<--<--<--<--<--<--<--<--<--<--<--<--<--<--<
 					newResult[i][j] = -1;
 					newResult[i + 1][j + moveDirection] = -1;
 
+					a_pieceToMove.push_back(std::make_tuple((unsigned int)i, (unsigned int)j));
 					results.push_back(newResult);
 				}
 				//Jump Move other direction
@@ -957,6 +1007,7 @@ outsideLoop: //<--<--<--<--<--<--<---<--<--<--<--<--<--<--<--<--<--<--<--<--<--<
 					newResult[i][j] = -1;
 					newResult[i - 1][j + moveDirection] = -1;
 
+					a_pieceToMove.push_back(std::make_tuple((unsigned int)i, (unsigned int)j));
 					results.push_back(newResult);
 				}
 				//Teleport Move
@@ -986,6 +1037,7 @@ outsideLoop: //<--<--<--<--<--<--<---<--<--<--<--<--<--<--<--<--<--<--<--<--<--<
 						newResult[i][0] = -1;
 					}
 
+					a_pieceToMove.push_back(std::make_tuple((unsigned int)i, (unsigned int)j));
 					results.push_back(newResult);
 				}
 			}
@@ -1062,12 +1114,25 @@ int CheckersTest2::PlayUntilEnd(std::vector<std::vector<int>> a_board, const boo
 
 void CheckersTest2::UseAIMove()
 {
+	m_aiMoveFinished = false;
 	m_threadFinished = false;
+
+	AIMove(m_board, m_turn, m_aiDifficulty);
+
+	//This updates the board visuals, commented out so that I can add the checkers mover which will do this instead.
+	//UpdateBoard();
+	CheckersMover::MoveAvailable();
+
+	//m_turn = !m_turn;
+	//m_aiMoveFinished = true;
+	m_threadFinished = true;
+}
+
+void CheckersTest2::UpdateBoard()
+{
 	std::vector<bool> emittersMoved;
 	emittersMoved.assign(24, false);
 
-	AIMove(m_board, m_turn, m_aiDifficulty);
-	m_turn = !m_turn;
 	//Move pieces
 	for (unsigned int i = 0; i < 8; ++i)
 	{
@@ -1081,7 +1146,7 @@ void CheckersTest2::UseAIMove()
 			}
 		}
 	}
-
+	
 	//Remove taken pieces
 	for (unsigned int i = 0; i < emittersMoved.size(); ++i)
 	{
@@ -1091,8 +1156,6 @@ void CheckersTest2::UseAIMove()
 			m_renderer->SetLightPosition(m_pieceLights[i], vec3(M_TILE_WIDTH * 5.5f * ((m_emitters[i] < 12) ? -1 : 1), 5, 0));
 		}
 	}
-
-	m_threadFinished = true;
 }
 
 #pragma endregion

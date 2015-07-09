@@ -2,19 +2,25 @@
 
 bool CheckersMover::s_checkersMoveAvailable = false;
 
-CheckersMover::CheckersMover(float a_speed, float a_distanceModifier, float a_checkersModifier, float a_physicsModifier, float a_maxDistanceSquared, PxRigidDynamic* a_physicsBody) :
-m_speed(a_speed), m_distanceModifier(a_distanceModifier), m_checkersModifier(a_checkersModifier), m_physicsModifier(a_physicsModifier), m_maxDistanceSquared(a_maxDistanceSquared), g_physicsBody(a_physicsBody)
+CheckersMover::CheckersMover(float a_speed, float a_checkersRange, float a_distanceModifier, float a_checkersModifier, float a_physicsModifier, float a_maxDistanceSquared, PxRigidDynamic* a_physicsBody) :
+m_speed(a_speed), m_checkersRange(a_checkersRange), m_distanceModifier(a_distanceModifier), m_checkersModifier(a_checkersModifier), m_physicsModifier(a_physicsModifier), m_maxDistanceSquared(a_maxDistanceSquared), g_physicsBody(a_physicsBody)
 {
 }
 
-void CheckersMover::Update(const PxVec3& a_physicsPos, const PxVec3& a_checkersPos)
+bool CheckersMover::Update(const PxVec3& a_physicsPos, const PxVec3& a_checkersPos)
 {
 	//The two actions available are 'mess around with the nearest physics object' and 'make a checkers move'. These variables are the utility scores of each.
 	float physicsUtilityScore, checkersUtilityScore;
 
 	PxVec3 myPos = g_physicsBody->getGlobalPose().p;
 
-	//Geta value between 0 and 1 based on the distance of the closest physics object 
+	if (s_checkersMoveAvailable && (myPos - a_checkersPos).magnitudeSquared() < m_checkersRange)
+	{
+		s_checkersMoveAvailable = false;
+		return true;
+	}
+
+	//Get a value between 0 and 1 based on the distance of the closest physics object 
 	float physicsDistanceValue = fmaxf(1 - (a_physicsPos - myPos).magnitudeSquared() / m_maxDistanceSquared, 0);
 	//The '1.0f' part of this equation is there because there are always physics objects within the world.
 	physicsUtilityScore = (m_physicsModifier * 1.0f) * (m_distanceModifier * physicsDistanceValue);
@@ -32,6 +38,9 @@ void CheckersMover::Update(const PxVec3& a_physicsPos, const PxVec3& a_checkersP
 	}
 	
 	//Apply a force based on which utility score is higher.
-	g_physicsBody->addForce(m_speed * (myPos - (checkersUtilityScore > physicsUtilityScore ? a_checkersPos : a_physicsPos)).getNormalized());
-	
+	PxVec3 force = m_speed * ((checkersUtilityScore > physicsUtilityScore ? a_checkersPos : a_physicsPos) - myPos).getNormalized();
+	g_physicsBody->addForce(force);
+	g_physicsBody->addTorque(force);
+
+	return false;
 }

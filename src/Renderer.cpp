@@ -40,10 +40,6 @@ m_standardProgram(-1), m_particleProgram(-1), m_animatedProgram(-1), m_postProce
 	TwAddVarRW(m_bar, "Light Direction", TW_TYPE_DIR3F, &m_lightDir[0], "");
 	TwAddVarRW(m_bar, "Specular Power", TW_TYPE_FLOAT, &m_specPow, "");
 
-	//m_frameBuffers.push_back(0);
-	//m_frameBufferDimensions.push_back(vec4(0, 0, 1280, 720));
-	//m_frameBufferColours.push_back(vec3(0.25f, 0.25f, 0.75f));
-
 	//Set up the framebuffer that everything will be ran through- used for post processing effects.
 	unsigned int texture = LoadFrameBuffer(a_camera, vec4(0, 0, 1280, 720), vec3(0.25f, 0.25f, 0.75f));
 

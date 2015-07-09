@@ -147,7 +147,6 @@ void PhysicsBase::AddBox(PxMaterial* const a_material, const float a_density, co
 {
 	PxBoxGeometry box(a_dimensions.x, a_dimensions.y, a_dimensions.z);
 	PxTransform position(PxVec3(a_position.x, a_position.y, a_position.z));
-	PxCreateDynamic(*g_physics, position, box, *a_material, a_density);
 	g_physicsActors.push_back(PxCreateDynamic(*g_physics, position, box, *a_material, a_density));
 	g_physicsScene->addActor(*g_physicsActors[g_physicsActors.size() - 1]);
 

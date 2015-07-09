@@ -70,14 +70,13 @@ private:
 	PlayerCollisions* g_playerCollisions;
 	PxRigidStatic* g_proceduralPhysics;
 
-	CheckersMover* m_mover;
-
 	float m_animationTimer;
 
 	float m_spawnTimer;
 
 	float m_walkSpeed;
 	float m_verticleSpeed;
+	bool m_canFly;
 	
 	float m_shootTimer;
 	float m_shootForce;
@@ -100,10 +99,13 @@ private:
 
 	void UseAIMove();
 	void AIMove(int(&a_board)[8][8], const bool a_turn, const unsigned int a_difficulty);
-	//As vectors of arrays don't work, a vector<vector<int>>> has been used to replace a vector<int[8][8]>
-	std::vector<std::vector<std::vector<int>>> GetPossibleMoves(const int a_board[8][8], const bool a_turn);
+	//As vectors of arrays don't work, a vector<vector<int>>> has been used to replace a vector<int[8][8]>.
+	//a_pieceToMove is used for outputting which piece has been moved in each possible move.
+	std::vector<std::vector<std::vector<int>>> GetPossibleMoves(const int a_board[8][8], const bool a_turn, std::vector<std::tuple<unsigned int, unsigned int>>& a_pieceToMove = std::vector<std::tuple<unsigned int, unsigned int>>());
 	//Plays random moves for both sides until the game ends.
 	int PlayUntilEnd(std::vector<std::vector<int>> a_board, const bool a_turn);
+	//Updates the visuals to match the board passed in as an argument- this re-updates the entire board, so when a known piece has been moved, it is better to update the visuals manually than call this function.
+	void UpdateBoard();
 
 
 	std::vector<unsigned int> m_emitters;
@@ -134,16 +136,17 @@ private:
 
 	std::thread m_aiThread;
 
+	bool m_aiMoveFinished;
 	bool m_threadFinished;
 
 	bool m_turn;
-#pragma endregion
-	
 
-	//Variables for generating the random board.
-	//float m_amplitude;
-	//float m_persistence;
-	//unsigned int m_seed;
+	std::vector<CheckersMover*> m_movers;
+
+	//These are used for telling the checkers mover which pieces to move.
+	unsigned int m_xToMove;
+	unsigned int m_yToMove;
+#pragma endregion
 };
 
 #endif
