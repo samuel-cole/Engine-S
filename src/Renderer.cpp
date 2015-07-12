@@ -435,7 +435,7 @@ void Renderer::GenerateShadowMap(const float a_lightWidth)
 	m_lightProjection = glm::ortho<float>(-a_lightWidth, a_lightWidth, -a_lightWidth, a_lightWidth, -a_lightWidth, a_lightWidth);
 }
 
-void Renderer::GeneratePerlinNoiseMap(const unsigned int a_rows, const unsigned int a_columns, const unsigned int a_octaves, const float a_amplitude, const float a_persistence, const unsigned int a_index, const unsigned int a_seed, const bool a_tileable, std::vector<float>& a_heights)
+void Renderer::GeneratePerlinNoiseMap(const unsigned int a_rows, const unsigned int a_columns, const unsigned int a_octaves, const float a_amplitude, const float a_persistence, const unsigned int a_index, const unsigned int a_seed, const bool a_tileable, const bool a_border, std::vector<float>& a_heights)
 {
 	if (a_index >= m_numOfIndices.size() || m_numOfIndices[a_index] == -1)
 	{
@@ -490,13 +490,35 @@ void Renderer::GeneratePerlinNoiseMap(const unsigned int a_rows, const unsigned 
 
 					glm::vec2 perlinInput = glm::vec2(xPerlin, yPerlin)  * (1.0f / glm::max(a_rows, a_columns)) * 3 * frequency;
 
-					//At the moment, repeating textures do not use a seed- fix this later.
+					//TODO: at the moment, repeating textures do not use a seed- fix this later.
 					perlinSample = glm::perlin(perlinInput);
 				}
 				perlinSample = perlinSample * 0.5f + 0.5f;
 				perlinData[i * a_columns + j] += perlinSample * amplitude;
 				amplitude *= a_persistence;
 			}
+		}
+	}
+
+	//Move all of the values down- the values seem to start at a number greater than 0 that is directly proportional to the amplitude (and possibly persistence also?).
+	//This bit is to move them all back down so that the lowest value sits at 0.
+	float smallestValue = 99999999.9f;
+	for (unsigned int i = 0; i < a_rows; ++i)
+	{
+		for (unsigned int j = 0; j < a_columns; ++j)
+		{
+			if (perlinData[i * a_columns + j] < smallestValue)
+				smallestValue = perlinData[i * a_columns + j];
+		}
+	}
+	for (unsigned int i = 0; i < a_rows; ++i)
+	{
+		for (unsigned int j = 0; j < a_columns; ++j)
+		{
+			if (a_border && (i == 0 || i == a_rows - 1 || j == 0 || j == a_columns - 1))
+				perlinData[i * a_columns + j] = 0;
+			else
+				perlinData[i * a_columns + j] -= smallestValue;
 		}
 	}
 
@@ -517,7 +539,6 @@ void Renderer::GeneratePerlinNoiseMap(const unsigned int a_rows, const unsigned 
  		vertices[i].position += vertices[i].normal * perlinValue;
 
 		a_heights.push_back(perlinValue);
-		//a_heights.push_back(vertices[i].position.y);
 	}
 
 	//Cleanup the vertex buffer.

@@ -197,7 +197,7 @@ PxRigidStatic* PhysicsBase::AddProceduralPlane(const unsigned int a_dimensions, 
 	std::vector<float> proceduralHeights;
 
 	a_rendererIndex = m_renderer->GenerateGrid(a_dimensions, a_dimensions);
-	m_renderer->GeneratePerlinNoiseMap(a_noiseMapDimensions, a_noiseMapDimensions, a_octaves, a_amplitude, a_persistence, a_rendererIndex, a_seed, false, proceduralHeights);
+	m_renderer->GeneratePerlinNoiseMap(a_noiseMapDimensions, a_noiseMapDimensions, a_octaves, a_amplitude, a_persistence, a_rendererIndex, a_seed, false, true, proceduralHeights);
 	m_renderer->SetTransform(glm::scale(glm::translate(a_position), vec3(a_stretch, 1, a_stretch)), a_rendererIndex);
 
 	//This is used for getting the maximum possible precision from PhysX for my heightmap.
@@ -229,26 +229,16 @@ PxRigidStatic* PhysicsBase::AddProceduralPlane(const unsigned int a_dimensions, 
 		//+1 to get from a_dimensions into the intuitive definition of dimensions (human readability), +2 more to add padding.
 		unsigned int paddedDimensions = a_dimensions + 3;
 		//Get the heights of the procedural terrain into a form accepted by PhysX. Extra spacing added for outside row.
-		PxHeightFieldSample* data = new PxHeightFieldSample[proceduralHeights.size() + paddedDimensions * 4 - 4];
+		PxHeightFieldSample* data = new PxHeightFieldSample[proceduralHeights.size()];
 		unsigned int counter = 0;
 
-		for (unsigned int i = paddedDimensions - 1; i < proceduralHeights.size() + paddedDimensions * 4 - 4; --i)
+		for (unsigned int i = a_dimensions; i < proceduralHeights.size(); --i)
 		{
-			unsigned int nonPaddedIndex = i - a_dimensions - 2 * row;
-			unsigned int paddedColumn = (i % paddedDimensions);
+			data[counter].height = (short)(proceduralHeights[i] * multiplier);
 
-			if (nonPaddedIndex < 0 || nonPaddedIndex > proceduralHeights.size() - 1 || paddedColumn == 0 || paddedColumn == paddedDimensions - 1)
-				data[counter].height = (short)0;
-			else
-				data[counter].height = (short)(proceduralHeights[nonPaddedIndex] * multiplier);
-			data[counter].materialIndex0 = 0;
-			data[counter].materialIndex1 = 0;
-
-			if (i % paddedDimensions == 0)
+			if (i % (a_dimensions + 1) == 0)
 			{
-				//This number is one higher than the wanted value, however this will be fixed because of the --i in the for loop.
-				i += paddedDimensions * 2;
-				++row;
+				i += (a_dimensions + 1) * 2;
 			}
 			++counter;
 		}
@@ -256,8 +246,8 @@ PxRigidStatic* PhysicsBase::AddProceduralPlane(const unsigned int a_dimensions, 
 		//Generate the height
 		PxHeightFieldDesc heightFieldDesc;
 		heightFieldDesc.format = PxHeightFieldFormat::eS16_TM;
-		heightFieldDesc.nbColumns = paddedDimensions;
-		heightFieldDesc.nbRows = paddedDimensions;
+		heightFieldDesc.nbColumns = a_dimensions + 1;
+		heightFieldDesc.nbRows = a_dimensions + 1;
 		heightFieldDesc.samples.data = data;
 		heightFieldDesc.samples.stride = sizeof(PxHeightFieldSample);
 		heightFieldDesc.thickness = -100.0f;

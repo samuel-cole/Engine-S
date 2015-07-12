@@ -250,9 +250,19 @@ public:
 
 	//Creates a shadow map. Setting light width to a high number gives a large area that shadows can be created within, while setting it to a low number generates higher quality shadow maps.
 	void GenerateShadowMap(const float a_lightWidth);
-	//Generates a perlin noise map. Pass the index of the model to have a perlin-based transform added to it into a_index. Note that perlin maps are not supported for animated models. a_octaves determines how bumpy the map will be.
+
+	//Generates a perlin noise map.
+	//a_rows and a_columns determine the dimensions of the noise map.
+	//a_octaves is used to determine how bumpy the map will be. 6 is a good value for most situations. Note that large a_octaves values can have very large load times.
+	//a_amplitude is used to determine hom large the height differences in the map will be. Please note that the map will not actually have this value as a max height, they will have a height proportional to this value.
+	//a_persistence is used to influence both the height differences and the bumpiness of the map. 0.3 is a good default value.
+	//a_index is the index of the model to have a perlin-based transform added to it. Note that perlin maps are not supported for animated models.
+	//a_seed is the seed used to generate the terrain- changing the seed will result in a different noise map.
+	//a_tileable is whether the map will be repeating- set to true to get a perlin map that can be repeated indefinitely without having any breaks in it.
+	//a_border is whether the map will have a border of 0-height vertices around it.
 	//a_heights is used for passing out the heights of each vertex on the object after being modified by the Perlin Noise map.
-	void GeneratePerlinNoiseMap(const unsigned int a_rows, const unsigned int a_columns, const unsigned int a_octaves, const float a_amplitude, const float a_persistence, const unsigned int a_index, const unsigned int a_seed, const bool a_tileable, std::vector<float>& a_heights = std::vector<float>());
+	void GeneratePerlinNoiseMap(const unsigned int a_rows, const unsigned int a_columns, const unsigned int a_octaves, const float a_amplitude, const float a_persistence,
+								const unsigned int a_index, const unsigned int a_seed, const bool a_tileable, const bool a_border = false, std::vector<float>& a_heights = std::vector<float>());
 
 	//Method for loading in a texture. Pass the index of the model to be textured into a_index.
 	void LoadTexture(const std::string& a_filePath, const unsigned int a_index);
