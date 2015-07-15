@@ -65,6 +65,9 @@ private:
 	void Update(float a_deltaTime);
 	void Draw();
 
+	//Gets the height of the heightfield at the specified (x, z) coordinate. Returns a height value (or -1 if the coordinates are invalid).
+	float GetHeightAtPos(float a_x, float a_z);
+
 	PxMaterial* g_physicsMaterial;
 	PxController* g_playerController;
 	PlayerCollisions* g_playerCollisions;
@@ -90,6 +93,9 @@ private:
 	float m_persistence;
 	unsigned int m_seed;
 	unsigned int m_proceduralPlane;
+
+	const float RAYCAST_HEIGHT = 400.0f;
+	const PxVec3 RAYCAST_DIRECTION = PxVec3(0, -1, 0);
 
 #pragma region Checkers Member Variables and Methods
 	void CheckersUpdate(float a_deltaTime);

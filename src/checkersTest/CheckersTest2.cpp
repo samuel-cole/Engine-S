@@ -428,6 +428,21 @@ void CheckersTest2::Draw()
 	PhysicsBase::Draw();
 }
 
+float CheckersTest2::GetHeightAtPos(float a_x, float a_z)
+{
+	PxRaycastBuffer hit;
+	PxQueryFilterData fd;
+	fd.flags |= PxQueryFlag::eANY_HIT;
+	if (g_physicsScene->raycast(PxVec3(a_x, RAYCAST_HEIGHT, a_z), RAYCAST_DIRECTION, RAYCAST_HEIGHT, hit))
+	{
+		if (hit.hasBlock)
+		{
+			return hit.block.position.y;
+		}
+	}
+	return -1.0f;
+}
+
 #pragma region Checkers Functions
 
 void CheckersTest2::CheckersUpdate(float a_deltaTime)
@@ -481,15 +496,16 @@ void CheckersTest2::CheckersUpdate(float a_deltaTime)
 
 	if (m_inputTimer < 0)
 	{
+		bool changeMade = false;
+		float newX, newZ;
+
 		if (InputManager::GetKey(Keys::LEFT))
 		{
 			if (m_currentX > 0)
 			{
 				--m_currentX;
 				m_inputTimer = 0.15f;
-				m_renderer->SetTransform(glm::translate(vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentX, 10, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentY)), m_positionMarker);
-				m_renderer->SetLightPosition(m_positionLight, vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentX, 8, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentY));
-				m_renderer->SetLightPosition(m_positionLight2, vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentX, 12, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentY));
+				changeMade = true;
 			}
 		}
 		if (InputManager::GetKey(Keys::RIGHT))
@@ -498,9 +514,7 @@ void CheckersTest2::CheckersUpdate(float a_deltaTime)
 			{
 				++m_currentX;
 				m_inputTimer = 0.15f;
-				m_renderer->SetTransform(glm::translate(vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentX, 10, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentY)), m_positionMarker);
-				m_renderer->SetLightPosition(m_positionLight, vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentX, 8, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentY));
-				m_renderer->SetLightPosition(m_positionLight2, vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentX, 12, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentY));
+				changeMade = true;
 			}
 		}
 		if (InputManager::GetKey(Keys::UP))
@@ -509,9 +523,7 @@ void CheckersTest2::CheckersUpdate(float a_deltaTime)
 			{
 				--m_currentY;
 				m_inputTimer = 0.15f;
-				m_renderer->SetTransform(glm::translate(vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentX, 10, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentY)), m_positionMarker);
-				m_renderer->SetLightPosition(m_positionLight, vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentX, 8, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentY));
-				m_renderer->SetLightPosition(m_positionLight2, vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentX, 12, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentY));
+				changeMade = true;
 			}
 		}
 		if (InputManager::GetKey(Keys::DOWN))
@@ -520,11 +532,21 @@ void CheckersTest2::CheckersUpdate(float a_deltaTime)
 			{
 				++m_currentY;
 				m_inputTimer = 0.15f;
-				m_renderer->SetTransform(glm::translate(vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentX, 10, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentY)), m_positionMarker);
-				m_renderer->SetLightPosition(m_positionLight, vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentX, 8, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentY));
-				m_renderer->SetLightPosition(m_positionLight2, vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentX, 12, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentY));
+				changeMade = true;
 			}
 		}
+
+		if (changeMade)
+		{
+			newX = M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentX;
+			newZ = M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentY;
+			float newY = GetHeightAtPos(newX, newZ);
+
+			m_renderer->SetTransform(glm::translate(vec3(newX, newY + 10, newZ)), m_positionMarker);
+			m_renderer->SetLightPosition(m_positionLight, vec3(newX, newY + 8, newZ));
+			m_renderer->SetLightPosition(m_positionLight2, vec3(newX, newY + 12, newZ));
+		}
+
 		if (!m_turn)
 		{
 			if (InputManager::GetKey(Keys::ENTER))
