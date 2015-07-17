@@ -59,6 +59,8 @@ public:
 		return AddProceduralPlane(a_dimensions, a_noiseMapDimensions, a_stretch, a_position, a_material, a_rendererIndex, a_maxHeight, a_amplitude, a_seed, a_octaves, a_persistence);
 	}
 
+	void ResetCheckerPieceHeights();
+
 private:
 	int Init();
 	int Deinit();

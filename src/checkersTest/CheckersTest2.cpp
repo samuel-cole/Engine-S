@@ -28,6 +28,8 @@ void TW_CALL BoardGenerate2(void* a_clientData)
 	PxExtendedVec3 pos = player->getPosition();
 	if (pos.x > -51 && pos.x < 51 && pos.z > -51 && pos.z < 51 && pos.y <= maxHeight)
 		player->setPosition(PxExtendedVec3(pos.x, maxHeight + 10.0f, pos.z));
+
+	checkers->ResetCheckerPieceHeights();
 }
 
 class PlayerCollisions : public PxUserControllerHitReport
@@ -49,6 +51,8 @@ int CheckersTest2::Init()
 	int baseInit = PhysicsBase::Init();
 	if (baseInit != 0)
 		return baseInit;
+
+	m_renderer->GenerateShadowMap(100.0f);
 
 	m_camera->SetLookAt(vec3(0, 10, 0), vec3(1, 0, 0), vec3(0, 1, 0));
 
@@ -268,6 +272,8 @@ int CheckersTest2::Init()
 
 	m_aiMoveFinished = true;
 	m_aiDifficulty = 10;
+
+	ResetCheckerPieceHeights();
 #pragma endregion
 
 	return 0;
@@ -443,6 +449,21 @@ float CheckersTest2::GetHeightAtPos(float a_x, float a_z)
 	return -1.0f;
 }
 
+void CheckersTest2::ResetCheckerPieceHeights()
+{
+	for (unsigned int i = 0; i < 8; ++i)
+	{
+		for (unsigned int j = 0; j < 8; ++j)
+		{
+			if (m_board[i][j] != -1)
+			{
+				vec3 pos = m_renderer->GetEmitterPosition(m_emitters[m_board[i][j]], true);
+				m_renderer->SetEmitterPosition(m_emitters[m_board[i][j]], true, vec3(pos.x, 5.0f + GetHeightAtPos(pos.x, pos.z), pos.z));
+			}
+		}
+	}
+}
+
 #pragma region Checkers Functions
 
 void CheckersTest2::CheckersUpdate(float a_deltaTime)
@@ -469,12 +490,12 @@ void CheckersTest2::CheckersUpdate(float a_deltaTime)
 			PxVec3 closestPos(-9999999, -9999999, -9999999);
 			float closestDistance = 9999999.0f;
 			//This loop is for finding the closest physics body to the checkers mover.
-			for (unsigned int i = 0; i < g_physicsActors.size(); ++i)
+			for (unsigned int j = 0; j < g_physicsActors.size(); ++j)
 			{
 				//Don't consider the checkers mover within the calculation
-				if (g_physicsActors[i] != moverBody)
+				if (g_physicsActors[j] != moverBody)
 				{
-					PxVec3 otherPos = g_physicsActors[i]->getGlobalPose().p;
+					PxVec3 otherPos = g_physicsActors[j]->getGlobalPose().p;
 					float distance = (otherPos - moverPos).magnitudeSquared();
 					if (distance < closestDistance)
 					{
@@ -604,7 +625,6 @@ void CheckersTest2::HandleEnter(int(&a_board)[8][8], const unsigned int a_xPos, 
 						a_board[a_xPos][7] = -1;
 						m_renderer->SetEmitterPosition(m_emitters[a_board[a_xPos + 1][0]], true, vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * (a_xPos + 1), 5, 0));
 						m_renderer->SetLightPosition(m_pieceLights[a_board[a_xPos + 1][0]], vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * (a_xPos + 1), 5, 0));
-
 					}
 					else
 					{
@@ -614,6 +634,7 @@ void CheckersTest2::HandleEnter(int(&a_board)[8][8], const unsigned int a_xPos, 
 						m_renderer->SetLightPosition(m_pieceLights[a_board[a_xPos - 1][7]], vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * (a_xPos - 1), 5, M_TILE_WIDTH * 3.5f));
 					}
 					a_turn = !a_turn;
+					ResetCheckerPieceHeights();
 				}
 				//For an explanation of the below 'if' statement, look this way -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> v v v v v v v v v v v v v v v v v v v v v
 				else if ((a_turn &&																																				//If it is player 1's turn...
@@ -731,6 +752,7 @@ void CheckersTest2::HandleEnter(int(&a_board)[8][8], const unsigned int a_xPos, 
 			a_board[a_xPos][a_yPos] = a_pieceSelected;
 			a_pieceSelected = -1;
 			a_turn = !a_turn;
+			ResetCheckerPieceHeights();
 		}
 		else
 		{
@@ -1178,6 +1200,8 @@ void CheckersTest2::UpdateBoard()
 			m_renderer->SetLightPosition(m_pieceLights[i], vec3(M_TILE_WIDTH * 5.5f * ((m_emitters[i] < 12) ? -1 : 1), 5, 0));
 		}
 	}
+
+	ResetCheckerPieceHeights();
 }
 
 #pragma endregion

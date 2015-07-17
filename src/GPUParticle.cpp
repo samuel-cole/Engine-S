@@ -11,9 +11,11 @@ m_deltaTimeUniformLocation(-1), m_emitterPositionUniformLocation(-1), m_emitterP
 	m_vbo[1] = 0;
 }
 
+unsigned int GPUParticleEmitter::s_defaultTexture = -1;
+
 GPUParticleEmitter::GPUParticleEmitter(const unsigned int a_maxParticles, const float a_lifeSpanMin, const float a_lifeSpanMax,
 									   const float a_velocityMin, const float a_velocityMax, const float a_startSize, const float a_endSize,
-									   const  vec4& a_startColour, const vec4& a_endColour, const vec3& a_direction, const float a_directionVariance) 
+									   const vec4& a_startColour, const vec4& a_endColour, const vec3& a_direction, const float a_directionVariance, const unsigned int a_texture) 
 									   : m_deltaTimeUniformLocation(-1), m_emitterPositionUniformLocation(-1), m_emitterPosition2UniformLocation(-1), m_timeUniformLocation(-1), m_directionUniformLocation(-1), m_depthTextureUniformLocation(-1)
 
 {
@@ -27,6 +29,7 @@ GPUParticleEmitter::GPUParticleEmitter(const unsigned int a_maxParticles, const 
 	m_lifeSpanMax = a_lifeSpanMax;
 	m_maxParticles = a_maxParticles;
 	m_direction = a_direction;
+	m_texture = a_texture;
 	if (m_direction.x == 0)
 		m_direction.x += 0.000001f;
 	if (m_direction.y == 0)
@@ -54,7 +57,8 @@ GPUParticleEmitter::GPUParticleEmitter(const unsigned int a_maxParticles, const 
 
 GPUParticleEmitter::GPUParticleEmitter(const unsigned int a_maxParticles, const float a_lifeSpanMin, const float a_lifeSpanMax,
 									   const float a_velocityMin, const float a_velocityMax, const float a_startSize, const float a_endSize,
-									   const  vec4& a_startColour, const vec4& a_endColour, const vec3& a_direction, const float a_directionVariance, TwBar* const a_bar, const unsigned int a_emitterID)
+									   const vec4& a_startColour, const vec4& a_endColour, const vec3& a_direction, const float a_directionVariance, const unsigned int a_texture,
+									   TwBar* const a_bar, const unsigned int a_emitterID)
 									   : m_deltaTimeUniformLocation(-1), m_emitterPositionUniformLocation(-1), m_emitterPosition2UniformLocation(-1), m_timeUniformLocation(-1), m_directionUniformLocation(-1), m_depthTextureUniformLocation(-1)
 
 {
@@ -68,6 +72,7 @@ GPUParticleEmitter::GPUParticleEmitter(const unsigned int a_maxParticles, const 
 	m_lifeSpanMax = a_lifeSpanMax;
 	m_maxParticles = a_maxParticles;
 	m_direction = a_direction;
+	m_texture = a_texture;
 	if (m_direction.x == 0)
 		m_direction.x += 0.000001f;
 	if (m_direction.y == 0)
