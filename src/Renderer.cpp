@@ -73,6 +73,7 @@ m_standardProgram(-1), m_particleProgram(-1), m_animatedProgram(-1), m_postProce
 	m_defaultNormal = LoadTexture("../data/default/normal.png");
 	m_defaultShadow = LoadTexture("../data/default/shadow.png");
 	m_defaultSpec = m_defaultShadow;
+	GPUParticleEmitter::SetDefaultTexture(m_defaultAmbient);
 	
 	m_deferredRenderMode = true;
 
@@ -608,20 +609,29 @@ void Renderer::GenerateNormals(const unsigned int a_index)
 
 unsigned int Renderer::LoadTexture(const std::string& a_path)
 {
-	int imageWidth = 0, imageHeight = 0, imageFormat = 0;
-	unsigned char* data = stbi_load(a_path.c_str(), &imageWidth, &imageHeight, &imageFormat, STBI_default);
+	if (m_textureNames.find(a_path) == m_textureNames.end())
+	{
+		int imageWidth = 0, imageHeight = 0, imageFormat = 0;
+		unsigned char* data = stbi_load(a_path.c_str(), &imageWidth, &imageHeight, &imageFormat, STBI_default);
 
-	unsigned int textureIndex;
+		unsigned int textureIndex;
 
-	glGenTextures(1, &textureIndex);
-	glBindTexture(GL_TEXTURE_2D, textureIndex);
-	glTexImage2D(GL_TEXTURE_2D, 0, (imageFormat == 4) ? GL_RGBA : GL_RGB, imageWidth, imageHeight, 0, (imageFormat == 4) ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, data);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glGenTextures(1, &textureIndex);
+		glBindTexture(GL_TEXTURE_2D, textureIndex);
+		glTexImage2D(GL_TEXTURE_2D, 0, (imageFormat == 4) ? GL_RGBA : GL_RGB, imageWidth, imageHeight, 0, (imageFormat == 4) ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, data);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
-	stbi_image_free(data);
+		stbi_image_free(data);
 
-	return textureIndex;
+		m_textureNames[a_path] = textureIndex;
+
+		return textureIndex;
+	}
+	else
+	{
+		return m_textureNames[a_path];
+	}
 }
 
 void Renderer::LoadTexture(const string& a_filePath, const unsigned int a_index)
@@ -809,7 +819,7 @@ unsigned int Renderer::GenerateGrid(const unsigned int a_rows, const unsigned in
 	{
 		for (unsigned int c = 0; c < columns; ++c)
 		{
-			aoVertices[ r * columns + c].position = vec4((float)c - a_columns/2, 0, (float)r - a_rows/2, 1);
+			aoVertices[r * columns + c].position = vec4((float)c - a_columns/2, 0, (float)r - a_rows/2, 1);
 			aoVertices[r * columns + c].colour = vec4(1, 1, 1, 1);
 			aoVertices[r * columns + c].normal = glm::vec4(0, 1, 0, 0);
 			aoVertices[r * columns + c].tangent = glm::vec4(1, 0, 1, 1);
@@ -868,7 +878,7 @@ unsigned int Renderer::CreateEmitter(const unsigned int a_maxParticles, const un
 {
 	if (a_gpuBased)
 	{
-		GPUParticleEmitter* emitter = new GPUParticleEmitter(a_maxParticles, a_lifespanMin, a_lifespanMax, a_velocityMin, a_velocityMax, a_startSize, a_endSize, a_startColour, a_endColour, a_direction, a_directionVariance);
+		GPUParticleEmitter* emitter = new GPUParticleEmitter(a_maxParticles, a_lifespanMin, a_lifespanMax, a_velocityMin, a_velocityMax, a_startSize, a_endSize, a_startColour, a_endColour, a_direction, a_directionVariance, -1);
 
 		std::vector<GPUParticleEmitter*>::iterator i = m_gpuEmitters.begin();
 		while (i != m_gpuEmitters.end())
@@ -914,7 +924,7 @@ unsigned int Renderer::CreateEmitter(const unsigned int a_maxParticles, const fl
 {
 	if (a_gpuBased)
 	{
-		GPUParticleEmitter* emitter = new GPUParticleEmitter(a_maxParticles, a_lifespanMin, a_lifespanMax, a_velocityMin, a_velocityMax, a_startSize, a_endSize, a_startColour, a_endColour, a_direction, a_directionVariance);
+		GPUParticleEmitter* emitter = new GPUParticleEmitter(a_maxParticles, a_lifespanMin, a_lifespanMax, a_velocityMin, a_velocityMax, a_startSize, a_endSize, a_startColour, a_endColour, a_direction, a_directionVariance, -1);
 
 		std::vector<GPUParticleEmitter*>::iterator i = m_gpuEmitters.begin();
 		while (i != m_gpuEmitters.end())
@@ -938,11 +948,13 @@ unsigned int Renderer::CreateEmitter(const unsigned int a_maxParticles, const fl
 }
 
 unsigned int Renderer::CreateEmitter(const unsigned int a_maxParticles, const float a_lifespanMin, const float a_lifespanMax, const  float a_velocityMin, const float a_velocityMax,
-	const float a_startSize, const float a_endSize, const vec4& a_startColour, const vec4& a_endColour, const vec3& a_direction, const float a_directionVariance, const bool a_gpuBased, TwBar* a_bar)
+	const float a_startSize, const float a_endSize, const vec4& a_startColour, const vec4& a_endColour, const vec3& a_direction, const float a_directionVariance, const bool a_gpuBased, TwBar* a_bar, const std::string a_texture)
 {
 	if (a_gpuBased)
 	{
-		GPUParticleEmitter* emitter = new GPUParticleEmitter(a_maxParticles, a_lifespanMin, a_lifespanMax, a_velocityMin, a_velocityMax, a_startSize, a_endSize, a_startColour, a_endColour, a_direction, a_directionVariance, a_bar, m_gpuEmitters.size());
+		unsigned int texture = LoadTexture(a_texture);
+
+		GPUParticleEmitter* emitter = new GPUParticleEmitter(a_maxParticles, a_lifespanMin, a_lifespanMax, a_velocityMin, a_velocityMax, a_startSize, a_endSize, a_startColour, a_endColour, a_direction, a_directionVariance, texture, a_bar, m_gpuEmitters.size());
 
 		std::vector<GPUParticleEmitter*>::iterator i = m_gpuEmitters.begin();
 		while (i != m_gpuEmitters.end())
@@ -1419,7 +1431,6 @@ void Renderer::Draw()
 	{
 #pragma region FORWARD_CODE
 		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
 		if (m_shadowGenProgram != -1)
 		{
 			//Render to the shadow map for non-animated objects.
@@ -1477,7 +1488,6 @@ void Renderer::Draw()
 		}
 
 		//Do stuff to render the framebuffer used for post processing.
-
 		//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glViewport(0, 0, 1280, 720);
@@ -1536,7 +1546,7 @@ void Renderer::Draw()
 			glActiveTexture(GL_TEXTURE3);
 			glBindTexture(GL_TEXTURE_2D, ((m_normals[i] == -1) ? m_defaultNormal : m_normals[i]));
 			glUniform1i((m_uniformLocations[m_gpassProgram])[NORMAL], 3);
-
+			
 			glBindVertexArray(m_VAO[i]);
 			glDrawElements(GL_TRIANGLES, m_numOfIndices[i], GL_UNSIGNED_INT, nullptr);
 		}
@@ -1562,12 +1572,12 @@ void Renderer::Draw()
 			// Set Ambient Slot
 			glActiveTexture(GL_TEXTURE1);
 			glBindTexture(GL_TEXTURE_2D, ((m_ambients[i] == -1) ? m_defaultDiffuse : m_ambients[i]));
-			glUniform1i((m_uniformLocations[m_gpassProgram])[AMBIENT], 1);
+			glUniform1i((m_uniformLocations[m_gpassAnimProgram])[AMBIENT], 1);
 
 			// Set Specular Slot
 			glActiveTexture(GL_TEXTURE2);
 			glBindTexture(GL_TEXTURE_2D, ((m_speculars[i] == -1) ? m_defaultSpec : m_speculars[i]));
-			glUniform1i((m_uniformLocations[m_gpassProgram])[SPECULAR], 2);
+			glUniform1i((m_uniformLocations[m_gpassAnimProgram])[SPECULAR], 2);
 
 			// Set Normal Map Slot
 			glActiveTexture(GL_TEXTURE3);
@@ -1589,16 +1599,12 @@ void Renderer::Draw()
 		glDisable(GL_DEPTH_TEST);
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_ONE, GL_ONE);
-		glEnable(GL_CULL_FACE);
 
 		//Draw each type of light.
 		DrawDirectionalLight();
 		DrawPointLights();
 
 		glDisable(GL_BLEND);
-		glDisable(GL_CULL_FACE);
-		//glEnable(GL_DEPTH_TEST);
-
 
 #pragma endregion LIGHT_PASS
 
@@ -1983,6 +1989,38 @@ void Renderer::UpdateMirrors()
 	}
 }
 
+void Renderer::ModifyMesh(const unsigned int a_index, const std::vector<vec3>& a_vertexPositions)
+{
+	glBindBuffer(GL_ARRAY_BUFFER, m_VBO[a_index]);
+	Vertex* const vertices = (Vertex* const)glMapBuffer(GL_ARRAY_BUFFER, GL_READ_WRITE);
+	//Get the number of vertices from the vbo.
+	int verticesSize;
+	glGetBufferParameteriv(GL_ARRAY_BUFFER, GL_BUFFER_SIZE, &verticesSize);
+	verticesSize /= sizeof(Vertex);
+
+	if (a_vertexPositions.size() != verticesSize)
+	{
+		std::cout << "Error: Invalid number of vertices used while attempting to modify mesh!" << std::endl;
+
+		//Cleanup the vertex buffer.
+		glUnmapBuffer(GL_ARRAY_BUFFER);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+		return;
+	}
+
+	for (unsigned int i = 0; i < a_vertexPositions.size(); ++i)
+	{
+		vertices[i].position = vec4(a_vertexPositions[i], 1);
+	}
+
+	//Cleanup the vertex buffer.
+	glUnmapBuffer(GL_ARRAY_BUFFER);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	GenerateNormals(a_index);
+}
+
 void Renderer::SplitIndex(const string& a_string, std::vector<Vertex>* const a_vertices, std::vector<unsigned int>* const a_indices, std::vector<vec3>* const a_position, std::vector<vec3>* a_normal, std::vector<glm::vec2>* a_uv)
 {
 	unsigned int firstSpace = a_string.find(' ', 2);
@@ -2231,43 +2269,133 @@ void Renderer::CleanupBuffers()
 {
 	for (unsigned int i = 0; i < m_VAO.size(); ++i)
 	{
-		glDeleteVertexArrays(1, &m_VAO[i]);
+		if (m_VAO[i] != -1)
+		{
+			glDeleteVertexArrays(1, &m_VAO[i]);
+			m_VAO[i] = -1;
+		}
 	}
 	for (unsigned int i = 0; i < m_VBO.size(); ++i)
 	{
-		glDeleteBuffers(1, &m_VBO[i]);
+		if (m_VBO[i] != -1)
+		{
+			glDeleteBuffers(1, &m_VBO[i]);
+			m_VBO[i] = -1;
+		}
 	}
 	for (unsigned int i = 0; i < m_IBO.size(); ++i)
 	{
-		glDeleteBuffers(1, &m_IBO[i]);
+		if (m_IBO[i] != -1)
+		{
+			glDeleteBuffers(1, &m_IBO[i]);
+			m_IBO[i] = -1;
+		}
+	}
+	if (m_pointVAO != -1)
+	{
+		glDeleteBuffers(1, &m_pointVAO);
+		m_pointVAO = -1;
+	}
+	if (m_pointVBO != -1)
+	{
+		glDeleteBuffers(1, &m_pointVBO);
+		m_pointVBO = -1;
+	}
+	if (m_pointIBO != -1)
+	{
+		glDeleteBuffers(1, &m_pointIBO);
+		m_pointIBO = -1;
+	}
+	if (m_gpassFBO != -1)
+	{
+		glDeleteBuffers(1, &m_gpassFBO);
+		m_gpassFBO = -1;
+	}
+	if (m_lightFBO != -1)
+	{
+		glDeleteBuffers(1, &m_lightFBO);
+		m_lightFBO = -1;
 	}
 
 
 	for (unsigned int i = 0; i < m_renderBuffers.size(); ++i)
 	{
-		glDeleteRenderbuffers(1, &m_renderBuffers[i]);
+		if (m_renderBuffers[i] != -1)
+		{
+			glDeleteRenderbuffers(1, &m_renderBuffers[i]);
+			m_renderBuffers[i] = -1;
+		}
 	}
 	for (unsigned int i = 0; i < m_frameBuffers.size(); ++i)
 	{
-		glDeleteFramebuffers(1, &m_frameBuffers[i]);
+		if (m_frameBuffers[i] != -1)
+		{
+			glDeleteFramebuffers(1, &m_frameBuffers[i]);
+			m_frameBuffers[i] = -1;
+		}
+	}
+	if (m_shadowMap != -1)
+	{
+		glDeleteFramebuffers(1, &m_shadowMap);
+		m_shadowMap = -1;
 	}
 
 
 	if (m_standardProgram != -1)
+	{
 		glDeleteProgram(m_standardProgram);
+		m_standardProgram = -1;
+	}
 	if (m_animatedProgram != -1)
+	{
 		glDeleteProgram(m_animatedProgram);
+		m_animatedProgram = -1;
+	}
 	if (m_particleProgram != -1)
+	{
 		glDeleteProgram(m_particleProgram);
+		m_particleProgram = -1;
+	}
 	if (m_postProcessingProgram != -1)
+	{
 		glDeleteProgram(m_postProcessingProgram);
+		m_postProcessingProgram = -1;
+	}
 	if (m_shadowGenProgram != -1)
+	{
 		glDeleteProgram(m_shadowGenProgram);
+		m_shadowGenProgram = -1;
+	}
 	if (m_animShadowGenProgram != -1)
+	{
 		glDeleteProgram(m_animShadowGenProgram);
-
-	if (m_shadowDepth != -1)
-		glDeleteTextures(1, &m_shadowDepth);
+		m_animShadowGenProgram = -1;
+	}
+	if (m_gpassProgram != -1)
+	{
+		glDeleteProgram(m_gpassProgram);
+		m_gpassProgram = -1;
+	}
+	if (m_gpassAnimProgram != -1)
+	{
+		glDeleteProgram(m_gpassAnimProgram);
+		m_gpassAnimProgram = -1;
+	}
+	if (m_dirLightProgram != -1)
+	{
+		glDeleteProgram(m_dirLightProgram);
+		m_dirLightProgram = -1;
+	}
+	if (m_pointLightProgram != -1)
+	{
+		glDeleteProgram(m_pointLightProgram);
+		m_pointLightProgram = -1;
+	}
+	if (m_compositeProgram != -1)
+	{
+		glDeleteProgram(m_compositeProgram);
+		m_compositeProgram = -1;
+	}
 
 	for (unsigned int i = 0; i < m_textures.size(); ++i)
 	{
@@ -2290,9 +2418,76 @@ void Renderer::CleanupBuffers()
 			glDeleteTextures(1, &m_speculars[i]);
 	}
 
-	glDeleteTextures(1, &m_defaultDiffuse);
-	glDeleteTextures(1, &m_defaultNormal);
-	glDeleteTextures(1, &m_defaultShadow);
+	if (m_shadowDepth != -1)
+	{
+		glDeleteTextures(1, &m_shadowDepth);
+		m_shadowDepth = -1;
+	}
+	if (m_gpassDepth != -1)
+	{
+		glDeleteTextures(1, &m_gpassDepth);
+		m_gpassDepth = -1;
+	}
+	if (m_defaultDiffuse != -1)
+	{
+		glDeleteTextures(1, &m_defaultDiffuse);
+		m_defaultDiffuse = -1;
+	}
+	if (m_defaultNormal != -1)
+	{
+		glDeleteTextures(1, &m_defaultNormal);
+		m_defaultNormal = -1;
+	}
+	if (m_defaultShadow != -1)
+	{
+		glDeleteTextures(1, &m_defaultShadow);
+		m_defaultShadow = -1;
+	}
+	if (m_defaultAmbient != -1)
+	{
+		glDeleteTextures(1, &m_defaultAmbient);
+		m_defaultAmbient = -1;
+	}
+	if (m_diffuseTexture != -1)
+	{
+		glDeleteTextures(1, &m_diffuseTexture);
+		m_diffuseTexture = -1;
+	}
+	if (m_ambientTexture != -1)
+	{
+		glDeleteTextures(1, &m_ambientTexture);
+		m_ambientTexture = -1;
+	}
+	if (m_positionTexture != -1)
+	{
+		glDeleteTextures(1, &m_positionTexture);
+		m_positionTexture = -1;
+	}
+	if (m_normalTexture != -1)
+	{
+		glDeleteTextures(1, &m_normalTexture);
+		m_normalTexture = -1;
+	}
+	if (m_specularTexture != -1)
+	{
+		glDeleteTextures(1, &m_specularTexture);
+		m_specularTexture = -1;
+	}
+	if (m_lightDiffuseTexture != -1)
+	{
+		glDeleteTextures(1, &m_lightDiffuseTexture);
+		m_lightDiffuseTexture = -1;
+	}
+	if (m_lightSpecularTexture != -1)
+	{
+		glDeleteTextures(1, &m_lightSpecularTexture);
+		m_lightSpecularTexture = -1;
+	}
+
+	for (unsigned int i = 0; i < m_gpuEmitters.size(); ++i)
+	{
+		delete m_gpuEmitters[i];
+	}
 
 	for (unsigned int i = 0; i < m_mirrors.size(); ++i)
 	{

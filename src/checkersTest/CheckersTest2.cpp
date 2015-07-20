@@ -28,6 +28,8 @@ void TW_CALL BoardGenerate2(void* a_clientData)
 	PxExtendedVec3 pos = player->getPosition();
 	if (pos.x > -51 && pos.x < 51 && pos.z > -51 && pos.z < 51 && pos.y <= maxHeight)
 		player->setPosition(PxExtendedVec3(pos.x, maxHeight + 10.0f, pos.z));
+
+	checkers->ResetCheckerPieceHeights();
 }
 
 class PlayerCollisions : public PxUserControllerHitReport
@@ -49,6 +51,8 @@ int CheckersTest2::Init()
 	int baseInit = PhysicsBase::Init();
 	if (baseInit != 0)
 		return baseInit;
+
+	m_renderer->GenerateShadowMap(100.0f);
 
 	m_camera->SetLookAt(vec3(0, 10, 0), vec3(1, 0, 0), vec3(0, 1, 0));
 
@@ -123,6 +127,14 @@ int CheckersTest2::Init()
 	PxTransform pose = PxTransform(PxVec3(0.0f, 0.0f, 0.0f), PxQuat(PxHalfPi * 1.0f, PxVec3(0.0f, 0.0f, 1.0f)));
 	PxRigidStatic* plane = PxCreateStatic(*g_physics, pose, PxPlaneGeometry(), *g_physicsMaterial);
 	g_physicsScene->addActor(*plane);
+	m_ground = m_renderer->GenerateGrid(3, 3);
+	m_renderer->SetTransform(glm::scale(vec3(10000, 1, 10000)), m_ground);
+
+	AddCloth(50, std::vector<unsigned int>() = { 0, 49}, PxTransform(PxVec3(100, 50, 50)));
+	m_renderer->LoadAmbient("../data/tablecloth.tga", m_clothModels[0]);
+	m_renderer->LoadTexture("../data/tablecloth.tga", m_clothModels[0]);
+	m_renderer->LoadSpecularMap("../data/tablecloth.tga", m_clothModels[0]);
+
 
 	//Checkers Mover
 	for (int i = 0; i < 10; ++i)
@@ -268,6 +280,8 @@ int CheckersTest2::Init()
 
 	m_aiMoveFinished = true;
 	m_aiDifficulty = 10;
+
+	ResetCheckerPieceHeights();
 #pragma endregion
 
 	return 0;
@@ -293,6 +307,9 @@ void CheckersTest2::Update(float a_deltaTime)
 	m_camera->Update(a_deltaTime);
 	m_renderer->UpdateAnimation(m_animationTimer, m_animatedModel);
 	m_animationTimer += a_deltaTime;
+
+	PxExtendedVec3 playerPos = g_playerController->getPosition();
+	m_renderer->SetTransform(glm::translate(vec3(playerPos.x, 0, playerPos.z)) * glm::scale(vec3(10000, 1, 10000)), m_ground);
 
 	CheckersUpdate(a_deltaTime);
 
@@ -342,7 +359,6 @@ void CheckersTest2::Update(float a_deltaTime)
 	PxControllerFilters filters;
 	g_playerController->move(displacement, 0.01f, a_deltaTime, filters);
 
-	PxExtendedVec3 playerPos = g_playerController->getPosition();
 	PxExtendedVec3 footPos = g_playerController->getFootPosition();
 	//I do these calculations individually inside this vector constructor because PxEtendedVec3 doesn't contain some of the necessary operators to do this.
 	vec3 endPos = vec3(2.0f * playerPos.x - footPos.x, 2.0f * playerPos.y - footPos.y, 2.0f * playerPos.z - footPos.z);
@@ -352,7 +368,7 @@ void CheckersTest2::Update(float a_deltaTime)
 #pragma region Spawn Physics Props
 	m_spawnTimer += a_deltaTime;
 
-	if (m_spawnTimer >= 1.0f)
+	if (m_spawnTimer >= 1.0f && g_physicsActors.size() < 50)
 	{
 		vec3 randPos = vec3(((float)rand() / (float)RAND_MAX) * 20.0f + 200, ((float)rand() / (float)RAND_MAX) * 20.0f + 200.0f, ((float)rand() / (float)RAND_MAX) * 20.0f);
 
@@ -428,6 +444,36 @@ void CheckersTest2::Draw()
 	PhysicsBase::Draw();
 }
 
+float CheckersTest2::GetHeightAtPos(float a_x, float a_z)
+{
+	PxRaycastBuffer hit;
+	PxQueryFilterData fd;
+	fd.flags |= PxQueryFlag::eANY_HIT;
+	if (g_physicsScene->raycast(PxVec3(a_x, RAYCAST_HEIGHT, a_z), RAYCAST_DIRECTION, RAYCAST_HEIGHT, hit))
+	{
+		if (hit.hasBlock)
+		{
+			return hit.block.position.y;
+		}
+	}
+	return -1.0f;
+}
+
+void CheckersTest2::ResetCheckerPieceHeights()
+{
+	for (unsigned int i = 0; i < 8; ++i)
+	{
+		for (unsigned int j = 0; j < 8; ++j)
+		{
+			if (m_board[i][j] != -1)
+			{
+				vec3 pos = m_renderer->GetEmitterPosition(m_emitters[m_board[i][j]], true);
+				m_renderer->SetEmitterPosition(m_emitters[m_board[i][j]], true, vec3(pos.x, 5.0f + GetHeightAtPos(pos.x, pos.z), pos.z));
+			}
+		}
+	}
+}
+
 #pragma region Checkers Functions
 
 void CheckersTest2::CheckersUpdate(float a_deltaTime)
@@ -454,12 +500,12 @@ void CheckersTest2::CheckersUpdate(float a_deltaTime)
 			PxVec3 closestPos(-9999999, -9999999, -9999999);
 			float closestDistance = 9999999.0f;
 			//This loop is for finding the closest physics body to the checkers mover.
-			for (unsigned int i = 0; i < g_physicsActors.size(); ++i)
+			for (unsigned int j = 0; j < g_physicsActors.size(); ++j)
 			{
 				//Don't consider the checkers mover within the calculation
-				if (g_physicsActors[i] != moverBody)
+				if (g_physicsActors[j] != moverBody)
 				{
-					PxVec3 otherPos = g_physicsActors[i]->getGlobalPose().p;
+					PxVec3 otherPos = g_physicsActors[j]->getGlobalPose().p;
 					float distance = (otherPos - moverPos).magnitudeSquared();
 					if (distance < closestDistance)
 					{
@@ -481,15 +527,16 @@ void CheckersTest2::CheckersUpdate(float a_deltaTime)
 
 	if (m_inputTimer < 0)
 	{
+		bool changeMade = false;
+		float newX, newZ;
+
 		if (InputManager::GetKey(Keys::LEFT))
 		{
 			if (m_currentX > 0)
 			{
 				--m_currentX;
 				m_inputTimer = 0.15f;
-				m_renderer->SetTransform(glm::translate(vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentX, 10, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentY)), m_positionMarker);
-				m_renderer->SetLightPosition(m_positionLight, vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentX, 8, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentY));
-				m_renderer->SetLightPosition(m_positionLight2, vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentX, 12, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentY));
+				changeMade = true;
 			}
 		}
 		if (InputManager::GetKey(Keys::RIGHT))
@@ -498,9 +545,7 @@ void CheckersTest2::CheckersUpdate(float a_deltaTime)
 			{
 				++m_currentX;
 				m_inputTimer = 0.15f;
-				m_renderer->SetTransform(glm::translate(vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentX, 10, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentY)), m_positionMarker);
-				m_renderer->SetLightPosition(m_positionLight, vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentX, 8, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentY));
-				m_renderer->SetLightPosition(m_positionLight2, vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentX, 12, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentY));
+				changeMade = true;
 			}
 		}
 		if (InputManager::GetKey(Keys::UP))
@@ -509,9 +554,7 @@ void CheckersTest2::CheckersUpdate(float a_deltaTime)
 			{
 				--m_currentY;
 				m_inputTimer = 0.15f;
-				m_renderer->SetTransform(glm::translate(vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentX, 10, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentY)), m_positionMarker);
-				m_renderer->SetLightPosition(m_positionLight, vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentX, 8, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentY));
-				m_renderer->SetLightPosition(m_positionLight2, vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentX, 12, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentY));
+				changeMade = true;
 			}
 		}
 		if (InputManager::GetKey(Keys::DOWN))
@@ -520,11 +563,21 @@ void CheckersTest2::CheckersUpdate(float a_deltaTime)
 			{
 				++m_currentY;
 				m_inputTimer = 0.15f;
-				m_renderer->SetTransform(glm::translate(vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentX, 10, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentY)), m_positionMarker);
-				m_renderer->SetLightPosition(m_positionLight, vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentX, 8, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentY));
-				m_renderer->SetLightPosition(m_positionLight2, vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentX, 12, M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentY));
+				changeMade = true;
 			}
 		}
+
+		if (changeMade)
+		{
+			newX = M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentX;
+			newZ = M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * m_currentY;
+			float newY = GetHeightAtPos(newX, newZ);
+
+			m_renderer->SetTransform(glm::translate(vec3(newX, newY + 10, newZ)), m_positionMarker);
+			m_renderer->SetLightPosition(m_positionLight, vec3(newX, newY + 8, newZ));
+			m_renderer->SetLightPosition(m_positionLight2, vec3(newX, newY + 12, newZ));
+		}
+
 		if (!m_turn)
 		{
 			if (InputManager::GetKey(Keys::ENTER))
@@ -582,7 +635,6 @@ void CheckersTest2::HandleEnter(int(&a_board)[8][8], const unsigned int a_xPos, 
 						a_board[a_xPos][7] = -1;
 						m_renderer->SetEmitterPosition(m_emitters[a_board[a_xPos + 1][0]], true, vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * (a_xPos + 1), 5, 0));
 						m_renderer->SetLightPosition(m_pieceLights[a_board[a_xPos + 1][0]], vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * (a_xPos + 1), 5, 0));
-
 					}
 					else
 					{
@@ -592,6 +644,7 @@ void CheckersTest2::HandleEnter(int(&a_board)[8][8], const unsigned int a_xPos, 
 						m_renderer->SetLightPosition(m_pieceLights[a_board[a_xPos - 1][7]], vec3(M_TILE_WIDTH * -3.5f + M_TILE_WIDTH * (a_xPos - 1), 5, M_TILE_WIDTH * 3.5f));
 					}
 					a_turn = !a_turn;
+					ResetCheckerPieceHeights();
 				}
 				//For an explanation of the below 'if' statement, look this way -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> -> v v v v v v v v v v v v v v v v v v v v v
 				else if ((a_turn &&																																				//If it is player 1's turn...
@@ -709,6 +762,7 @@ void CheckersTest2::HandleEnter(int(&a_board)[8][8], const unsigned int a_xPos, 
 			a_board[a_xPos][a_yPos] = a_pieceSelected;
 			a_pieceSelected = -1;
 			a_turn = !a_turn;
+			ResetCheckerPieceHeights();
 		}
 		else
 		{
@@ -1156,6 +1210,8 @@ void CheckersTest2::UpdateBoard()
 			m_renderer->SetLightPosition(m_pieceLights[i], vec3(M_TILE_WIDTH * 5.5f * ((m_emitters[i] < 12) ? -1 : 1), 5, 0));
 		}
 	}
+
+	ResetCheckerPieceHeights();
 }
 
 #pragma endregion
