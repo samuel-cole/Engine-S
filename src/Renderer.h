@@ -124,7 +124,7 @@ private:
 	//Default shadow map used for situations in which a shadow map hasn't been generated.
 	unsigned int m_defaultShadow;
 
-	//Vector containing all of the framebuffers associated with this renderer. TODO: Get framebuffers working in deferred renderer mode.
+	//Vector containing all of the framebuffers associated with this renderer.
 	std::vector<unsigned int> m_frameBuffers;
 	//Vector containing all of the render buffors used for storing depth- this vector is only used for cleaning up purposes at the moment.
 	std::vector<unsigned int> m_renderBuffers;
@@ -136,10 +136,10 @@ private:
 	//Stores which frame buffers should ignore which objects- first unsigned int is for the frame buffer that is going to ignore an object, second one is for the object to be ignored.
 	std::vector<std::pair<unsigned int, unsigned int>> m_frameBufferIgnores;
 
-	//Vector containing indices to the m_frameBuffers vector- shows which framebuffers are used for post processing. TODO: Add options for post processing framebuffers.
+	//Vector containing indices to the m_frameBuffers vector- shows which framebuffers are used for post processing.
 	//std::vector<unsigned int> m_postProcessingBufferIndices;
 
-	//Handle to the framebuffer that stores the shadow map
+	//Handle to the texture that stores the shadow map
 	unsigned int m_shadowMap;
 	//Handle to the depth of the shadow map.
 	unsigned int m_shadowDepth;
@@ -294,7 +294,7 @@ public:
 							   const float a_startSize, const float a_endSize, const vec4& a_startColour, const vec4& a_endColour, const vec3& a_direction, const float a_directionVariance, const bool a_gpuBased);
 	//Method for creating GPU-based particles only. Still has a bool to check gpu-based just to make sure that the correct function is being called. Debug mode, includes a debug bar to change variables.
 	unsigned int CreateEmitter(const unsigned int a_maxParticles, const float a_lifespanMin, const float a_lifespanMax, const  float a_velocityMin, const float a_velocityMax,
-							   const float a_startSize, const float a_endSize, const vec4& a_startColour, const vec4& a_endColour, const vec3& a_direction, const float a_directionVariance, const bool a_gpuBased, TwBar* a_bar, const std::string a_texture = "");
+							   const float a_startSize, const float a_endSize, const vec4& a_startColour, const vec4& a_endColour, const vec3& a_direction, const float a_directionVariance, const bool a_gpuBased, TwBar* a_bar);
 
 	//Sets the position of the emitter at the specified index to the position indicated.
 	void SetLightPosition(const unsigned int a_index, const vec3& a_position);
@@ -334,10 +334,6 @@ public:
 	void UpdateEmitters(const float a_deltaTime);
 	//Updates all mirrors to properly reflect.
 	void UpdateMirrors();
-
-	//Modifies the mesh at the specified index to place its vertices at the specified positions. Will print an error to console and not do anything if the specified number of vertices is not the same as there are in the mesh.
-	//Useful with soft-body physics.
-	void ModifyMesh(const unsigned int a_index, const std::vector<vec3>& a_vertexPositions);
 
 	//Destroys the object at the specified index. TODO: Make new objects check for -1 values within the buffer vectors and place themselves there, instead of pushing back new values to the vector.
 	void DestroyObject(const unsigned int a_index);

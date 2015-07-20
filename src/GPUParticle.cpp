@@ -2,7 +2,7 @@
 #include "gl_core_4_4.h"
 #include <fstream>
 
-GPUParticleEmitter::GPUParticleEmitter() : m_particles(nullptr), m_maxParticles(0), m_position(0, 0, 0), m_drawProgram(-1), m_updateProgram(-1), m_lastDrawTime(0), 
+GPUParticleEmitter::GPUParticleEmitter() : m_particles(nullptr), m_maxParticles(0), m_position(0, 0, 0), m_drawProgram(0), m_updateProgram(0), m_lastDrawTime(0), 
 m_deltaTimeUniformLocation(-1), m_emitterPositionUniformLocation(-1), m_emitterPosition2UniformLocation(-1), m_timeUniformLocation(-1), m_directionUniformLocation(-1), m_depthTextureUniformLocation(-1)
 {
 	m_vao[0] = 0;
@@ -11,11 +11,9 @@ m_deltaTimeUniformLocation(-1), m_emitterPositionUniformLocation(-1), m_emitterP
 	m_vbo[1] = 0;
 }
 
-unsigned int GPUParticleEmitter::s_defaultTexture = -1;
-
 GPUParticleEmitter::GPUParticleEmitter(const unsigned int a_maxParticles, const float a_lifeSpanMin, const float a_lifeSpanMax,
 									   const float a_velocityMin, const float a_velocityMax, const float a_startSize, const float a_endSize,
-									   const vec4& a_startColour, const vec4& a_endColour, const vec3& a_direction, const float a_directionVariance, const unsigned int a_texture) 
+									   const  vec4& a_startColour, const vec4& a_endColour, const vec3& a_direction, const float a_directionVariance) 
 									   : m_deltaTimeUniformLocation(-1), m_emitterPositionUniformLocation(-1), m_emitterPosition2UniformLocation(-1), m_timeUniformLocation(-1), m_directionUniformLocation(-1), m_depthTextureUniformLocation(-1)
 
 {
@@ -29,7 +27,6 @@ GPUParticleEmitter::GPUParticleEmitter(const unsigned int a_maxParticles, const 
 	m_lifeSpanMax = a_lifeSpanMax;
 	m_maxParticles = a_maxParticles;
 	m_direction = a_direction;
-	m_texture = a_texture;
 	if (m_direction.x == 0)
 		m_direction.x += 0.000001f;
 	if (m_direction.y == 0)
@@ -57,8 +54,7 @@ GPUParticleEmitter::GPUParticleEmitter(const unsigned int a_maxParticles, const 
 
 GPUParticleEmitter::GPUParticleEmitter(const unsigned int a_maxParticles, const float a_lifeSpanMin, const float a_lifeSpanMax,
 									   const float a_velocityMin, const float a_velocityMax, const float a_startSize, const float a_endSize,
-									   const vec4& a_startColour, const vec4& a_endColour, const vec3& a_direction, const float a_directionVariance, const unsigned int a_texture,
-									   TwBar* const a_bar, const unsigned int a_emitterID)
+									   const  vec4& a_startColour, const vec4& a_endColour, const vec3& a_direction, const float a_directionVariance, TwBar* const a_bar, const unsigned int a_emitterID)
 									   : m_deltaTimeUniformLocation(-1), m_emitterPositionUniformLocation(-1), m_emitterPosition2UniformLocation(-1), m_timeUniformLocation(-1), m_directionUniformLocation(-1), m_depthTextureUniformLocation(-1)
 
 {
@@ -72,7 +68,6 @@ GPUParticleEmitter::GPUParticleEmitter(const unsigned int a_maxParticles, const 
 	m_lifeSpanMax = a_lifeSpanMax;
 	m_maxParticles = a_maxParticles;
 	m_direction = a_direction;
-	m_texture = a_texture;
 	if (m_direction.x == 0)
 		m_direction.x += 0.000001f;
 	if (m_direction.y == 0)
@@ -110,16 +105,8 @@ GPUParticleEmitter::~GPUParticleEmitter()
 	glDeleteVertexArrays(2, m_vao);
 	glDeleteBuffers(2, m_vbo);
 
-	if (m_drawProgram != -1)
-	{
-		glDeleteProgram(m_drawProgram);
-		m_drawProgram = -1;
-	}
-	if (m_updateProgram != -1)
-	{
-		glDeleteProgram(m_updateProgram);
-		m_updateProgram = -1;
-	}
+	glDeleteProgram(m_drawProgram);
+	glDeleteProgram(m_updateProgram);
 }
 
 void GPUParticleEmitter::SetupBuffer(const unsigned int a_index)

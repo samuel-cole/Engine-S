@@ -25,11 +25,10 @@ public:
 	GPUParticleEmitter();
 	GPUParticleEmitter(const unsigned int a_maxParticles, const float a_lifeSpanMin, const float a_lifeSpanMax,
 					   const float a_velocityMin, const float a_velocityMax, const float a_startSize, const float a_endSize,
-					   const vec4& a_startColour, const vec4& a_endColour, const vec3& a_direction, const float a_directionVariance, const unsigned int a_texture);
+					   const vec4& a_startColour, const vec4& a_endColour, const vec3& a_direction, const float a_directionVariance);
 	GPUParticleEmitter(const unsigned int a_maxParticles, const float a_lifeSpanMin, const float a_lifeSpanMax,
 					   const float a_velocityMin, const float a_velocityMax, const float a_startSize, const float a_endSize,
-					   const vec4& a_startColour, const vec4& a_endColour, const vec3& a_direction, const float a_directionVariance, const unsigned int a_texture,
-					   TwBar* const a_bar, const unsigned int a_emitterID);
+					   const vec4& a_startColour, const vec4& a_endColour, const vec3& a_direction, const float a_directionVariance, TwBar* const a_bar, const unsigned int a_emitterID);
 	~GPUParticleEmitter();
 
 	//Draw function. The optional depthTexture argument is for depth testing to make sure particles don't draw over everything else in deferred rendering..
@@ -65,11 +64,6 @@ public:
 			m_direction.z += 0.000001f;
 	}
 
-	inline static void SetDefaultTexture(const unsigned int a_texture)
-	{
-		s_defaultTexture = a_texture;
-	}
-
 private:
 	void SetupBuffer(const unsigned int a_index);
 	void CreateUpdateProgram();
@@ -97,10 +91,6 @@ private:
 	unsigned int m_vao[2];
 	unsigned int m_vbo[2];
 
-	unsigned int m_texture;
-	static unsigned int s_defaultTexture;
-
-	//TODO: Make these static- I don't need a program for each particle emitter.
 	unsigned int m_drawProgram, m_updateProgram;
 
 	//Update program uniform locations

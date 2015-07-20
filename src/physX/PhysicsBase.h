@@ -47,13 +47,6 @@ protected:
 									  const float a_stretch, const vec3& a_position, PxMaterial* const a_material, unsigned int& a_rendererIndex, float& a_maxHeight,
 									  float a_amplitude, unsigned int a_seed = rand(), unsigned int a_octaves = 6, float a_persistence = 0.3f);
 
-	//Function used for adding a piece of cloth.
-	//a_dimensions determines how many rows/columns the created cloth should have (also sets the size).
-	//a_staticPoints determines which points in the cloth should be static- points are determined according to the equation point = row * dimension + column. For example, to have a piece of 10x10 cloth that hangs from its top two corners, set this vector to contain 0 and 90.
-	//a_pose determines the transform of the cloth.
-	void AddCloth(unsigned int a_dimensions, std::vector<unsigned int> a_staticPoints, PxTransform a_pose);
-
-
 	//Physics Variables
 	PxFoundation* g_physicsFoundation;
 	PxPhysics* g_physics;
@@ -63,20 +56,12 @@ protected:
 	PxSimulationFilterShader g_defaultFilterShader = PxDefaultSimulationFilterShader;
 
 	std::vector<PxRigidActor*> g_physicsActors;
-	std::vector<PxCloth*> g_physicsCloths;
-
-	//TEST
-	PxCloth* m_cloth;
-	unsigned int m_clothGrid;
-
 	//End of physics variables
 
 	//The models of each of the physics actors.
 	std::vector<unsigned int> m_models;
 	//The scale that each model should be at.
 	std::vector<vec3> m_scales;
-
-	std::vector<unsigned int> m_clothModels;
 
 	WalkCamera* m_camera;
 	Renderer* m_renderer;
