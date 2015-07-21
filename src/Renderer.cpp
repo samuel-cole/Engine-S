@@ -73,6 +73,7 @@ m_standardProgram(-1), m_particleProgram(-1), m_animatedProgram(-1), m_postProce
 	m_defaultNormal = LoadTexture("../data/default/normal.png");
 	m_defaultShadow = LoadTexture("../data/default/shadow.png");
 	m_defaultSpec = m_defaultShadow;
+	GPUParticleEmitter::SetDefaultTexture(m_defaultAmbient);
 	
 	m_deferredRenderMode = true;
 
@@ -608,20 +609,29 @@ void Renderer::GenerateNormals(const unsigned int a_index)
 
 unsigned int Renderer::LoadTexture(const std::string& a_path)
 {
-	int imageWidth = 0, imageHeight = 0, imageFormat = 0;
-	unsigned char* data = stbi_load(a_path.c_str(), &imageWidth, &imageHeight, &imageFormat, STBI_default);
+	if (m_textureNames.find(a_path) == m_textureNames.end())
+	{
+		int imageWidth = 0, imageHeight = 0, imageFormat = 0;
+		unsigned char* data = stbi_load(a_path.c_str(), &imageWidth, &imageHeight, &imageFormat, STBI_default);
 
-	unsigned int textureIndex;
+		unsigned int textureIndex;
 
-	glGenTextures(1, &textureIndex);
-	glBindTexture(GL_TEXTURE_2D, textureIndex);
-	glTexImage2D(GL_TEXTURE_2D, 0, (imageFormat == 4) ? GL_RGBA : GL_RGB, imageWidth, imageHeight, 0, (imageFormat == 4) ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, data);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glGenTextures(1, &textureIndex);
+		glBindTexture(GL_TEXTURE_2D, textureIndex);
+		glTexImage2D(GL_TEXTURE_2D, 0, (imageFormat == 4) ? GL_RGBA : GL_RGB, imageWidth, imageHeight, 0, (imageFormat == 4) ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, data);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
-	stbi_image_free(data);
+		stbi_image_free(data);
 
-	return textureIndex;
+		m_textureNames[a_path] = textureIndex;
+
+		return textureIndex;
+	}
+	else
+	{
+		return m_textureNames[a_path];
+	}
 }
 
 void Renderer::LoadTexture(const string& a_filePath, const unsigned int a_index)
@@ -868,7 +878,7 @@ unsigned int Renderer::CreateEmitter(const unsigned int a_maxParticles, const un
 {
 	if (a_gpuBased)
 	{
-		GPUParticleEmitter* emitter = new GPUParticleEmitter(a_maxParticles, a_lifespanMin, a_lifespanMax, a_velocityMin, a_velocityMax, a_startSize, a_endSize, a_startColour, a_endColour, a_direction, a_directionVariance);
+		GPUParticleEmitter* emitter = new GPUParticleEmitter(a_maxParticles, a_lifespanMin, a_lifespanMax, a_velocityMin, a_velocityMax, a_startSize, a_endSize, a_startColour, a_endColour, a_direction, a_directionVariance, -1);
 
 		std::vector<GPUParticleEmitter*>::iterator i = m_gpuEmitters.begin();
 		while (i != m_gpuEmitters.end())
@@ -914,7 +924,7 @@ unsigned int Renderer::CreateEmitter(const unsigned int a_maxParticles, const fl
 {
 	if (a_gpuBased)
 	{
-		GPUParticleEmitter* emitter = new GPUParticleEmitter(a_maxParticles, a_lifespanMin, a_lifespanMax, a_velocityMin, a_velocityMax, a_startSize, a_endSize, a_startColour, a_endColour, a_direction, a_directionVariance);
+		GPUParticleEmitter* emitter = new GPUParticleEmitter(a_maxParticles, a_lifespanMin, a_lifespanMax, a_velocityMin, a_velocityMax, a_startSize, a_endSize, a_startColour, a_endColour, a_direction, a_directionVariance, -1);
 
 		std::vector<GPUParticleEmitter*>::iterator i = m_gpuEmitters.begin();
 		while (i != m_gpuEmitters.end())
@@ -938,11 +948,13 @@ unsigned int Renderer::CreateEmitter(const unsigned int a_maxParticles, const fl
 }
 
 unsigned int Renderer::CreateEmitter(const unsigned int a_maxParticles, const float a_lifespanMin, const float a_lifespanMax, const  float a_velocityMin, const float a_velocityMax,
-	const float a_startSize, const float a_endSize, const vec4& a_startColour, const vec4& a_endColour, const vec3& a_direction, const float a_directionVariance, const bool a_gpuBased, TwBar* a_bar)
+	const float a_startSize, const float a_endSize, const vec4& a_startColour, const vec4& a_endColour, const vec3& a_direction, const float a_directionVariance, const bool a_gpuBased, TwBar* a_bar, const std::string a_texture)
 {
 	if (a_gpuBased)
 	{
-		GPUParticleEmitter* emitter = new GPUParticleEmitter(a_maxParticles, a_lifespanMin, a_lifespanMax, a_velocityMin, a_velocityMax, a_startSize, a_endSize, a_startColour, a_endColour, a_direction, a_directionVariance, a_bar, m_gpuEmitters.size());
+		unsigned int texture = LoadTexture(a_texture);
+
+		GPUParticleEmitter* emitter = new GPUParticleEmitter(a_maxParticles, a_lifespanMin, a_lifespanMax, a_velocityMin, a_velocityMax, a_startSize, a_endSize, a_startColour, a_endColour, a_direction, a_directionVariance, texture, a_bar, m_gpuEmitters.size());
 
 		std::vector<GPUParticleEmitter*>::iterator i = m_gpuEmitters.begin();
 		while (i != m_gpuEmitters.end())

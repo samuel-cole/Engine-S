@@ -294,7 +294,7 @@ public:
 							   const float a_startSize, const float a_endSize, const vec4& a_startColour, const vec4& a_endColour, const vec3& a_direction, const float a_directionVariance, const bool a_gpuBased);
 	//Method for creating GPU-based particles only. Still has a bool to check gpu-based just to make sure that the correct function is being called. Debug mode, includes a debug bar to change variables.
 	unsigned int CreateEmitter(const unsigned int a_maxParticles, const float a_lifespanMin, const float a_lifespanMax, const  float a_velocityMin, const float a_velocityMax,
-							   const float a_startSize, const float a_endSize, const vec4& a_startColour, const vec4& a_endColour, const vec3& a_direction, const float a_directionVariance, const bool a_gpuBased, TwBar* a_bar);
+							   const float a_startSize, const float a_endSize, const vec4& a_startColour, const vec4& a_endColour, const vec3& a_direction, const float a_directionVariance, const bool a_gpuBased, TwBar* a_bar, const std::string a_texture = "");
 
 	//Sets the position of the emitter at the specified index to the position indicated.
 	void SetLightPosition(const unsigned int a_index, const vec3& a_position);

@@ -59,11 +59,16 @@ public:
 		return AddProceduralPlane(a_dimensions, a_noiseMapDimensions, a_stretch, a_position, a_material, a_rendererIndex, a_maxHeight, a_amplitude, a_seed, a_octaves, a_persistence);
 	}
 
+	void ResetCheckerPieceHeights();
+
 private:
 	int Init();
 	int Deinit();
 	void Update(float a_deltaTime);
 	void Draw();
+
+	//Gets the height of the heightfield at the specified (x, z) coordinate. Returns a height value (or -1 if the coordinates are invalid).
+	float GetHeightAtPos(float a_x, float a_z);
 
 	PxMaterial* g_physicsMaterial;
 	PxController* g_playerController;
@@ -90,6 +95,9 @@ private:
 	float m_persistence;
 	unsigned int m_seed;
 	unsigned int m_proceduralPlane;
+
+	const float RAYCAST_HEIGHT = 400.0f;
+	const PxVec3 RAYCAST_DIRECTION = PxVec3(0, -1, 0);
 
 #pragma region Checkers Member Variables and Methods
 	void CheckersUpdate(float a_deltaTime);
