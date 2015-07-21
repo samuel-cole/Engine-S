@@ -29,7 +29,7 @@ public:
 	GPUParticleEmitter(const unsigned int a_maxParticles, const float a_lifeSpanMin, const float a_lifeSpanMax,
 					   const float a_velocityMin, const float a_velocityMax, const float a_startSize, const float a_endSize,
 					   const vec4& a_startColour, const vec4& a_endColour, const vec3& a_direction, const float a_directionVariance, const unsigned int a_texture,
-					   TwBar* const a_bar, const unsigned int a_emitterID);
+					   TwBar* const a_bar, const unsigned int a_emitterID, const bool a_spinny);
 	~GPUParticleEmitter();
 
 	//Draw function. The optional depthTexture argument is for depth testing to make sure particles don't draw over everything else in deferred rendering..
@@ -93,6 +93,9 @@ private:
 	float m_startSize, m_endSize;
 	vec4 m_startColour, m_endColour;
 
+	//Whether or not the particles should spin around and move upwards.
+	bool m_spinny;
+
 	unsigned int m_activeBuffer;
 	unsigned int m_vao[2];
 	unsigned int m_vbo[2];
@@ -100,7 +103,8 @@ private:
 	unsigned int m_texture;
 	static unsigned int s_defaultTexture;
 
-	//TODO: Make these static- I don't need a program for each particle emitter.
+	//Not sure if these should work this way. On the one hand, many of the variables used don't change at all for a particle system, so the current way of 'set and forget' works well, but on the other hand, it seems ridiculous to have a program per emitter.
+	//Would probably be better to have these as static and change various other things, but not worth changing in the little time left- additional features more important.
 	unsigned int m_drawProgram, m_updateProgram;
 
 	//Update program uniform locations

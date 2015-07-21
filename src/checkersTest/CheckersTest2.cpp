@@ -154,28 +154,6 @@ int CheckersTest2::Init()
 	TwAddVarRW(m_debugBar, "AI Difficulty", TW_TYPE_UINT32, &m_aiDifficulty, "");
 
 #pragma region Setup Checkers
-	for (unsigned int i = 0; i < 24; ++i)
-	{
-		unsigned int emitter = m_renderer->CreateEmitter(1000,			  //Max particles
-			0.2f,														  //Lifespan minimum 
-			2.0f,														  //Lifespan maximum
-			0.05f,														  //Velocity minimum
-			5.0f,														  //Velocity maximum
-			1.0f,														  //Start size
-			0.1f,														  //End size
-			((i < 12) ? vec4(1, 0, 0, 1) : vec4(0, 0, 1, 1)),			  //Start colour
-			((i < 12) ? vec4(1, 1, 0, 1) : vec4(0, 1, 1, 1)),			  //End colour
-			vec3(1, 0, 0),												  //Direction
-			3.14159265358979f,											  //Direction variance
-			true,														  //GPU based
-			m_debugBar);
-
-		m_emitters.push_back(emitter);
-
-		unsigned int light = m_renderer->CreatePointLight(((i < 12) ? vec3(1, 0.5f, 0) : vec3(0, 0.5f, 1)), 12, false);
-		m_pieceLights.push_back(light);
-	}
-
 	for (unsigned int i = 0; i < 16; ++i)
 	{
 		unsigned int loc = m_renderer->LoadOBJ("../data/teleporter/teleporter.obj");
@@ -211,6 +189,29 @@ int CheckersTest2::Init()
 		PxTransform teleporterPos(PxVec3(M_TILE_WIDTH * -3.5f + (i % 8) * M_TILE_WIDTH, 7.5f, M_TILE_WIDTH * (i < 8 ? 4.3f : -4.3f)));
 		PxRigidStatic* teleporterObject = PxCreateStatic(*g_physics, teleporterPos, teleporterBox, *g_physicsMaterial);
 		g_physicsScene->addActor(*teleporterObject);
+	}
+
+	for (unsigned int i = 0; i < 24; ++i)
+	{
+		unsigned int emitter = m_renderer->CreateEmitter(1000,			  //Max particles
+			0.2f,														  //Lifespan minimum 
+			2.0f,														  //Lifespan maximum
+			0.05f,														  //Velocity minimum
+			5.0f,														  //Velocity maximum
+			1.0f,														  //Start size
+			0.1f,														  //End size
+			((i < 12) ? vec4(1, 0, 0, 1) : vec4(0, 0, 1, 1)),			  //Start colour
+			((i < 12) ? vec4(1, 1, 0, 1) : vec4(0, 1, 1, 1)),			  //End colour
+			vec3(1, 0, 0),												  //Direction
+			3.14159265358979f,											  //Direction variance
+			true,														  //GPU based
+			m_debugBar,													  //Debug Bar
+			true);
+
+		m_emitters.push_back(emitter);
+
+		unsigned int light = m_renderer->CreatePointLight(((i < 12) ? vec3(1, 0.5f, 0) : vec3(0, 0.5f, 1)), 12, false);
+		m_pieceLights.push_back(light);
 	}
 
 	for (unsigned int i = 0; i < 8; ++i)

@@ -58,7 +58,7 @@ GPUParticleEmitter::GPUParticleEmitter(const unsigned int a_maxParticles, const 
 GPUParticleEmitter::GPUParticleEmitter(const unsigned int a_maxParticles, const float a_lifeSpanMin, const float a_lifeSpanMax,
 									   const float a_velocityMin, const float a_velocityMax, const float a_startSize, const float a_endSize,
 									   const vec4& a_startColour, const vec4& a_endColour, const vec3& a_direction, const float a_directionVariance, const unsigned int a_texture,
-									   TwBar* const a_bar, const unsigned int a_emitterID)
+									   TwBar* const a_bar, const unsigned int a_emitterID, bool a_spinny)
 									   : m_deltaTimeUniformLocation(-1), m_emitterPositionUniformLocation(-1), m_emitterPosition2UniformLocation(-1), m_timeUniformLocation(-1), m_directionUniformLocation(-1), m_depthTextureUniformLocation(-1)
 
 {
@@ -73,6 +73,7 @@ GPUParticleEmitter::GPUParticleEmitter(const unsigned int a_maxParticles, const 
 	m_maxParticles = a_maxParticles;
 	m_direction = a_direction;
 	m_texture = a_texture;
+	m_spinny = a_spinny;
 	if (m_direction.x == 0)
 		m_direction.x += 0.000001f;
 	if (m_direction.y == 0)
@@ -192,6 +193,8 @@ void GPUParticleEmitter::CreateUpdateProgram()
 	glUniform1f(location, m_velocityMax);
 	location = glGetUniformLocation(m_updateProgram, "DirectionVariance");
 	glUniform1f(location, m_directionVariation);
+	location = glGetUniformLocation(m_updateProgram, "Spinny");
+	glUniform1i(location, (m_spinny ? 1 : 0));
 
 	//Set the location of uniforms that will change.
 	m_timeUniformLocation = glGetUniformLocation(m_updateProgram, "Time");

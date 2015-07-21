@@ -20,6 +20,7 @@ uniform float DirectionVariance;
 uniform vec3 EmitterPosition;
 uniform vec3 OtherEmitterPosition;
 uniform vec3 EmitterDirection;
+uniform int Spinny;
 
 
 const float INVERSE_MAX_UINT = 1.0f / 4294967295.0f;
@@ -37,10 +38,11 @@ float rand(uint seed, float range)
 
 void main()
 {
-	vPosition = Position + Velocity * DeltaTime;
-	vVelocity = Velocity;
 	vLifeTime = LifeTime + DeltaTime;
 	vLifeSpan = LifeSpan;
+	//The bit on the end of this line is a hack I've done to make particles look a little better.
+	vPosition = Position + Velocity * DeltaTime + 0.1f * Spinny * vec3(vLifeTime * sin(Position.y + gl_VertexID), vLifeTime, vLifeTime * cos(Position.y + gl_VertexID));
+	vVelocity = Velocity;
 
 	float depth;
 	

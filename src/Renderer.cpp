@@ -358,12 +358,9 @@ unsigned int Renderer::LoadFrameBuffer(Camera* const a_camera, const vec4& a_dim
 	glBindTexture(GL_TEXTURE_2D, FBOTexture);
 
 	//Specify texture format
-	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, (GLsizei)a_dimensions.z, (GLsizei)a_dimensions.w);
+	glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB8, (GLsizei)a_dimensions.z, (GLsizei)a_dimensions.w);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
 	//Attach to the Frame Buffer as first colour attachment.
 	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, FBOTexture, 0);
@@ -387,9 +384,12 @@ unsigned int Renderer::LoadFrameBuffer(Camera* const a_camera, const vec4& a_dim
 
 	//Unbind framebuffer so that we can render back to the back buffer.
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	//Unbind texture.
+	glBindTexture(GL_TEXTURE_2D, 0);
 
 	m_frameBuffers.push_back(FBO);
 	m_renderBuffers.push_back(fboDepth);
+	m_frameBufferTextures.push_back(FBOTexture);
 	m_frameBufferDimensions.push_back(a_dimensions);
 	m_frameBufferColours.push_back(a_backgroundColour);
 	
@@ -667,11 +667,6 @@ void Renderer::LoadTexture(const string& a_filePath, const unsigned int a_index)
 
 void Renderer::LoadTexture(const unsigned int a_textureIndex, const unsigned int a_index)
 {
-	//while (a_index >= m_textures.size())
-	//{
-	//	m_textures.push_back(-1);
-	//}
-
 	if (a_index >= m_numOfIndices.size() || m_numOfIndices[a_index] == -1)
 	{
 		std::cout << "Error: Loading texture for invalid object!" << std::endl;
@@ -948,13 +943,13 @@ unsigned int Renderer::CreateEmitter(const unsigned int a_maxParticles, const fl
 }
 
 unsigned int Renderer::CreateEmitter(const unsigned int a_maxParticles, const float a_lifespanMin, const float a_lifespanMax, const  float a_velocityMin, const float a_velocityMax,
-	const float a_startSize, const float a_endSize, const vec4& a_startColour, const vec4& a_endColour, const vec3& a_direction, const float a_directionVariance, const bool a_gpuBased, TwBar* a_bar, const std::string a_texture)
+	const float a_startSize, const float a_endSize, const vec4& a_startColour, const vec4& a_endColour, const vec3& a_direction, const float a_directionVariance, const bool a_gpuBased, TwBar* a_bar, const bool a_spinny, const std::string a_texture)
 {
 	if (a_gpuBased)
 	{
 		unsigned int texture = LoadTexture(a_texture);
 
-		GPUParticleEmitter* emitter = new GPUParticleEmitter(a_maxParticles, a_lifespanMin, a_lifespanMax, a_velocityMin, a_velocityMax, a_startSize, a_endSize, a_startColour, a_endColour, a_direction, a_directionVariance, texture, a_bar, m_gpuEmitters.size());
+		GPUParticleEmitter* emitter = new GPUParticleEmitter(a_maxParticles, a_lifespanMin, a_lifespanMax, a_velocityMin, a_velocityMax, a_startSize, a_endSize, a_startColour, a_endColour, a_direction, a_directionVariance, texture, a_bar, m_gpuEmitters.size(), a_spinny);
 
 		std::vector<GPUParticleEmitter*>::iterator i = m_gpuEmitters.begin();
 		while (i != m_gpuEmitters.end())
@@ -1663,9 +1658,20 @@ void Renderer::Draw()
 		}
 
 		//GPU Particles
+		//This is used for deciding the order that gpu emitters are rendered. 
+		//This is because gpu particles don't do depth tests against each other, so this is a cheap way to try an make particles render in a little better order than default.
+		std::vector<bool> gpuEmittersRendered(m_gpuEmitters.size(), false);
 		for (unsigned int i = 0; i < m_gpuEmitters.size(); ++i)
 		{
-			if (m_gpuEmitters[i] != nullptr)
+			if (glm::length((m_gpuEmitters[i]->GetPosition() - vec3(m_cameras[0]->GetWorldTransform()[3]))) > 50.0f)
+			{
+				m_gpuEmitters[i]->Draw((float)glfwGetTime(), m_cameras[0]->GetWorldTransform(), m_cameras[0]->GetProjectionView(), m_gpassDepth);
+				gpuEmittersRendered[i] = true;
+			}
+		}
+		for (unsigned int i = 0; i < m_gpuEmitters.size(); ++i)
+		{
+			if (m_gpuEmitters[i] != nullptr && gpuEmittersRendered[i] == false)
 			{
 				m_gpuEmitters[i]->Draw((float)glfwGetTime(), m_cameras[0]->GetWorldTransform(), m_cameras[0]->GetProjectionView(), m_gpassDepth);
 			}
@@ -2306,17 +2312,6 @@ void Renderer::CleanupBuffers()
 		glDeleteBuffers(1, &m_pointIBO);
 		m_pointIBO = -1;
 	}
-	if (m_gpassFBO != -1)
-	{
-		glDeleteBuffers(1, &m_gpassFBO);
-		m_gpassFBO = -1;
-	}
-	if (m_lightFBO != -1)
-	{
-		glDeleteBuffers(1, &m_lightFBO);
-		m_lightFBO = -1;
-	}
-
 
 	for (unsigned int i = 0; i < m_renderBuffers.size(); ++i)
 	{
@@ -2338,6 +2333,16 @@ void Renderer::CleanupBuffers()
 	{
 		glDeleteFramebuffers(1, &m_shadowMap);
 		m_shadowMap = -1;
+	}
+	if (m_gpassFBO != -1)
+	{
+		glDeleteFramebuffers(1, &m_gpassFBO);
+		m_gpassFBO = -1;
+	}
+	if (m_lightFBO != -1)
+	{
+		glDeleteFramebuffers(1, &m_lightFBO);
+		m_lightFBO = -1;
 	}
 
 
@@ -2400,22 +2405,42 @@ void Renderer::CleanupBuffers()
 	for (unsigned int i = 0; i < m_textures.size(); ++i)
 	{
 		if (m_textures[i] != -1)
+		{
 			glDeleteTextures(1, &m_textures[i]);
+			m_textures[i] = -1;
+		}
 	}
 	for (unsigned int i = 0; i < m_ambients.size(); ++i)
 	{
 		if (m_ambients[i] != -1)
+		{
 			glDeleteTextures(1, &m_ambients[i]);
+			m_ambients[i] = -1;
+		}
 	}
 	for (unsigned int i = 0; i < m_normals.size(); ++i)
 	{
 		if (m_normals[i] != -1)
+		{
 			glDeleteTextures(1, &m_normals[i]);
+			m_normals[i] = -1;
+		}
 	}
 	for (unsigned int i = 0; i < m_speculars.size(); ++i)
 	{
 		if (m_speculars[i] != -1)
+		{
 			glDeleteTextures(1, &m_speculars[i]);
+			m_speculars[i] = -1;
+		}
+	}
+	for (unsigned int i = 0; i < m_frameBufferTextures.size(); ++i)
+	{
+		if (m_frameBufferTextures[i] != -1)
+		{
+			glDeleteTextures(1, &m_frameBufferTextures[i]);
+			m_frameBufferTextures[i] = -1;
+		}
 	}
 
 	if (m_shadowDepth != -1)
@@ -2485,13 +2510,20 @@ void Renderer::CleanupBuffers()
 	}
 
 	for (unsigned int i = 0; i < m_gpuEmitters.size(); ++i)
-	{
-		delete m_gpuEmitters[i];
+	{	
+		if (m_gpuEmitters[i] != nullptr)
+		{
+			delete m_gpuEmitters[i];
+			m_gpuEmitters[i] = nullptr;
+		}
 	}
 
 	for (unsigned int i = 0; i < m_mirrors.size(); ++i)
 	{
 		if (m_mirrors[i] != -1)
+		{
 			delete m_cameras[m_mirrors[i]];
+			m_mirrors[i] = -1;
+		}
 	}
 }
