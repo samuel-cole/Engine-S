@@ -35,11 +35,11 @@ int PhysicsConcrete2::Init()
 	TwAddSeparator(m_debugBar, "Lights", "");
 	TwAddButton(m_debugBar, "AddLight", AddLight, (void*)(m_renderer), "");
 
-	PxBoxGeometry playerBox(1, 2, 1);
-	PxTransform playerPos(PxVec3(0, 0, 0));
-	m_player = PxCreateDynamic(*g_physics, playerPos, playerBox, *g_physicsMaterial, 10);
-	m_player->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
-	g_physicsScene->addActor(*m_player);
+	//PxBoxGeometry playerBox(1, 2, 1);
+	//PxTransform playerPos(PxVec3(0, 0, 0));
+	//m_player = PxCreateDynamic(*g_physics, playerPos, playerBox, *g_physicsMaterial, 10);
+	//m_player->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
+	//g_physicsScene->addActor(*m_player);
 
 	m_walkSpeed = 1.0f;
 	m_verticleSpeed = -10.0f;
@@ -56,6 +56,55 @@ int PhysicsConcrete2::Init()
 	desc.radius = 2.0f;
 	desc.stepOffset = 0.1f;
 	g_playerController = controllerManager->createController(desc);
+
+	//Cloth stuff
+	PxClothParticle* vertices = new PxClothParticle[10 * 10];
+	for (unsigned int r = 0; r < 10; ++r)
+	{
+		for (unsigned int c = 0; c < 10; ++c)
+		{
+			vertices[r * 10 + c].pos = PxVec3((float)c - 10 / 2, 0, (float)r - 10 / 2);
+			vertices[r * 10 + c].invWeight = 1.0f;
+		}
+	}
+	vertices[0].invWeight = 0.0f;
+	vertices[90].invWeight = 0.0f;
+
+	PxU32* primitives = new PxU32[(10 - 1) * (10 - 1) * 4];
+	unsigned int index = 0;
+	for (unsigned int r = 0; r < (10 - 1); ++r)
+	{
+		for (unsigned int c = 0; c < (10 - 1); ++c)
+		{
+			primitives[index++] = r * 10 + c;
+			primitives[index++] = r * 10 + c + 1;
+			primitives[index++] = (r + 1) * 10 + c;
+			primitives[index++] = (r + 1) * 10 + c + 1;
+		}
+	}
+
+	PxClothMeshDesc clothDesc;
+	clothDesc.points.data = vertices;
+	clothDesc.points.count = 10 * 10;
+	clothDesc.points.stride = sizeof(PxClothParticle);
+	clothDesc.invMasses.data = &vertices->invWeight;
+	clothDesc.invMasses.count = 10 * 10;
+	clothDesc.invMasses.stride = sizeof(PxClothParticle);
+	clothDesc.quads.data = primitives;
+	clothDesc.quads.count = (10 - 1) * (10 - 1);
+	clothDesc.quads.stride = sizeof(PxU32) * 4;
+	
+	PxClothFabric* fabric = PxClothFabricCreate(*g_physics, clothDesc, PxVec3(0, -1, 0));
+	PxTransform clothPose = PxTransform(PxVec3(0.0f, 0.0f, 0.0f));
+	m_cloth = g_physics->createCloth(clothPose, *fabric, vertices, PxClothFlags());
+	m_cloth->setClothFlag(PxClothFlag::eSCENE_COLLISION, true);
+	m_cloth->setSolverFrequency(240.0f);
+	g_physicsScene->addActor(*m_cloth);
+
+	delete[] vertices;
+	delete[] primitives;
+
+	m_clothGrid = m_renderer->GenerateGrid(9, 9);
 
 	return 0;
 }
@@ -191,6 +240,16 @@ void PhysicsConcrete2::Update(float a_deltaTime)
 		m_lights.push_back(m_renderer->CreatePointLight(vec3(((float)rand() / (float)RAND_MAX), ((float)rand() / (float)RAND_MAX), ((float)rand() / (float)RAND_MAX)), 20, false, vec3(cameraWorld[3])));
 	}
 #pragma endregion
+
+	PxClothParticleData* data = m_cloth->lockParticleData();
+	std::vector<vec3> particlePositions;
+	for (unsigned int i = 0; i < m_cloth->getNbParticles(); ++i)
+	{
+		PxVec3 particlePos = data->particles[i].pos;
+		particlePositions.push_back(vec3(particlePos.x, particlePos.y, particlePos.z));
+	}
+	m_renderer->ModifyMesh(m_clothGrid, particlePositions);
+	data->unlock();
 }
 
 void PhysicsConcrete2::Draw()

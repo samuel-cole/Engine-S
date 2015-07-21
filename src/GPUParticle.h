@@ -100,6 +100,7 @@ private:
 	unsigned int m_texture;
 	static unsigned int s_defaultTexture;
 
+	//TODO: Make these static- I don't need a program for each particle emitter.
 	unsigned int m_drawProgram, m_updateProgram;
 
 	//Update program uniform locations

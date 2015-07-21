@@ -88,6 +88,7 @@ private:
 
 	unsigned int m_gun;
 	unsigned int m_animatedModel;
+	unsigned int m_ground;
 
 	std::vector<unsigned int> m_physicsLights;
 
