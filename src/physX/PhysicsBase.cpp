@@ -110,7 +110,7 @@ void PhysicsBase::UpdatePhysX(float a_deltaTime)
 	g_physicsScene->simulate(a_deltaTime);
 	while (g_physicsScene->fetchResults() == false)
 	{
-		//Represent all physics objects in the scene.
+		//Represent all normal physics objects in the scene.
 		for (unsigned int i = 0; i < g_physicsActors.size(); ++i)
 		{
 			if (m_models[i] == -1)
@@ -139,7 +139,20 @@ void PhysicsBase::UpdatePhysX(float a_deltaTime)
 
 			delete[] shapes;
 		}
+	}
 
+	//Represent cloth objects within the scene.
+	for (unsigned int i = 0; i < g_physicsCloths.size(); ++i)
+	{
+		PxClothParticleData* data = g_physicsCloths[i]->lockParticleData();
+		std::vector<vec3> particlePositions;
+		for (unsigned int j = 0; j < g_physicsCloths[i]->getNbParticles(); ++j)
+		{
+			PxVec3 particlePos = data->particles[j].pos;
+			particlePositions.push_back(vec3(particlePos.x, particlePos.y, particlePos.z));
+		}
+		m_renderer->ModifyMesh(m_clothModels[i], particlePositions);
+		data->unlock();
 	}
 }
 
@@ -266,4 +279,67 @@ PxRigidStatic* PhysicsBase::AddProceduralPlane(const unsigned int a_dimensions, 
 
 		return terrain;
 	}	
+}
+
+void PhysicsBase::AddCloth(unsigned int a_dimensions, std::vector<unsigned int> a_staticPoints, PxTransform a_pose)
+{
+	//Fill in the data for how many points there should be, where they should be, etc.
+	PxClothParticle* vertices = new PxClothParticle[a_dimensions * a_dimensions];
+	for (unsigned int r = 0; r < a_dimensions; ++r)
+	{
+		for (unsigned int c = 0; c < a_dimensions; ++c)
+		{
+			vertices[r * a_dimensions + c].pos = PxVec3((float)c - a_dimensions / 2, 0, (float)r - a_dimensions / 2);
+			vertices[r * a_dimensions + c].invWeight = 1.0f;
+		}
+	}
+	//Make the appropriate points static.
+	for (unsigned int i = 0; i < a_staticPoints.size(); ++i)
+	{
+		if (a_staticPoints[i] < a_dimensions * a_dimensions)
+			vertices[a_staticPoints[i]].invWeight = 0.0f;
+		else
+			std::cout << "Error: invalid point index while creating cloth.";
+	}
+	
+	//The quads field that this primitives variable is used for is essentially the physX equivalent of OpenGL indices (IBOs).
+	PxU32* primitives = new PxU32[(a_dimensions - 1) * (a_dimensions - 1) * 4];
+	unsigned int index = 0;
+	for (unsigned int r = 0; r < (a_dimensions - 1); ++r)
+	{
+		for (unsigned int c = 0; c < (a_dimensions - 1); ++c)
+		{
+			primitives[index++] = r * a_dimensions + c;
+			primitives[index++] = r * a_dimensions + c + 1;
+			primitives[index++] = (r + 1) * a_dimensions + c;
+			primitives[index++] = (r + 1) * a_dimensions + c + 1;
+		}
+	}
+	
+	//Fill in the description object.
+	PxClothMeshDesc clothDesc;
+	clothDesc.points.data = vertices;
+	clothDesc.points.count = a_dimensions * a_dimensions;
+	clothDesc.points.stride = sizeof(PxClothParticle);
+	clothDesc.invMasses.data = &vertices->invWeight;
+	clothDesc.invMasses.count = a_dimensions * a_dimensions;
+	clothDesc.invMasses.stride = sizeof(PxClothParticle);
+	clothDesc.quads.data = primitives;
+	clothDesc.quads.count = (a_dimensions - 1) * (a_dimensions - 1);
+	clothDesc.quads.stride = sizeof(PxU32) * 4;
+	
+	//Create the cloth.
+	PxClothFabric* fabric = PxClothFabricCreate(*g_physics, clothDesc, PxVec3(0, -1, 0));
+	PxCloth* cloth = g_physics->createCloth(a_pose, *fabric, vertices, PxClothFlags());
+	cloth->setClothFlag(PxClothFlag::eSCENE_COLLISION, true);
+	cloth->setSolverFrequency(240.0f);
+	g_physicsScene->addActor(*cloth);
+	g_physicsCloths.push_back(cloth);
+	
+	delete[] vertices;
+	delete[] primitives;
+
+	m_clothModels.push_back(m_renderer->GenerateGrid(a_dimensions - 1, a_dimensions - 1));
+	glm::quat rot = glm::quat(a_pose.q.w, a_pose.q.x, a_pose.q.y, a_pose.q.z);
+	m_renderer->SetTransform((mat4)rot * glm::translate(vec3(a_pose.p.x, a_pose.p.y, a_pose.p.z)), m_clothModels[m_clothModels.size() - 1]);
 }

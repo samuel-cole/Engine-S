@@ -26,6 +26,9 @@ private:
 
 	PxController* g_playerController;
 
+	PxCloth* m_cloth;
+	unsigned int m_clothGrid;
+
 	std::vector<unsigned int> m_lights;
 
 	PxRigidDynamic* m_player;

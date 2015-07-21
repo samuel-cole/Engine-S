@@ -124,7 +124,7 @@ private:
 	//Default shadow map used for situations in which a shadow map hasn't been generated.
 	unsigned int m_defaultShadow;
 
-	//Vector containing all of the framebuffers associated with this renderer.
+	//Vector containing all of the framebuffers associated with this renderer. TODO: Get framebuffers working in deferred renderer mode.
 	std::vector<unsigned int> m_frameBuffers;
 	//Vector containing all of the render buffors used for storing depth- this vector is only used for cleaning up purposes at the moment.
 	std::vector<unsigned int> m_renderBuffers;
@@ -136,10 +136,10 @@ private:
 	//Stores which frame buffers should ignore which objects- first unsigned int is for the frame buffer that is going to ignore an object, second one is for the object to be ignored.
 	std::vector<std::pair<unsigned int, unsigned int>> m_frameBufferIgnores;
 
-	//Vector containing indices to the m_frameBuffers vector- shows which framebuffers are used for post processing.
+	//Vector containing indices to the m_frameBuffers vector- shows which framebuffers are used for post processing. TODO: Add options for post processing framebuffers.
 	//std::vector<unsigned int> m_postProcessingBufferIndices;
 
-	//Handle to the texture that stores the shadow map
+	//Handle to the framebuffer that stores the shadow map
 	unsigned int m_shadowMap;
 	//Handle to the depth of the shadow map.
 	unsigned int m_shadowDepth;
@@ -334,6 +334,10 @@ public:
 	void UpdateEmitters(const float a_deltaTime);
 	//Updates all mirrors to properly reflect.
 	void UpdateMirrors();
+
+	//Modifies the mesh at the specified index to place its vertices at the specified positions. Will print an error to console and not do anything if the specified number of vertices is not the same as there are in the mesh.
+	//Useful with soft-body physics.
+	void ModifyMesh(const unsigned int a_index, const std::vector<vec3>& a_vertexPositions);
 
 	//Destroys the object at the specified index. TODO: Make new objects check for -1 values within the buffer vectors and place themselves there, instead of pushing back new values to the vector.
 	void DestroyObject(const unsigned int a_index);

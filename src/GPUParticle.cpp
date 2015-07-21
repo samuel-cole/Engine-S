@@ -2,7 +2,7 @@
 #include "gl_core_4_4.h"
 #include <fstream>
 
-GPUParticleEmitter::GPUParticleEmitter() : m_particles(nullptr), m_maxParticles(0), m_position(0, 0, 0), m_drawProgram(0), m_updateProgram(0), m_lastDrawTime(0), 
+GPUParticleEmitter::GPUParticleEmitter() : m_particles(nullptr), m_maxParticles(0), m_position(0, 0, 0), m_drawProgram(-1), m_updateProgram(-1), m_lastDrawTime(0), 
 m_deltaTimeUniformLocation(-1), m_emitterPositionUniformLocation(-1), m_emitterPosition2UniformLocation(-1), m_timeUniformLocation(-1), m_directionUniformLocation(-1), m_depthTextureUniformLocation(-1)
 {
 	m_vao[0] = 0;
@@ -110,8 +110,16 @@ GPUParticleEmitter::~GPUParticleEmitter()
 	glDeleteVertexArrays(2, m_vao);
 	glDeleteBuffers(2, m_vbo);
 
-	glDeleteProgram(m_drawProgram);
-	glDeleteProgram(m_updateProgram);
+	if (m_drawProgram != -1)
+	{
+		glDeleteProgram(m_drawProgram);
+		m_drawProgram = -1;
+	}
+	if (m_updateProgram != -1)
+	{
+		glDeleteProgram(m_updateProgram);
+		m_updateProgram = -1;
+	}
 }
 
 void GPUParticleEmitter::SetupBuffer(const unsigned int a_index)

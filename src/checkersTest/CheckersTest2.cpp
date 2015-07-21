@@ -127,6 +127,14 @@ int CheckersTest2::Init()
 	PxTransform pose = PxTransform(PxVec3(0.0f, 0.0f, 0.0f), PxQuat(PxHalfPi * 1.0f, PxVec3(0.0f, 0.0f, 1.0f)));
 	PxRigidStatic* plane = PxCreateStatic(*g_physics, pose, PxPlaneGeometry(), *g_physicsMaterial);
 	g_physicsScene->addActor(*plane);
+	m_ground = m_renderer->GenerateGrid(3, 3);
+	m_renderer->SetTransform(glm::scale(vec3(10000, 1, 10000)), m_ground);
+
+	AddCloth(50, std::vector<unsigned int>() = { 0, 49}, PxTransform(PxVec3(100, 50, 50)));
+	m_renderer->LoadAmbient("../data/tablecloth.tga", m_clothModels[0]);
+	m_renderer->LoadTexture("../data/tablecloth.tga", m_clothModels[0]);
+	m_renderer->LoadSpecularMap("../data/tablecloth.tga", m_clothModels[0]);
+
 
 	//Checkers Mover
 	for (int i = 0; i < 10; ++i)
@@ -300,6 +308,9 @@ void CheckersTest2::Update(float a_deltaTime)
 	m_renderer->UpdateAnimation(m_animationTimer, m_animatedModel);
 	m_animationTimer += a_deltaTime;
 
+	PxExtendedVec3 playerPos = g_playerController->getPosition();
+	m_renderer->SetTransform(glm::translate(vec3(playerPos.x, 0, playerPos.z)) * glm::scale(vec3(10000, 1, 10000)), m_ground);
+
 	CheckersUpdate(a_deltaTime);
 
 
@@ -348,7 +359,6 @@ void CheckersTest2::Update(float a_deltaTime)
 	PxControllerFilters filters;
 	g_playerController->move(displacement, 0.01f, a_deltaTime, filters);
 
-	PxExtendedVec3 playerPos = g_playerController->getPosition();
 	PxExtendedVec3 footPos = g_playerController->getFootPosition();
 	//I do these calculations individually inside this vector constructor because PxEtendedVec3 doesn't contain some of the necessary operators to do this.
 	vec3 endPos = vec3(2.0f * playerPos.x - footPos.x, 2.0f * playerPos.y - footPos.y, 2.0f * playerPos.z - footPos.z);
@@ -358,7 +368,7 @@ void CheckersTest2::Update(float a_deltaTime)
 #pragma region Spawn Physics Props
 	m_spawnTimer += a_deltaTime;
 
-	if (m_spawnTimer >= 1.0f)
+	if (m_spawnTimer >= 1.0f && g_physicsActors.size() < 50)
 	{
 		vec3 randPos = vec3(((float)rand() / (float)RAND_MAX) * 20.0f + 200, ((float)rand() / (float)RAND_MAX) * 20.0f + 200.0f, ((float)rand() / (float)RAND_MAX) * 20.0f);
 

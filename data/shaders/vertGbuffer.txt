@@ -12,7 +12,6 @@ out vec3 vTangent;
 out vec3 vBiTangent;
 out vec2 vUV;
 
-uniform mat4 View;
 uniform mat4 ProjectionView;
 uniform mat4 Global;
 
