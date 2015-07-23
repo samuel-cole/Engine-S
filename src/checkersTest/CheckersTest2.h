@@ -74,6 +74,10 @@ private:
 	PxController* g_playerController;
 	PlayerCollisions* g_playerCollisions;
 	PxRigidStatic* g_proceduralPhysics;
+	PxRigidStatic* g_plane;
+	PxControllerManager* g_controllerManager;
+
+	std::vector<PxRigidStatic*> g_teleporterBodies;
 
 	float m_animationTimer;
 

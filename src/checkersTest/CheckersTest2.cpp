@@ -16,7 +16,8 @@ void TW_CALL BoardGenerate2(void* a_clientData)
 
 	float maxHeight;
 
-	checkers->GetProceduralPhysics()->release();
+	//The terrain is now released within the GenerateProceduralPlane() function.
+	//checkers->GetProceduralPhysics()->release();
 	renderer->DestroyObject(checkers->GetProceduralPlane());
 	unsigned int object;
 	checkers->SetProceduralPhysics(checkers->GenerateProceduralPlane(99, 100, 1, vec3(0, 0, 0), checkers->GetPhysicsMaterial(), object, maxHeight, checkers->GetAmplitude(), checkers->GetSeed(), 6, checkers->GetPersistence()));
@@ -109,7 +110,7 @@ int CheckersTest2::Init()
 	TwAddButton(m_debugBar, "AddLight", AddLight, (void*)(m_renderer), "");
 
 	//Set up the player
-	PxControllerManager* controllerManager = PxCreateControllerManager(*g_physicsScene);
+	g_controllerManager = PxCreateControllerManager(*g_physicsScene);
 	PxCapsuleControllerDesc desc;
 	desc.contactOffset = 0.05f;
 	desc.height = 3.0f;
@@ -121,12 +122,12 @@ int CheckersTest2::Init()
 	desc.stepOffset = 0.1f;
 	g_playerCollisions = new PlayerCollisions();
 	desc.reportCallback = g_playerCollisions;
-	g_playerController = controllerManager->createController(desc);
+	g_playerController = g_controllerManager->createController(desc);
 	
 	//Add a plane
 	PxTransform pose = PxTransform(PxVec3(0.0f, 0.0f, 0.0f), PxQuat(PxHalfPi * 1.0f, PxVec3(0.0f, 0.0f, 1.0f)));
-	PxRigidStatic* plane = PxCreateStatic(*g_physics, pose, PxPlaneGeometry(), *g_physicsMaterial);
-	g_physicsScene->addActor(*plane);
+	g_plane = PxCreateStatic(*g_physics, pose, PxPlaneGeometry(), *g_physicsMaterial);
+	g_physicsScene->addActor(*g_plane);
 	m_ground = m_renderer->GenerateGrid(3, 3);
 	m_renderer->SetTransform(glm::scale(vec3(10000, 1, 10000)), m_ground);
 
@@ -167,7 +168,7 @@ int CheckersTest2::Init()
 
 			light = m_renderer->CreatePointLight(vec3(0, 0.1f, 1), 14.0f, false);
 
-			emitter = m_renderer->CreateEmitter(1000, 1.0f, 2.0f, 0.1f, 4.0f, 1.0f, 1.0f, vec4(0, 0.5f, 1, 1), vec4(0, 0, 0.5f, 1), vec3(0, 0, -1), 3.141592f / 4.0f, true, m_debugBar);
+			emitter = m_renderer->CreateEmitter(1000, 1.0f, 2.0f, 0.1f, 4.0f, 1.0f, 1.0f, vec4(0, 0.5f, 1, 1), vec4(0, 0, 0.5f, 1), vec3(0, 0, -1), 3.141592f / 4.0f, true, m_debugBar, false, "../data/particle_default.png");
 		}
 		else
 		{
@@ -177,7 +178,7 @@ int CheckersTest2::Init()
 
 			light = m_renderer->CreatePointLight(vec3(1, 0.1f, 0), 14.0f, false);
 
-			emitter = m_renderer->CreateEmitter(1000, 1.0f, 2.0f, 0.1f, 4.0f, 1.0f, 1.0f, vec4(1, 0.5f, 0, 1), vec4(1.0f, 0.0f, 0, 1), vec3(0, 0, 1), 3.141592f / 4.0f, true, m_debugBar);
+			emitter = m_renderer->CreateEmitter(1000, 1.0f, 2.0f, 0.1f, 4.0f, 1.0f, 1.0f, vec4(1, 0.5f, 0, 1), vec4(1.0f, 0.0f, 0, 1), vec3(0, 0, 1), 3.141592f / 4.0f, true, m_debugBar, false, "../data/crate.png");
 		}
 		m_renderer->SetLightPosition(light, vec3(M_TILE_WIDTH * -3.5f + (i % 8) * M_TILE_WIDTH, 13.0f, M_TILE_WIDTH * (i < 8 ? 4.0f : -4.0f)));
 		m_renderer->SetTransform(glm::translate(vec3(M_TILE_WIDTH * -3.5f + (i % 8) * M_TILE_WIDTH, 0, M_TILE_WIDTH * (i < 8 ? 4.3f : -4.3f))) * glm::scale(vec3(2, 2, 2)), loc);
@@ -188,6 +189,7 @@ int CheckersTest2::Init()
 		PxBoxGeometry teleporterBox(5.0f, 7.5f, 0.5f);
 		PxTransform teleporterPos(PxVec3(M_TILE_WIDTH * -3.5f + (i % 8) * M_TILE_WIDTH, 7.5f, M_TILE_WIDTH * (i < 8 ? 4.3f : -4.3f)));
 		PxRigidStatic* teleporterObject = PxCreateStatic(*g_physics, teleporterPos, teleporterBox, *g_physicsMaterial);
+		g_teleporterBodies.push_back(teleporterObject);
 		g_physicsScene->addActor(*teleporterObject);
 	}
 
@@ -206,7 +208,8 @@ int CheckersTest2::Init()
 			3.14159265358979f,											  //Direction variance
 			true,														  //GPU based
 			m_debugBar,													  //Debug Bar
-			true);
+			true, 
+			"../data/tablecloth.tga");
 
 		m_emitters.push_back(emitter);
 
@@ -296,6 +299,42 @@ int CheckersTest2::Deinit()
 	{
 		delete m_movers[i];
 		m_movers[i] = nullptr;
+	}
+
+	for (unsigned int i = 0; i < g_teleporterBodies.size(); ++i)
+	{
+		if (g_teleporterBodies[i] != nullptr)
+		{
+			g_teleporterBodies[i]->release();
+			g_teleporterBodies[i] = nullptr;
+		}
+	}
+
+	if (g_plane != nullptr)
+	{
+		unsigned int shapeNo = g_plane->getNbShapes();
+		PxShape** shapes = new PxShape*[shapeNo];
+		g_plane->getShapes(shapes, 1);
+		g_plane->detachShape(**shapes);
+		g_plane->release();
+		g_plane = nullptr;
+	}
+
+	if (g_physicsMaterial != nullptr)
+	{
+		g_physicsMaterial->release();
+		g_physicsMaterial = nullptr;
+	}
+
+	if (g_playerController != nullptr)
+	{
+		g_playerController->release();
+		g_playerController = nullptr;
+	}
+	if (g_controllerManager != nullptr)
+	{
+		g_controllerManager->release();
+		g_controllerManager = nullptr;
 	}
 
 	return PhysicsBase::Deinit();

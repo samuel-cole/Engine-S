@@ -16,6 +16,7 @@ class FBXSkeleton;
 class FBXAnimation;
 class ParticleEmitter;
 class GPUParticleEmitter;
+class FBXFile;
 
 enum UniformTypes
 {
@@ -59,6 +60,10 @@ struct Vertex
 
 class Renderer
 {
+/*THINGS TODO:
+* Memory leaks fixed
+* Lit particles
+*/
 private:
 	//Stores the names of each loaded model and the index of that model's VAO within the m_VAO vector.
 	//TODO: Support model reuse for FBX models with multiple meshes per model.
@@ -78,6 +83,8 @@ private:
 	std::vector<FBXSkeleton*> m_skeletons;
 	//Vector containing the animations of animated objects. Set to nullptr for non-animated models.
 	std::vector<FBXAnimation*> m_animations;
+	//Vector containing the files of animated objects. Used for cleaning up files after closing the program.
+	std::vector<FBXFile*> m_fbxFiles;
 
 	//Vector containing the world transforms of every object.
 	std::vector<glm::mat4> m_globals;

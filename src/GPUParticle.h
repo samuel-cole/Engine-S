@@ -23,9 +23,11 @@ class GPUParticleEmitter
 {
 public:
 	GPUParticleEmitter();
+	//GPU Particle Emitter constructor. Setting the texture to -1 uses the default texture instead.
 	GPUParticleEmitter(const unsigned int a_maxParticles, const float a_lifeSpanMin, const float a_lifeSpanMax,
 					   const float a_velocityMin, const float a_velocityMax, const float a_startSize, const float a_endSize,
 					   const vec4& a_startColour, const vec4& a_endColour, const vec3& a_direction, const float a_directionVariance, const unsigned int a_texture);
+	//GPU Particle Emitter constructor. Setting the texture to -1 uses the default texture instead.
 	GPUParticleEmitter(const unsigned int a_maxParticles, const float a_lifeSpanMin, const float a_lifeSpanMax,
 					   const float a_velocityMin, const float a_velocityMax, const float a_startSize, const float a_endSize,
 					   const vec4& a_startColour, const vec4& a_endColour, const vec3& a_direction, const float a_directionVariance, const unsigned int a_texture,
@@ -110,7 +112,7 @@ private:
 	//Update program uniform locations
 	unsigned int m_timeUniformLocation, m_deltaTimeUniformLocation, m_emitterPositionUniformLocation, m_emitterPosition2UniformLocation, m_directionUniformLocation;
 	//Draw program uniform locations
-	unsigned int m_projectionViewUniformLocation, m_cameraTransformUniformLocation, m_depthTextureUniformLocation;
+	unsigned int m_projectionViewUniformLocation, m_cameraTransformUniformLocation, m_depthTextureUniformLocation, m_textureUniformLocation;
 
 
 	float m_lastDrawTime;

@@ -27,7 +27,7 @@ void TW_CALL ChangeDeferred(void* a_clientData)
 Renderer::Renderer(Camera* const a_camera, TwBar* const a_bar) : m_bar(a_bar), m_shadowDepth(-1),
 m_standardProgram(-1), m_particleProgram(-1), m_animatedProgram(-1), m_postProcessingProgram(-1), m_shadowGenProgram(-1), m_animShadowGenProgram(-1)
 {
-	//Fill the uniform locations vector with empty vcetors. 300 should be more than enough programs.
+	//Fill the uniform locations vector with empty vectors. 300 should be more than enough programs.
 	m_uniformLocations.assign(300, std::vector<unsigned int>());
 
 	m_dirLightStrength = 0.1f;
@@ -73,7 +73,8 @@ m_standardProgram(-1), m_particleProgram(-1), m_animatedProgram(-1), m_postProce
 	m_defaultNormal = LoadTexture("../data/default/normal.png");
 	m_defaultShadow = LoadTexture("../data/default/shadow.png");
 	m_defaultSpec = m_defaultShadow;
-	GPUParticleEmitter::SetDefaultTexture(m_defaultAmbient);
+
+	GPUParticleEmitter::SetDefaultTexture(m_defaultDiffuse);
 	
 	m_deferredRenderMode = true;
 
@@ -947,7 +948,11 @@ unsigned int Renderer::CreateEmitter(const unsigned int a_maxParticles, const fl
 {
 	if (a_gpuBased)
 	{
-		unsigned int texture = LoadTexture(a_texture);
+		unsigned int texture;
+		if (a_texture != std::string(""))
+			texture = LoadTexture(a_texture);
+		else
+			texture = -1;
 
 		GPUParticleEmitter* emitter = new GPUParticleEmitter(a_maxParticles, a_lifespanMin, a_lifespanMax, a_velocityMin, a_velocityMax, a_startSize, a_endSize, a_startColour, a_endColour, a_direction, a_directionVariance, texture, a_bar, m_gpuEmitters.size(), a_spinny);
 
@@ -1103,9 +1108,11 @@ unsigned int Renderer::LoadFBX(const string& a_filePath, const std::vector<strin
 	if (m_modelNames.find(a_filePath) == m_modelNames.end())
 	{
 		FBXFile* file = new FBXFile();
-
 		file->load(a_filePath.c_str());
-		for (unsigned int j = 0; j < file->getMeshCount(); ++j)
+		m_fbxFiles.push_back(file);
+		unsigned int meshCount = file->getMeshCount();
+
+		for (unsigned int j = 0; j < meshCount; ++j)
 		{
 			FBXMeshNode* mesh = file->getMeshByIndex(j);
 			file->initialiseOpenGLTextures();
@@ -1173,8 +1180,7 @@ unsigned int Renderer::LoadFBX(const string& a_filePath, const std::vector<strin
 				}
 			}
 		}
-
-		return m_numOfIndices.size() - file->getMeshCount();
+		return m_numOfIndices.size() - meshCount;
 	}
 	else
 	{
@@ -1221,6 +1227,7 @@ unsigned int Renderer::LoadFBX(const string& a_filePath, const std::vector<strin
 
 		return m_numOfIndices.size() - 1;
 	}
+
 }
 
 unsigned int Renderer::LoadOBJ(const string& a_filePath)
@@ -1643,6 +1650,9 @@ void Renderer::Draw()
 #pragma endregion COMPOSITE
 #pragma region PARTICLES
 
+		//glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
 		//CPU Particles
 		if (m_particleProgram != -1)
 		{
@@ -1676,6 +1686,8 @@ void Renderer::Draw()
 				m_gpuEmitters[i]->Draw((float)glfwGetTime(), m_cameras[0]->GetWorldTransform(), m_cameras[0]->GetProjectionView(), m_gpassDepth);
 			}
 		}
+
+		//glDisable(GL_BLEND);
 
 #pragma endregion PARTICLES
 
@@ -2524,6 +2536,15 @@ void Renderer::CleanupBuffers()
 		{
 			delete m_cameras[m_mirrors[i]];
 			m_mirrors[i] = -1;
+		}
+	}
+
+	for (unsigned int i = 0; i < m_fbxFiles.size(); ++i)
+	{
+		if (m_fbxFiles[i] != nullptr)
+		{
+			delete m_fbxFiles[i];
+			m_fbxFiles[i] = nullptr;
 		}
 	}
 }

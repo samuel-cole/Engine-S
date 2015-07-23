@@ -63,6 +63,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)dep\AntTweakBar\lib;$(SolutionDir)dep\fbx;$(SolutionDir)dep\glfw-3.1.bin.WIN32\lib-vc2013;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>glfw3.lib;opengl32.lib;FBXLoader_d.lib;AntTweakBar.lib;PhysX3DEBUG_x86.lib;PhysX3CharacterKinematicDEBUG_x86.lib;PhysX3CommonDEBUG_x86.lib;PhysX3CookingDEBUG_x86.lib;PhysX3ExtensionsDEBUG.lib;PhysX3GpuDEBUG_x86.lib;PhysX3VehicleDEBUG.lib;PhysXVisualDebuggerSDKDEBUG.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>msvcrt.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -81,6 +82,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalDependencies>glfw3.lib;opengl32.lib;FBXLoader.lib;AntTweakBar.lib;PhysX3_x86.lib;PhysX3CharacterKinematic_x86.lib;PhysX3Common_x86.lib;PhysX3Cooking_x86.lib;PhysX3Extensions.lib;PhysX3Gpu_x86.lib;PhysX3Vehicle.lib;PhysXVisualDebuggerSDK.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>msvcrt.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -158,6 +160,7 @@
     <Text Include="..\data\shaders\frag.txt" />
     <Text Include="..\data\shaders\fragComposite.txt" />
     <Text Include="..\data\shaders\fragGbuffer.txt" />
+    <Text Include="..\data\shaders\fragGPUParticles.txt" />
     <Text Include="..\data\shaders\fragLightDir.txt" />
     <Text Include="..\data\shaders\fragLightPoint.txt" />
     <Text Include="..\data\shaders\fragParticles.txt" />

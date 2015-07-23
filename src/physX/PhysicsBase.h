@@ -59,8 +59,12 @@ protected:
 	PxPhysics* g_physics;
 	PxScene* g_physicsScene;
 	PxDefaultErrorCallback g_defaultErrorCallback;
-	PxDefaultAllocator g_defaultAllocatorCallback;
+	PxAllocatorCallback* g_allocatorCallback;
 	PxSimulationFilterShader g_defaultFilterShader = PxDefaultSimulationFilterShader;
+	PxVisualDebuggerConnection* g_pvdConnection;
+
+	//Terrain object. Stored for cleaning up purposes.
+	PxRigidStatic* g_terrain;
 
 	std::vector<PxRigidActor*> g_physicsActors;
 	std::vector<PxCloth*> g_physicsCloths;

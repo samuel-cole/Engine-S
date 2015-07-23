@@ -1,0 +1,14 @@
+#version 410
+
+in vec3 gColour;
+in vec2 gUV;
+
+out vec4 fragColour;
+
+uniform sampler2D Texture;
+
+void main()
+{
+	fragColour = texture(Texture, gUV) * vec4(gColour, 1);
+	//fragColour = vec4(gUV, 1, 1);
+}

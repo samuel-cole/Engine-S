@@ -53,22 +53,88 @@ void PhysicsBase::Draw()
 
 int PhysicsBase::Deinit()
 {
+	m_renderer->CleanupBuffers();
+	delete m_renderer;
+
 	delete m_camera;
 
-	m_renderer->CleanupBuffers();
+	for (unsigned int i = 0; i < g_physicsActors.size(); ++i)
+	{
+		if (g_physicsActors[i] != nullptr)
+		{
+			PxU32 shapeNo = g_physicsActors[i]->getNbShapes();
+			PxShape** shapes = new PxShape*[shapeNo];
+			g_physicsActors[i]->getShapes(shapes, shapeNo);
+			for (unsigned int j = 0; j < shapeNo; ++j)
+			{
+				g_physicsActors[i]->detachShape(*shapes[j]);
+			}
+			delete[] shapes;
 
-	g_physicsScene->release();
-	g_physics->release();
-	//TODO: Fix this line. It currently doesn't release the foundation 'due to pending module references.' 'Close/release all depending modules first.'
-	g_physicsFoundation->release();
+			g_physicsActors[i]->release();
+			g_physicsActors[i] = nullptr;
+		}
+		g_physicsActors.clear();
+	}
+	for (unsigned int i = 0; i < g_physicsCloths.size(); ++i)
+	{
+		if (g_physicsCloths[i] != nullptr)
+		{
+			g_physicsCloths[i]->getFabric()->release();
+			g_physicsCloths[i]->release();
+			g_physicsCloths[i] = nullptr;
+		}
+	}
+	if (g_terrain != nullptr)
+	{
+		unsigned int shapeNo = g_terrain->getNbShapes();
+		PxShape** shapes = new PxShape*[shapeNo];
+		g_terrain->getShapes(shapes, 1);
+		g_terrain->detachShape(**shapes);
+		g_terrain->release();
+		g_terrain = nullptr;
+	}
+
+#if _DEBUG
+	if (g_pvdConnection != nullptr)
+	{
+		g_pvdConnection->disconnect();
+		g_pvdConnection->release();
+		g_pvdConnection = nullptr;
+	}
+#endif
+
+	if (g_physicsScene != nullptr)
+	{
+		g_physicsScene->release();
+		g_physicsScene = nullptr;
+	}
+	if (g_physics != nullptr)
+	{
+		PxCloseExtensions();
+		g_physics->release();
+		g_physics = nullptr;
+	}
+	if (g_physicsFoundation != nullptr)
+	{
+		//TODO: Fix this line. It currently doesn't release the foundation 'due to pending module references.' 'Close/release all depending modules first.'
+		g_physicsFoundation->release();
+		g_physicsFoundation = nullptr;
+	}
+	if (g_allocatorCallback != nullptr)
+	{
+		delete g_allocatorCallback;
+		g_allocatorCallback = nullptr;
+	}
+
 
 	return Application::Deinit();
 }
 
 void PhysicsBase::SetUpPhysX()
 {
-	PxAllocatorCallback *myCallback = new myAllocator();
-	g_physicsFoundation = PxCreateFoundation(PX_PHYSICS_VERSION, *myCallback, g_defaultErrorCallback);
+	g_allocatorCallback = new myAllocator();
+	g_physicsFoundation = PxCreateFoundation(PX_PHYSICS_VERSION, *g_allocatorCallback, g_defaultErrorCallback);
 	g_physics = PxCreatePhysics(PX_PHYSICS_VERSION, *g_physicsFoundation, PxTolerancesScale());
 	PxInitExtensions(*g_physics);
 	PxSceneDesc sceneDesc(g_physics->getTolerancesScale());
@@ -77,7 +143,11 @@ void PhysicsBase::SetUpPhysX()
 	sceneDesc.cpuDispatcher = PxDefaultCpuDispatcherCreate(1);
 	g_physicsScene = g_physics->createScene(sceneDesc);
 
+	g_terrain = nullptr;
+
+#if _DEBUG
 	SetUpVisualDebugger();
+#endif
 }
 
 void PhysicsBase::SetUpVisualDebugger()
@@ -98,7 +168,7 @@ void PhysicsBase::SetUpVisualDebugger()
 
 	PxVisualDebuggerConnectionFlags connectionFlags = PxVisualDebuggerExt::getAllConnectionFlags();
 	//And now try to connect.
-	auto connection = PxVisualDebuggerExt::createConnection(g_physics->getPvdConnectionManager(), pvdHostIP, port, timeout, connectionFlags);
+	g_pvdConnection = PxVisualDebuggerExt::createConnection(g_physics->getPvdConnectionManager(), pvdHostIP, port, timeout, connectionFlags);
 }
 
 void PhysicsBase::UpdatePhysX(float a_deltaTime)
@@ -207,6 +277,12 @@ PxRigidStatic* PhysicsBase::AddProceduralPlane(const unsigned int a_dimensions, 
 											   const float a_stretch, const vec3& a_position, PxMaterial* const a_material, unsigned int& a_rendererIndex, float& a_maxHeight,
 											   const float a_amplitude, const unsigned int a_seed, const unsigned int a_octaves, const float a_persistence)
 {
+	if (g_terrain != nullptr)
+	{
+		g_terrain->release();
+		g_terrain = nullptr;
+	}
+
 	std::vector<float> proceduralHeights;
 
 	a_rendererIndex = m_renderer->GenerateGrid(a_dimensions, a_dimensions);
@@ -274,6 +350,7 @@ PxRigidStatic* PhysicsBase::AddProceduralPlane(const unsigned int a_dimensions, 
 		PxShape* heightFieldShape = g_physics->createShape(heightFieldGeometry, *a_material);
 		PxRigidStatic* terrain = PxCreateStatic(*g_physics, pose, *heightFieldShape);
 		g_physicsScene->addActor(*terrain);
+		g_terrain = terrain;
 
 		delete[] data;
 

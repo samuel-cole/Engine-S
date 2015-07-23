@@ -280,5 +280,8 @@
     <Text Include="..\data\shaders\vertGbufferAnim.txt">
       <Filter>Resource Files</Filter>
     </Text>
+    <Text Include="..\data\shaders\fragGPUParticles.txt">
+      <Filter>Resource Files</Filter>
+    </Text>
   </ItemGroup>
 </Project>

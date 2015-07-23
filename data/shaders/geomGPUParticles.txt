@@ -7,8 +7,8 @@ in vec3  vPosition[];
 in float vLifeTime[];
 in float vLifeSpan[];
 
-//Following naming conventions, I should use gColour here, however, using vColour allows me to reuse my particle fragment shader.
-out vec4 vColour;
+out vec3 gColour;
+out vec2 gUV;
 
 uniform mat4  ProjectionView;
 uniform mat4  CameraTransform;
@@ -33,7 +33,7 @@ void main()
 
 	if (colourUV.z < texture(DepthTexture, vec2(colourUV)).r)
 	{
-		vColour = mix(ColourStart, ColourEnd, vLifeTime[0] / vLifeSpan[0]);
+		gColour = vec3(mix(ColourStart, ColourEnd, vLifeTime[0] / vLifeSpan[0]));
 
 		float halfSize = mix(SizeStart, SizeEnd, vLifeTime[0] / vLifeSpan[0]) * 0.5f;
 		
@@ -50,13 +50,18 @@ void main()
 		mat3 billboard = mat3(xAxis, yAxis, zAxis);
 		
 		//Make a quad
+
 		gl_Position = ProjectionView * vec4( billboard * corners[0] + vPosition[0], 1 );
+		gUV = vec2(1, 1);
 		EmitVertex();
 		gl_Position = ProjectionView * vec4( billboard * corners[1] + vPosition[0], 1 );
+		gUV = vec2(1, 0);
 		EmitVertex();
 		gl_Position = ProjectionView * vec4( billboard * corners[2] + vPosition[0], 1 );
+		gUV = vec2(0, 1);
 		EmitVertex();
 		gl_Position = ProjectionView * vec4( billboard * corners[3] + vPosition[0], 1 );
+		gUV = vec2(0, 0);
 		EmitVertex();
 	}
 }

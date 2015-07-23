@@ -3,8 +3,6 @@
 
 #include "Application.h"
 
-
-
 class ParticleEmitter;
 class FlyCamera;
 class Renderer;
