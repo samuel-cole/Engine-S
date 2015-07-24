@@ -18,17 +18,29 @@ uniform sampler2D Normal;
 
 void main()
 {
-	vec3 normal = normalize(texture(Normal, vUV).xyz);
-	vec3 position = texture(Global, vUV).xyz;
+	vec3 normal = texture(Normal, vUV).xyz;
 
-	//Diffuse
-	float d = max(0, dot(normal, -LightDir));
-	diffuseOutput = LightColour * d * LightMatrix;
+	if (normal != vec3(0, 0, 0))
+	{
+		normal = normalize(normal);
 
-	//Specular
-	vec3 E = normalize( CameraPos - position );
-	vec3 R = reflect( LightDir, normal );
-	float s = max( 0, dot( R, E ) );
-	s = pow( s, SpecPow );
-	specularOutput = LightColour * s * LightMatrix;
+		vec3 position = texture(Global, vUV).xyz;
+
+		//Diffuse
+		float  d = max(0, dot(normal, -LightDir));
+
+		diffuseOutput = LightColour * d * LightMatrix;
+
+		//Specular
+		vec3 E = normalize( CameraPos - position );
+		vec3 R = reflect( LightDir, normal );
+		float s = max( 0, dot( R, E ) );
+		s = pow( s, SpecPow );
+		specularOutput = LightColour * s * LightMatrix;
+	}
+	else
+	{
+		diffuseOutput = LightColour * LightMatrix;
+		specularOutput = LightColour * pow(LightMatrix, SpecPow);
+	}
 }

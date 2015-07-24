@@ -318,6 +318,7 @@ int CheckersTest2::Deinit()
 		g_plane->detachShape(**shapes);
 		g_plane->release();
 		g_plane = nullptr;
+		delete[] shapes;
 	}
 
 	if (g_physicsMaterial != nullptr)

@@ -20,20 +20,32 @@ void main()
 {
 	vec2 uv = gl_FragCoord.xy / textureSize(Global, 0).xy;
 
-	vec3 normal = normalize(texture(Normal, uv).xyz);
+	vec3 normal = texture(Normal, uv).xyz;
+
 	vec3 position = texture(Global, uv).xyz;
 
 	vec3 toLight = LightMatrix - position;
 	float falloff = 1 - min(1, length(toLight) / LightDir);
 
-	//Diffuse
-	float d = max(0, dot(normal, toLight));
-	diffuseOutput = LightColour * d * falloff;
+	if (normal != vec3(0, 0, 0))
+	{
+		normal = normalize(normal);
 
-	//Specular
-	vec3 E = normalize( CameraPos - position );
-	vec3 R = reflect( -toLight, normal );
-	float s = max( 0, dot( R, E ) );
-	s = pow( s, SpecPow );
-	specularOutput = LightColour * s * falloff * 0.1f;
+		//Diffuse
+		float d = max(0, dot(normal, toLight));
+		diffuseOutput = LightColour * d * falloff;
+
+		//Specular
+		vec3 E = normalize( CameraPos - position );
+		vec3 R = reflect( -toLight, normal );
+		float s = max( 0, dot( R, E ) );
+		s = pow( s, SpecPow );
+		specularOutput = LightColour * s * falloff * 0.1f;
+	}
+	else
+	{
+		diffuseOutput = LightColour * falloff;
+		specularOutput = LightColour * pow(2, SpecPow) * falloff * 0.1f;
+	}
+
 }

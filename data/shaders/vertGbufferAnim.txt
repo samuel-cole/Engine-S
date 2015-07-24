@@ -20,9 +20,8 @@ uniform mat4 Global;
 const int MAX_BONES = 128;
 uniform mat4 Bones[MAX_BONES];
 
-void main() {
-
-	
+void main()
+{
 	vNormal = normalize(Global * Normal).xyz;
 	vTangent = normalize(Tangent).xyz;
 	vBiTangent = cross(vNormal, vTangent);

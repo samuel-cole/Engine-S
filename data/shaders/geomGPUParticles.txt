@@ -7,6 +7,7 @@ in vec3  vPosition[];
 in float vLifeTime[];
 in float vLifeSpan[];
 
+out vec3 gPosition;
 out vec3 gColour;
 out vec2 gUV;
 
@@ -25,43 +26,40 @@ uniform sampler2D DepthTexture;
 
 void main()
 {
-	//Check to see if this particle should be drawn.
+	float halfSize = mix(SizeStart, SizeEnd, vLifeTime[0] / vLifeSpan[0]) * 0.5f;
 	
-	//For starters, need to get this particle into camera space (projection view space?) so that I can convert it into a UV.
-	vec4 uv = vec4(ProjectionView * vec4(vPosition[0], 1));
-	vec3 colourUV = (((uv.xyz / uv.w) * 0.5f) + 0.5f);
+	vec3 corners[4];
+	corners[0] = vec3(  halfSize, -halfSize, 0);
+	corners[1] = vec3(  halfSize,  halfSize, 0);
+	corners[2] = vec3( -halfSize, -halfSize, 0);
+	corners[3] = vec3( -halfSize,  halfSize, 0);
+	
+	//Billboarding
+	vec3 zAxis = normalize( CameraTransform[3].xyz - vPosition[0] );
+	vec3 xAxis = cross( CameraTransform[1].xyz, zAxis );
+	vec3 yAxis = cross( zAxis, xAxis );
+	mat3 billboard = mat3(xAxis, yAxis, zAxis);
 
-	if (colourUV.z < texture(DepthTexture, vec2(colourUV)).r)
-	{
-		gColour = vec3(mix(ColourStart, ColourEnd, vLifeTime[0] / vLifeSpan[0]));
+	gColour = vec3(mix(ColourStart, ColourEnd, vLifeTime[0] / vLifeSpan[0]));
 
-		float halfSize = mix(SizeStart, SizeEnd, vLifeTime[0] / vLifeSpan[0]) * 0.5f;
-		
-		vec3 corners[4];
-		corners[0] = vec3(  halfSize, -halfSize, 0);
-		corners[1] = vec3(  halfSize,  halfSize, 0);
-		corners[2] = vec3( -halfSize, -halfSize, 0);
-		corners[3] = vec3( -halfSize,  halfSize, 0);
-		
-		//Billboarding
-		vec3 zAxis = normalize( CameraTransform[3].xyz - vPosition[0] );
-		vec3 xAxis = cross( CameraTransform[1].xyz, zAxis );
-		vec3 yAxis = cross( zAxis, xAxis );
-		mat3 billboard = mat3(xAxis, yAxis, zAxis);
-		
-		//Make a quad
+	//Make a quad
+	gl_Position = ProjectionView * vec4( billboard * corners[0] + vPosition[0], 1 );
+	gPosition = billboard * corners[0] + vPosition[0];
+	gUV = vec2(1, 1);
+	EmitVertex();
 
-		gl_Position = ProjectionView * vec4( billboard * corners[0] + vPosition[0], 1 );
-		gUV = vec2(1, 1);
-		EmitVertex();
-		gl_Position = ProjectionView * vec4( billboard * corners[1] + vPosition[0], 1 );
-		gUV = vec2(1, 0);
-		EmitVertex();
-		gl_Position = ProjectionView * vec4( billboard * corners[2] + vPosition[0], 1 );
-		gUV = vec2(0, 1);
-		EmitVertex();
-		gl_Position = ProjectionView * vec4( billboard * corners[3] + vPosition[0], 1 );
-		gUV = vec2(0, 0);
-		EmitVertex();
-	}
+	gl_Position = ProjectionView * vec4( billboard * corners[1] + vPosition[0], 1 );
+	gPosition = billboard * corners[1] + vPosition[0];
+	gUV = vec2(1, 0);
+	EmitVertex();
+
+	gl_Position = ProjectionView * vec4( billboard * corners[2] + vPosition[0], 1 );
+	gPosition = billboard * corners[2] + vPosition[0];
+	gUV = vec2(0, 1);
+	EmitVertex();
+
+	gl_Position = ProjectionView * vec4( billboard * corners[3] + vPosition[0], 1 );
+	gPosition = billboard * corners[3] + vPosition[0];
+	gUV = vec2(0, 0);
+	EmitVertex();
 }

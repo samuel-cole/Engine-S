@@ -3,7 +3,6 @@
 #include "GLFW\glfw3.h"
 #include "glm\ext.hpp"
 #include "Camera.h"
-#include "StaticCamera.h"
 #include "FBXFile.h"
 #include "Particle.h"
 #include "GPUParticle.h"
@@ -546,6 +545,7 @@ void Renderer::GeneratePerlinNoiseMap(const unsigned int a_rows, const unsigned 
 	//Cleanup the vertex buffer.
 	glUnmapBuffer(GL_ARRAY_BUFFER);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	delete[] perlinData;
 	
 	GenerateNormals(a_index);
 }
@@ -1589,6 +1589,13 @@ void Renderer::Draw()
 			glBindVertexArray(m_VAO[i]);
 			glDrawElements(GL_TRIANGLES, m_numOfIndices[i], GL_UNSIGNED_INT, nullptr);
 		}
+
+		//Particle G-Pass
+		for (unsigned int i = 0; i < m_gpuEmitters.size(); ++i)
+		{
+			if (m_gpuEmitters[i] != nullptr)
+				m_gpuEmitters[i]->Draw((float)glfwGetTime(), m_cameras[0]->GetWorldTransform(), m_cameras[0]->GetProjectionView(), m_gpassDepth);
+		}
 #pragma endregion G_PASS
 
 		///////////////////////////LIGHT\\\\\\\\\\\\\\\\\\\\\\\\
@@ -1649,10 +1656,6 @@ void Renderer::Draw()
 
 #pragma endregion COMPOSITE
 #pragma region PARTICLES
-
-		//glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
 		//CPU Particles
 		if (m_particleProgram != -1)
 		{
@@ -1666,29 +1669,6 @@ void Renderer::Draw()
 					m_emitters[i]->Draw();
 			}
 		}
-
-		//GPU Particles
-		//This is used for deciding the order that gpu emitters are rendered. 
-		//This is because gpu particles don't do depth tests against each other, so this is a cheap way to try an make particles render in a little better order than default.
-		std::vector<bool> gpuEmittersRendered(m_gpuEmitters.size(), false);
-		for (unsigned int i = 0; i < m_gpuEmitters.size(); ++i)
-		{
-			if (glm::length((m_gpuEmitters[i]->GetPosition() - vec3(m_cameras[0]->GetWorldTransform()[3]))) > 50.0f)
-			{
-				m_gpuEmitters[i]->Draw((float)glfwGetTime(), m_cameras[0]->GetWorldTransform(), m_cameras[0]->GetProjectionView(), m_gpassDepth);
-				gpuEmittersRendered[i] = true;
-			}
-		}
-		for (unsigned int i = 0; i < m_gpuEmitters.size(); ++i)
-		{
-			if (m_gpuEmitters[i] != nullptr && gpuEmittersRendered[i] == false)
-			{
-				m_gpuEmitters[i]->Draw((float)glfwGetTime(), m_cameras[0]->GetWorldTransform(), m_cameras[0]->GetProjectionView(), m_gpassDepth);
-			}
-		}
-
-		//glDisable(GL_BLEND);
-
 #pragma endregion PARTICLES
 
 #pragma endregion DEFERRED_CODE
@@ -2543,8 +2523,10 @@ void Renderer::CleanupBuffers()
 	{
 		if (m_fbxFiles[i] != nullptr)
 		{
+			m_fbxFiles[i]->unload();
 			delete m_fbxFiles[i];
 			m_fbxFiles[i] = nullptr;
 		}
 	}
+	m_fbxFiles.clear();
 }

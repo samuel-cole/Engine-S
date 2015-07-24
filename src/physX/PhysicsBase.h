@@ -62,6 +62,7 @@ protected:
 	PxAllocatorCallback* g_allocatorCallback;
 	PxSimulationFilterShader g_defaultFilterShader = PxDefaultSimulationFilterShader;
 	PxVisualDebuggerConnection* g_pvdConnection;
+	PxCpuDispatcher* g_cpuDispatcher;
 
 	//Terrain object. Stored for cleaning up purposes.
 	PxRigidStatic* g_terrain;

@@ -34,7 +34,9 @@ public:
 					   TwBar* const a_bar, const unsigned int a_emitterID, const bool a_spinny);
 	~GPUParticleEmitter();
 
-	//Draw function. The optional depthTexture argument is for depth testing to make sure particles don't draw over everything else in deferred rendering..
+	//Draw function. 
+	//The optional a_depthTexture argument is for depth testing to make sure particles don't draw over everything else in deferred rendering.
+	//The optional a_lightTexture argument is for lighting particles in deferred rendering.
 	void Draw(const float a_time, const glm::mat4& a_cameraTransform, const glm::mat4& a_projectionView, const unsigned int a_depthTexture = -1);
 
 	inline const vec3& GetPosition()

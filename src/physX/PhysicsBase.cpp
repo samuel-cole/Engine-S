@@ -93,6 +93,14 @@ int PhysicsBase::Deinit()
 		g_terrain->detachShape(**shapes);
 		g_terrain->release();
 		g_terrain = nullptr;
+		delete[] shapes;
+	}
+
+	if (g_cpuDispatcher != nullptr)
+	{
+		//_aligned_free(g_cpuDispatcher);
+		delete g_cpuDispatcher;
+		g_cpuDispatcher = nullptr;
 	}
 
 #if _DEBUG
@@ -127,7 +135,6 @@ int PhysicsBase::Deinit()
 		g_allocatorCallback = nullptr;
 	}
 
-
 	return Application::Deinit();
 }
 
@@ -139,8 +146,10 @@ void PhysicsBase::SetUpPhysX()
 	PxInitExtensions(*g_physics);
 	PxSceneDesc sceneDesc(g_physics->getTolerancesScale());
 	sceneDesc.gravity = PxVec3(0, -10.0f, 0);
-	sceneDesc.filterShader = &physx::PxDefaultSimulationFilterShader;
+	sceneDesc.filterShader = &PxDefaultSimulationFilterShader;
 	sceneDesc.cpuDispatcher = PxDefaultCpuDispatcherCreate(1);
+	g_cpuDispatcher = sceneDesc.cpuDispatcher;
+
 	g_physicsScene = g_physics->createScene(sceneDesc);
 
 	g_terrain = nullptr;

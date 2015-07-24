@@ -1,14 +1,24 @@
 #version 410
 
+in vec3 gPosition;
+in vec3 gNormal;
 in vec3 gColour;
 in vec2 gUV;
 
-out vec4 fragColour;
-
 uniform sampler2D Texture;
+
+layout(location = 0) out vec3 gpassDiffuse;
+layout(location = 1) out vec3 gpassAmbient;
+layout(location = 2) out vec3 gpassSpecular;
+layout(location = 3) out vec3 gpassPosition;
+layout(location = 4) out vec3 gpassNormal;
 
 void main()
 {
-	fragColour = texture(Texture, gUV) * vec4(gColour, 1);
-	//fragColour = vec4(gUV, 1, 1);
+	gpassDiffuse = vec3(texture(Texture, gUV)) * gColour;
+	gpassAmbient = vec3(1, 1, 1);
+	gpassSpecular = vec3(1, 1, 1);
+
+	gpassPosition = gPosition; 
+	gpassNormal = vec3(0, 0, 0);
 }

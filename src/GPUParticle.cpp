@@ -322,19 +322,20 @@ void GPUParticleEmitter::Draw(const float a_time, const glm::mat4& a_cameraTrans
 
 	glUseProgram(m_drawProgram);
 
-	unsigned char depthUsed = 0;
+	//Why do I not pass through a default texture for this? Consider removing this 'if' statement and replacing with a default texture choice (see other textures passed in).
+	unsigned char texturesUsed = 0;
 	if (a_depthTexture != -1)
 	{
 		//Depth
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, a_depthTexture);
 		glUniform1i(m_depthTextureUniformLocation, 0);
-		++depthUsed;
+		++texturesUsed;
 	}
 	
-	glActiveTexture(GL_TEXTURE0 + (int)depthUsed);
+	glActiveTexture(GL_TEXTURE0 + (int)texturesUsed);
 	glBindTexture(GL_TEXTURE_2D, (m_texture == -1 ? s_defaultTexture : m_texture));
-	glUniform1i(m_textureUniformLocation, (int)depthUsed);
+	glUniform1i(m_textureUniformLocation, (int)texturesUsed);
 
 	glUniformMatrix4fv(m_projectionViewUniformLocation, 1, false, &a_projectionView[0][0]);
 	glUniformMatrix4fv(m_cameraTransformUniformLocation, 1, false, &a_cameraTransform[0][0]);
