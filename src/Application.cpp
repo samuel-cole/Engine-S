@@ -12,9 +12,6 @@ int Application::Run()
 
 	while (glfwWindowShouldClose(m_window) == false && glfwGetKey(m_window, GLFW_KEY_ESCAPE) != GLFW_PRESS)
 	{
-		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		glEnable(GL_DEPTH_TEST);
-
 		m_currentTime = (float)glfwGetTime();
 		m_deltaTime = m_currentTime - m_previousTime;
 		m_previousTime = m_currentTime;
@@ -55,17 +52,13 @@ int Application::Init()
 
 	m_previousTime = 0.01f;
 
-//	glClearColor( 0.25f, 0.25f, 0.75f, 1);
-
-//	glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
-
 	TwInit(TW_OPENGL_CORE, nullptr);
 	TwWindowSize(1280, 720);
 
 	InputManager::SetWindow(m_window);
 	InputManager::SetupAntBarCallbacks();
 
-	m_debugBar = TwNewBar("Debug Bar");
+	m_debugBar = TwNewBar("Options Bar");
 
 	srand((unsigned int)time(0));
 

@@ -18,10 +18,6 @@ uniform float SizeEnd;
 uniform vec4  ColourStart;
 uniform vec4  ColourEnd;
 
-
-uniform float zNear = 0.1f;
-uniform float zFar = 175.0f;
-
 uniform sampler2D DepthTexture;
 
 void main()

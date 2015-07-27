@@ -3,6 +3,7 @@
 
 #include "Camera.h"
 
+//Type of camera that doesn't move at all.
 class StaticCamera : public Camera
 {
 public:

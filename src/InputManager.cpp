@@ -3,47 +3,47 @@
 
 bool InputManager::GetKey(Keys a_key)
 {
-	return glfwGetKey(m_window, a_key) > 0;
+	return glfwGetKey(s_window, a_key) > 0;
 }
 
 bool InputManager::GetMouseDown(int a_mouseButton)
 {
-	return glfwGetMouseButton(m_window, a_mouseButton) > 0;
+	return glfwGetMouseButton(s_window, a_mouseButton) > 0;
 }
 
 void InputManager::SetMousePos(const glm::vec2& a_pos)
 {
-	glfwSetCursorPos(m_window, (double)a_pos.x, (double)a_pos.y);
+	glfwSetCursorPos(s_window, (double)a_pos.x, (double)a_pos.y);
 }
 
 void InputManager::SetMouseVisibility(const bool a_visible)
 {
-	if ((glfwGetInputMode(m_window, GLFW_CURSOR) == GLFW_CURSOR_NORMAL) != a_visible)
-		glfwSetInputMode(m_window, GLFW_CURSOR, (a_visible ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED));
+	if ((glfwGetInputMode(s_window, GLFW_CURSOR) == GLFW_CURSOR_NORMAL) != a_visible)
+		glfwSetInputMode(s_window, GLFW_CURSOR, (a_visible ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED));
 }
 
 glm::vec2 InputManager::GetMousePos()
 {
 	double xPos, yPos;
-	glfwGetCursorPos(m_window, &xPos, &yPos);
+	glfwGetCursorPos(s_window, &xPos, &yPos);
 	return glm::vec2(xPos, yPos);
 }
 
 void InputManager::SetMouseToCenter()
 {
 	int width, height;
-	glfwGetFramebufferSize(m_window, &width, &height);
-	glfwSetCursorPos(m_window, (double)(width/2), (double)(height/2));
+	glfwGetFramebufferSize(s_window, &width, &height);
+	glfwSetCursorPos(s_window, (double)(width/2), (double)(height/2));
 }
 
 void InputManager::SetupAntBarCallbacks()
 {
-	glfwSetMouseButtonCallback(m_window, OnMouseButton);
-	glfwSetCursorPosCallback(m_window, OnMousePosition);
-	glfwSetScrollCallback(m_window, OnMouseScroll);
-	glfwSetKeyCallback(m_window, OnKey);
-	glfwSetCharCallback(m_window, OnChar);
-	glfwSetWindowSizeCallback(m_window, OnWindowResize);
+	glfwSetMouseButtonCallback(s_window, OnMouseButton);
+	glfwSetCursorPosCallback(s_window, OnMousePosition);
+	glfwSetScrollCallback(s_window, OnMouseScroll);
+	glfwSetKeyCallback(s_window, OnKey);
+	glfwSetCharCallback(s_window, OnChar);
+	glfwSetWindowSizeCallback(s_window, OnWindowResize);
 }
 
-GLFWwindow* InputManager::m_window = nullptr;
+GLFWwindow* InputManager::s_window = nullptr;

@@ -7,18 +7,18 @@ in vec2 gUV;
 
 uniform sampler2D Texture;
 
-layout(location = 0) out vec3 gpassDiffuse;
-layout(location = 1) out vec3 gpassAmbient;
-layout(location = 2) out vec3 gpassSpecular;
-layout(location = 3) out vec3 gpassPosition;
-layout(location = 4) out vec3 gpassNormal;
+layout(location = 0) out vec3 GpassDiffuse;
+layout(location = 1) out vec3 GpassAmbient;
+layout(location = 2) out vec3 GpassSpecular;
+layout(location = 3) out vec3 GpassPosition;
+layout(location = 4) out vec3 GpassNormal;
 
 void main()
 {
-	gpassDiffuse = vec3(texture(Texture, gUV)) * gColour;
-	gpassAmbient = vec3(1, 1, 1);
-	gpassSpecular = vec3(1, 1, 1);
-
-	gpassPosition = gPosition; 
-	gpassNormal = vec3(0, 0, 0);
+	GpassDiffuse = vec3(texture(Texture, gUV)) * gColour;
+	GpassAmbient = vec3(1, 1, 1);
+	GpassSpecular = vec3(1, 1, 1);
+	
+	GpassPosition = gPosition; 
+	GpassNormal = vec3(0, 0, 0);
 }

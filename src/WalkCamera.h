@@ -4,6 +4,7 @@
 #include "Camera.h"
 #include "AntTweakBar.h"
 
+//Class that handles camera rotations with a control scheme similar to those used in many modern 'first person' style games.
 //WalkCamera is designed to be used with physX- the camera is moved with an object. As such, camera movement isn't handled by this class- only rotations are handled.
 class WalkCamera : public Camera
 {

@@ -6,6 +6,7 @@
 using glm::vec3;
 using glm::vec4;
 
+//Struct for CPU-based particles.
 struct Particle
 {
 	vec3 position;
@@ -16,12 +17,14 @@ struct Particle
 	float lifeSpan;
 };
 
+//Struct for information contained in each vertex of each CPU-based particle.
 struct ParticleVertex 
 {
 	vec4 position;
 	vec4 colour;
 };
 
+//Class for emitters of CPU-based particles.
 class ParticleEmitter 
 {
 public:

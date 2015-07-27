@@ -6,6 +6,7 @@
 #include "FBXFile.h"
 #include "Particle.h"
 #include "GPUParticle.h"
+#include "StaticCamera.h"
 
 #include <stb_image.h>
 
@@ -708,11 +709,6 @@ void Renderer::LoadAmbient(const string& a_filePath, const unsigned int a_index)
 
 void Renderer::LoadNormalMap(const string& a_filePath, const unsigned int a_index)
 {
-	//while (a_index >= m_normals.size())
-	//{
-	//	m_normals.push_back(-1);
-	//}
-
 	if (a_index >= m_numOfIndices.size() || m_numOfIndices[a_index] == -1)
 	{
 		std::cout << "Error: Loading normal map for invalid object!" << std::endl;
@@ -742,11 +738,6 @@ void Renderer::LoadNormalMap(const string& a_filePath, const unsigned int a_inde
 
 void Renderer::LoadSpecularMap(const string& a_filePath, const unsigned int a_index)
 {
-	//while (a_index >= m_speculars.size())
-	//{
-	//	m_speculars.push_back(-1);
-	//}
-
 	if (a_index >= m_numOfIndices.size() || m_numOfIndices[a_index] == -1)
 	{
 		std::cout << "Error: Loading specular map for invalid object!" << std::endl;
@@ -776,11 +767,6 @@ void Renderer::LoadSpecularMap(const string& a_filePath, const unsigned int a_in
 
 void Renderer::SetTransform(const mat4& a_transform, const unsigned int a_index)
 {
-	//while (a_index >= m_globals.size())
-	//{
-	//	m_globals.push_back(mat4());
-	//}
-
 	if (a_index >= m_numOfIndices.size() || m_numOfIndices[a_index] == -1)
 	{
 		std::cout << "Error: setting transform for invalid object!" << std::endl;
@@ -1365,7 +1351,6 @@ unsigned int Renderer::MakeMirror(const unsigned int a_width, const unsigned int
 	//Make reflection camera.
 	StaticCamera* camera = new StaticCamera();
 	camera->SetPerspective(glm::pi<float>() * 0.25f, 16.0f / 9.0f, 0.1f, 10000.0f);
-	//camera->SetPerspectiveOrtho(-1024, 1024, -1024, 1024, 0.1f, 100000.0f);
 	camera->SetLookAt(vec3(0, 0, 0), vec3(0, 0, 5), vec3(0, 1, 0));
 
 	m_cameras.push_back(camera);
@@ -1432,7 +1417,9 @@ void Renderer::Draw()
 	if (!m_deferredRenderMode)
 	{
 #pragma region FORWARD_CODE
-		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		glEnable(GL_DEPTH_TEST);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 		if (m_shadowGenProgram != -1)
 		{
 			//Render to the shadow map for non-animated objects.
@@ -1490,7 +1477,6 @@ void Renderer::Draw()
 		}
 
 		//Do stuff to render the framebuffer used for post processing.
-		//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		glViewport(0, 0, 1280, 720);
 		glClear(GL_DEPTH_BUFFER_BIT);
@@ -1655,7 +1641,7 @@ void Renderer::Draw()
 		glDrawElements(GL_TRIANGLES, m_numOfIndices[0], GL_UNSIGNED_INT, nullptr);
 
 #pragma endregion COMPOSITE
-#pragma region PARTICLES
+#pragma region CPU PARTICLES
 		//CPU Particles
 		if (m_particleProgram != -1)
 		{
@@ -1669,7 +1655,7 @@ void Renderer::Draw()
 					m_emitters[i]->Draw();
 			}
 		}
-#pragma endregion PARTICLES
+#pragma endregion CPU PARTICLES
 
 #pragma endregion DEFERRED_CODE
 	}
@@ -1691,7 +1677,6 @@ void Renderer::DrawDirectionalLight()
 
 	//vec4 viewSpaceLight = m_cameras[0]->GetView() * vec4(glm::normalize(m_lightDir), 0);
 	
-	//glUniform3f((m_uniformLocations[m_dirLightProgram])[LIGHT_DIR], viewSpaceLight.x, viewSpaceLight.y, viewSpaceLight.z);
 	glUniform3f((m_uniformLocations[m_dirLightProgram])[LIGHT_DIR], m_lightDir.x, m_lightDir.y, m_lightDir.z);
 	glUniform3f((m_uniformLocations[m_dirLightProgram])[LIGHT_COLOUR], m_lightColour.x, m_lightColour.y, m_lightColour.z);
 	glUniform3fv((m_uniformLocations[m_dirLightProgram])[CAMERA_POS], 1, &(m_cameras[0]->GetWorldTransform()[3][0]));
@@ -1981,8 +1966,6 @@ void Renderer::UpdateMirrors()
 			vec3 reflected = glm::normalize(incident - 2 * glm::dot(incident, normal) * normal);
 			vec3 newCameraPos = reflected * -glm::length(mirrorPosition - cameraPosition);
 			m_cameras[m_mirrors[i]]->SetLookAt(newCameraPos, mirrorPosition, vec3(0, 1, 0));
-			//m_cameras[m_mirrors[i]]->SetLookAt(mirrorPosition, mirrorPosition + reflected, vec3(0, 1, 0));
-
 		}
 	}
 }

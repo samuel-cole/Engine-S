@@ -60,10 +60,6 @@ struct Vertex
 
 class Renderer
 {
-/*THINGS TODO:
-* Memory leaks fixed
-* Lit particles
-*/
 private:
 	//Stores the names of each loaded model and the index of that model's VAO within the m_VAO vector.
 	//TODO: Support model reuse for FBX models with multiple meshes per model.
@@ -144,9 +140,6 @@ private:
 
 	//Stores which frame buffers should ignore which objects- first unsigned int is for the frame buffer that is going to ignore an object, second one is for the object to be ignored.
 	std::vector<std::pair<unsigned int, unsigned int>> m_frameBufferIgnores;
-
-	//Vector containing indices to the m_frameBuffers vector- shows which framebuffers are used for post processing. TODO: Add options for post processing framebuffers.
-	//std::vector<unsigned int> m_postProcessingBufferIndices;
 
 	//Handle to the framebuffer that stores the shadow map
 	unsigned int m_shadowMap;
@@ -332,6 +325,7 @@ public:
 	unsigned int LoadOBJ(const std::string& a_filePath);
 
 	//Creates a new frame buffer. Returns the texture that is generated. Dimensions sets the size of the texture that is ouputted.
+	//TODO: Get mirrors working correctly (they don't reflect correctly at the moment).
 	unsigned int MakeMirror(const unsigned int a_width, const unsigned int a_length, const vec4& a_dimensions, const vec3& a_backgroundColour);
 	
 	//Draw method- does all drawing for all models and particles to all framebuffers.

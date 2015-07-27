@@ -21,6 +21,7 @@ enum Keys
 	D = GLFW_KEY_D 
 };
 
+//Class used for managing input. Wraps some GLFW input handling.
 class InputManager
 {
 public:
@@ -39,7 +40,7 @@ public:
 
 	inline static void SetWindow(GLFWwindow* a_window)
 	{
-		m_window = a_window;
+		s_window = a_window;
 	}
 
 	//Callbacks for AntTweakBar
@@ -71,7 +72,7 @@ public:
 	static void SetupAntBarCallbacks();
 
 private:
-	static GLFWwindow* m_window;
+	static GLFWwindow* s_window;
 	
 };
 

@@ -11,21 +11,21 @@ uniform sampler2D Ambient;
 uniform sampler2D Specular;
 uniform sampler2D Normal;
 
-layout(location = 0) out vec3 gpassDiffuse;
-layout(location = 1) out vec3 gpassAmbient;
-layout(location = 2) out vec3 gpassSpecular;
-layout(location = 3) out vec3 gpassPosition;
-layout(location = 4) out vec3 gpassNormal;
+layout(location = 0) out vec3 GpassDiffuse;
+layout(location = 1) out vec3 GpassAmbient;
+layout(location = 2) out vec3 GpassSpecular;
+layout(location = 3) out vec3 GpassPosition;
+layout(location = 4) out vec3 GpassNormal;
 
 void main() 
 {
-	gpassDiffuse = texture(Diffuse, vUV).xyz;
-	gpassAmbient = texture(Ambient, vUV).xyz;
-	gpassSpecular = texture(Specular, vUV).xyz;
+	GpassDiffuse = texture(Diffuse, vUV).xyz;
+	GpassAmbient = texture(Ambient, vUV).xyz;
+	GpassSpecular = texture(Specular, vUV).xyz;
 
-	gpassPosition = vPosition;
+	GpassPosition = vPosition;
 
 	mat3 TBN = mat3(normalize(vTangent), normalize(vBiTangent), normalize(vNormal));
 	vec3 N = texture(Normal, vUV).xyz * 2 - 1;
-	gpassNormal = TBN * N;
+	GpassNormal = TBN * N;
 }

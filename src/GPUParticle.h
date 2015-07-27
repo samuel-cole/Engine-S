@@ -8,6 +8,7 @@
 using glm::vec3;
 using glm::vec4;
 
+//Struct for particles to be ran on the GPU.
 struct GPUParticle
 {
 	//Initialise all particles as dead.
@@ -19,6 +20,7 @@ struct GPUParticle
 	float lifeSpan;
 };
 
+//Class for emitters that create particles ran on the GPU.
 class GPUParticleEmitter
 {
 public:

@@ -14,6 +14,7 @@
     <ProjectGuid>{3EAA584D-433F-4EB4-891F-A6813999BEB2}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>IntroToOpenGL</RootNamespace>
+    <ProjectName>Engine S</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -56,7 +57,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;GLM_FORCE_PURE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)dep\stb;$(SolutionDir)src;$(SolutionDir)dep\glm;$(SolutionDir)dep\aieutilities;$(SolutionDir)dep\glfw-3.1.bin.WIN32\include;$(SolutionDir)dep\AntTweakBar\include;$(SolutionDir)dep\fbx;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)dep\stb;$(SolutionDir)src;$(SolutionDir)dep\glm;$(SolutionDir)dep\glfw-3.1.bin.WIN32\include;$(SolutionDir)dep\AntTweakBar\include;$(SolutionDir)dep\fbx;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -74,7 +75,9 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;GLM_FORCE_PURE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)dep\stb;$(SolutionDir)src;$(SolutionDir)dep\glm;$(SolutionDir)dep\glfw-3.1.bin.WIN32\include;$(SolutionDir)dep\AntTweakBar\include;$(SolutionDir)dep\fbx;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -82,78 +85,37 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalDependencies>glfw3.lib;opengl32.lib;FBXLoader.lib;AntTweakBar.lib;PhysX3_x86.lib;PhysX3CharacterKinematic_x86.lib;PhysX3Common_x86.lib;PhysX3Cooking_x86.lib;PhysX3Extensions.lib;PhysX3Gpu_x86.lib;PhysX3Vehicle.lib;PhysXVisualDebuggerSDK.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <IgnoreSpecificDefaultLibraries>msvcrt.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <AdditionalLibraryDirectories>$(SolutionDir)dep\AntTweakBar\lib;$(SolutionDir)dep\fbx;$(SolutionDir)dep\glfw-3.1.bin.WIN32\lib-vc2013;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\dep\aieutilities\Gizmos.cpp" />
     <ClCompile Include="..\src\Application.cpp" />
     <ClCompile Include="..\src\Camera.cpp" />
-    <ClCompile Include="..\src\checkersTest\CheckersMover.cpp" />
-    <ClCompile Include="..\src\checkersTest\CheckersTest1.cpp" />
-    <ClCompile Include="..\src\checkersTest\CheckersTest2.cpp" />
-    <ClCompile Include="..\src\FlyCamera.cpp" />
+    <ClCompile Include="..\src\checkers\Checkers.cpp" />
+    <ClCompile Include="..\src\checkers\CheckersMover.cpp" />
     <ClCompile Include="..\src\gl_core_4_4.c" />
     <ClCompile Include="..\src\GPUParticle.cpp" />
     <ClCompile Include="..\src\InputManager.cpp" />
     <ClCompile Include="..\src\main.cpp" />
-    <ClCompile Include="..\src\mirrorTesting\mirrorTest1.cpp" />
     <ClCompile Include="..\src\Particle.cpp" />
-    <ClCompile Include="..\src\physX\Physics1.cpp" />
-    <ClCompile Include="..\src\physX\Physics2.cpp" />
-    <ClCompile Include="..\src\physX\PhysicsBase.cpp" />
-    <ClCompile Include="..\src\physX\PhysicsConcrete1.cpp" />
-    <ClCompile Include="..\src\physX\PhysicsConcrete2.cpp" />
+    <ClCompile Include="..\src\PhysicsBase.cpp" />
     <ClCompile Include="..\src\Renderer.cpp" />
     <ClCompile Include="..\src\StaticCamera.cpp" />
-    <ClCompile Include="..\src\tut10\Tutorial10.cpp" />
-    <ClCompile Include="..\src\tut11\Tutorial11.cpp" />
-    <ClCompile Include="..\src\tut12\Tutorial12.cpp" />
-    <ClCompile Include="..\src\tut13\Tutorial13.cpp" />
-    <ClCompile Include="..\src\tut2\Tutorial2.cpp" />
-    <ClCompile Include="..\src\tut3\Tutorial3.cpp" />
-    <ClCompile Include="..\src\tut4\Tutorial4.cpp" />
-    <ClCompile Include="..\src\tut5\Tutorial5.cpp" />
-    <ClCompile Include="..\src\tut6\Tutorial6.cpp" />
-    <ClCompile Include="..\src\tut7\Tutorial7.cpp" />
-    <ClCompile Include="..\src\tut8\Tutorial8.cpp" />
-    <ClCompile Include="..\src\tut9\Tutorial9.cpp" />
-    <ClCompile Include="..\src\Tutorial1.cpp" />
     <ClCompile Include="..\src\WalkCamera.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\dep\aieutilities\Gizmos.h" />
     <ClInclude Include="..\src\Application.h" />
     <ClInclude Include="..\src\Camera.h" />
-    <ClInclude Include="..\src\checkersTest\CheckersMover.h" />
-    <ClInclude Include="..\src\checkersTest\CheckersTest1.h" />
-    <ClInclude Include="..\src\checkersTest\CheckersTest2.h" />
-    <ClInclude Include="..\src\FlyCamera.h" />
+    <ClInclude Include="..\src\checkers\Checkers.h" />
+    <ClInclude Include="..\src\checkers\CheckersMover.h" />
     <ClInclude Include="..\src\gl_core_4_4.h" />
     <ClInclude Include="..\src\GPUParticle.h" />
     <ClInclude Include="..\src\InputManager.h" />
-    <ClInclude Include="..\src\mirrorTesting\mirrorTest1.h" />
     <ClInclude Include="..\src\Particle.h" />
-    <ClInclude Include="..\src\physX\Physics1.h" />
-    <ClInclude Include="..\src\physX\Physics2.h" />
-    <ClInclude Include="..\src\physX\PhysicsBase.h" />
-    <ClInclude Include="..\src\physX\PhysicsConcrete1.h" />
-    <ClInclude Include="..\src\physX\PhysicsConcrete2.h" />
+    <ClInclude Include="..\src\PhysicsBase.h" />
     <ClInclude Include="..\src\Renderer.h" />
     <ClInclude Include="..\src\StaticCamera.h" />
-    <ClInclude Include="..\src\tut10\Tutorial10.h" />
-    <ClInclude Include="..\src\tut11\Tutorial11.h" />
-    <ClInclude Include="..\src\tut12\Tutorial12.h" />
-    <ClInclude Include="..\src\tut13\Tutorial13.h" />
-    <ClInclude Include="..\src\tut2\Tutorial2.h" />
-    <ClInclude Include="..\src\tut3\Tutorial3.h" />
-    <ClInclude Include="..\src\tut4\Tutorial4.h" />
-    <ClInclude Include="..\src\tut5\Tutorial5.h" />
-    <ClInclude Include="..\src\tut6\Tutorial6.h" />
-    <ClInclude Include="..\src\tut7\Tutorial7.h" />
-    <ClInclude Include="..\src\tut8\Tutorial8.h" />
-    <ClInclude Include="..\src\tut9\Tutorial9.h" />
-    <ClInclude Include="..\src\Tutorial1.h" />
     <ClInclude Include="..\src\WalkCamera.h" />
   </ItemGroup>
   <ItemGroup>

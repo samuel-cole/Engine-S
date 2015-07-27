@@ -1,0 +1,89 @@
+This document describes the features within my program in relation to the grading rubric provided for this assessment.
+
+Using the Options Bar:
+Several parts of the following descriptions require the use of the options bar- the options bar defaults to the top-left corner of the screen, and contains many options for the program.
+In order to use it:
+1) Hold the right mouse button- this should cause a mouse cursor to appear on screen.
+2) Navigate the mouse cursor to the appropriate option while still holding the right mouse button.
+3) Each field can be modified in different ways- check-boxes and buttons can be clicked using the left mouse button (the right mouse button must still be held while this is done), while other fields can be typed into.
+4) Release the right mouse button (this may cause the camera to snap to a different location, this effect can be minimised by releasing the button while the cursor is at a location similar to where it first appeared).
+
+Virtual World: 
+While the program features several memory leaks, these memory leaks are all caused by the FBX Loader used by the program, rather than the program itself. Additionally, these memory leaks do not change in size over the duration of the program.
+
+Graphical Techniques: 
+The program includes multiple high quality point lights, and one directional light. While these do not have shadows by default, clicking the 'Switch to Forward Rendering' button on the options bar removes the point lights and adds shadows to the directional light. This does, however, disable several other features.
+The game features many particles, some textured and some untextured, which can be lit in deferred render mode.
+Non-procedural entities within the scene include crates and spheres loaded from .obj files, 'teleporter' gates loaded from .obj (see below for crediting), a crossbow model loaded from .obj (see below for crediting) and an animated alien soldier loaded from a .fbx file. Most of these objects have been textures (some cubes aren't, to differentiate AI crates from standard ones), and all of them are lit.
+
+Procedural Technique:
+The checkers board within the program is procedurally generated using Perlin Noise. 
+Several options are provided to allow modifications to the procedurally generated plane- amplitude, persistence, seed and seed allow changes to be made. The terrain will then be refreshed with the new settings after clicking the 'Re-generate' button. Note: setting some of these values too high can result in unexpected behaviour- in particular, if the height of the checkers board goes above 400 units, the checkers pieces will no longer update to the correct height above it.
+The terrain rendering involves blended textures, as the lighting on the terrain is blended together as part of the deferred rendering pipeline.
+The terrain has accurate lighting.
+
+Artificial Intelligence:
+The program features two different types of artificial intelligence entity: the checkers 'overlord' and 'Checkers Movers'. The 'overlord' doesn't have a physical entity within the scene- it just responds to checkers moves that the player makes and attempts to beat them at checkers. It decides which checkers pieces to use based on a heavily simplified version of the 'Monte Carlo Tree Search' algorithm. The 'Checkers Movers' are represented within the world by the untextured cubes. They make decisions based on a Utility System- they decide between moving towards the closest physics object and moving a checkers piece if one is available to move. The AI interact with each other in this way- the 'overlord' decides which piece should be moved, then the 'Checkers Movers' move that piece (if they decide they want to). Utility modifiers for the Checkers Movers are generated randomly, so it is possible that they won't move the pieces at all- the utility scores are based off of the amount that the mover wants to move physics objects, the amount that the mover wants to play checkers, and the distances to those objects.
+
+Physics Simulations:
+The program features both static (the ground, the checkers board, and the teleporters) and dynamic (the checkers movers, the crates and the balls) rigid bodies.
+The program has a player controlled entity that interacts with all physics objects.
+A soft body is present in the scene (a piece of cloth).
+
+Code Documentation:
+My code has many comments in it (particularly within the .h files).
+
+Coding Standards:
+I have followed the following standards while coding:
+C++:
+Functions in UpperCamelCase.						eg: MyFunction()
+Variables in lowerCamelCase.						eg: myVariable
+PhysX-related member variables start with a 'g_'			eg: g_physicsVariable
+Other member variables start with an 'm_'				eg: m_memberVariable
+Function arguments start with an 'a_'					eg: a_argument
+Static variables start with an 's_'					eg: s_staticVariable
+Enum values and const member variables in UPPER_CASE_WITH_UNDERSCORES	eg: CONST_VARIABLE
+Braces start on the next line.						eg: void MyFunction(float a_argument)
+									    {
+										m_memberVariable = a_argument;
+									    }
+Include Guards rather than #pragma once.				eg: #ifndef FILE_H
+									    #define FILE_H
+									    //File
+									    #endif
+
+GLSL:
+Variables in lowerCamelCase.					eg: myVariable
+Uniforms and Vertex Shader inputs in UpperCamelCase.		eg: MyUniform
+Vertex Shader outputs start with 'v', then UpperCamelCase.	eg: vVertOutput
+Geometry Shader outputs start with 'g', then UpperCamelCase.	eg: gGeometryOutput
+Frag Shader outputs in UpperCamelCase.				eg: FragOutput
+const variables in UPPER_CASE_WITH_UNDERSCORES			eg: CONST_VARIABLE
+
+
+Crediting:
+	Art:
+		Sphere model provided by AIE.
+
+		'Enemyelite' model and textures provided by AIE.
+
+		'This Side Up' crate texture provided by AIE.
+
+		Crossbow model and textures by 'ringx', with an 'All Extended Uses' royalty free license.
+		http://www.turbosquid.com/3d-models/crossbow-fbx-free/725224
+
+		Teleporter model and texture by '3dregenerator', with a 'Personal Use Only' royalty free license.
+		http://tf3dm.com/3d-model/teleporter-31507.html
+
+		Tablecloth texture by my sister.
+
+	Code:
+		OpenGL by Khronos Group. (rendering)
+		OpenGL Mathematics (glm) by G-Truc Creation. (maths)
+		GLFW by Camillia Berglund. (window handling)
+		FBX Loader provided by AIE. (loading fbx files)
+		PhysX by Nvidia. (physics)
+		AntTweakBar by Philippe Decaudin. (simple GUI)
+		stb library by Sean Barrett. (loading images)
+		
+Everything else by me!

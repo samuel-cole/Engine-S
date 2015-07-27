@@ -2,28 +2,28 @@
 
 in vec2 vUV;
 
-out vec4 fFragColour;
+out vec4 FragColour;
 
-uniform sampler2D target;
+uniform sampler2D Target;
 
 vec4 Simple()
 {
-	return texture(target, vUV);
+	return texture(Target, vUV);
 }
 
 vec4 BoxBlur() 
 {
-	vec2 texel = 1.0f / textureSize(target, 0).xy;
+	vec2 texel = 1.0f / textureSize(Target, 0).xy;
 	
-	vec4 colour = texture(target, vUV);
-	colour += texture(target, vUV + vec2(-texel.x, texel.y));
-	colour += texture(target, vUV + vec2(-texel.x, 0));
-	colour += texture(target, vUV + vec2(-texel.x, -texel.y));
-	colour += texture(target, vUV + vec2(0, texel.y));
-	colour += texture(target, vUV + vec2(0, -texel.y));
-	colour += texture(target, vUV + vec2(texel.x, texel.y));
-	colour += texture(target, vUV + vec2(texel.x, 0));
-	colour += texture(target, vUV + vec2(texel.x, -texel.y));
+	vec4 colour = texture(Target, vUV);
+	colour += texture(Target, vUV + vec2(-texel.x, texel.y));
+	colour += texture(Target, vUV + vec2(-texel.x, 0));
+	colour += texture(Target, vUV + vec2(-texel.x, -texel.y));
+	colour += texture(Target, vUV + vec2(0, texel.y));
+	colour += texture(Target, vUV + vec2(0, -texel.y));
+	colour += texture(Target, vUV + vec2(texel.x, texel.y));
+	colour += texture(Target, vUV + vec2(texel.x, 0));
+	colour += texture(Target, vUV + vec2(texel.x, -texel.y));
 
 	return colour / 9;
 }
@@ -46,10 +46,10 @@ vec4 Distort()
 	if (newCoord.y < 0.01f)
 		newCoord.y = 0.01f;
 		
-	return texture(target, newCoord);
+	return texture(Target, newCoord);
 }
 
 void main()
 {
-	fFragColour = Simple();
+	FragColour = Simple();
 }
