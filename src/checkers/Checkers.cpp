@@ -1207,8 +1207,14 @@ void Checkers::UseAIMove()
 
 	AIMove(m_board, m_turn, m_aiDifficulty);
 
-	CheckersMover::MoveAvailable();
+	//CheckersMover::MoveAvailable();
 
+	//I've added these three lines to remove checkers movers.
+	UpdateBoard();
+	m_aiMoveFinished = true;
+	m_turn = !m_turn;
+
+	
 	m_threadFinished = true;
 }
 

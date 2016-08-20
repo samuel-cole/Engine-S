@@ -1502,6 +1502,8 @@ void Renderer::Draw()
 		glBindFramebuffer(GL_FRAMEBUFFER, m_gpassFBO);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
 
 		//Non-animated G-Pass
 		glUseProgram(m_gpassProgram);
@@ -1582,6 +1584,8 @@ void Renderer::Draw()
 			if (m_gpuEmitters[i] != nullptr)
 				m_gpuEmitters[i]->Draw((float)glfwGetTime(), m_cameras[0]->GetWorldTransform(), m_cameras[0]->GetProjectionView(), m_gpassDepth);
 		}
+
+		//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 #pragma endregion G_PASS
 
 		///////////////////////////LIGHT\\\\\\\\\\\\\\\\\\\\\\\\
