@@ -3,9 +3,26 @@
 
 #include "Application.h"
 
+#include <cassert>
+#include <set>
+#include <vector>
+#include <map>
+#include <algorithm>
+#include <functional>
+#include <numeric>
+
+#include "glm\glm.hpp"
+#include "glm\ext.hpp"
+
+
+
 class WalkCamera;
 class Renderer;
 struct FlexSolver;
+struct FlexExtAsset;
+
+using glm::vec4;
+using glm::vec3;
 
 //struct FlexParticle
 //{
@@ -31,12 +48,13 @@ protected:
 	FlexSolver* m_solver;
 
 	void AddCloth(unsigned int a_dimensions);
+	void AddBox();
 
 	unsigned int m_clothModel;
+	FlexExtAsset* g_cloth;
 
 	float m_particleRadius;
 };
-
 
 
 #endif
