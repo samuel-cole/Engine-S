@@ -11,7 +11,7 @@ class WalkCamera : public Camera
 public:
 	WalkCamera(TwBar* a_debugBar);
 
-	void Update(const float a_deltaTime);
+	void Update(const float a_deltaTime) override;
 	inline void SetPosition(const vec3& a_position)
 	{
 		mat4 world = GetWorldTransform();

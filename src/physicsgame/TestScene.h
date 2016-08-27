@@ -16,7 +16,7 @@
 
 
 
-class WalkCamera;
+class FlyCamera;
 class Renderer;
 struct FlexSolver;
 struct FlexExtAsset;
@@ -41,7 +41,7 @@ protected:
 	virtual void Draw() override;
 
 	//The camera used within the scene.
-	WalkCamera* m_camera;
+	FlyCamera* m_camera;
 	//The renderer used to render the scene.
 	Renderer* m_renderer;
 
@@ -50,10 +50,12 @@ protected:
 	void AddCloth(unsigned int a_dimensions);
 	void AddBox();
 
+	float timeInScene;
+
 	unsigned int m_clothModel;
 	FlexExtAsset* g_cloth;
 
-	float m_particleRadius;
+	int m_numberOfParticles;
 
 	float* m_particles;
 	float* m_velocities;

@@ -170,6 +170,7 @@
     <ClCompile Include="..\src\Camera.cpp" />
     <ClCompile Include="..\src\checkers\Checkers.cpp" />
     <ClCompile Include="..\src\checkers\CheckersMover.cpp" />
+    <ClCompile Include="..\src\FlyCamera.cpp" />
     <ClCompile Include="..\src\gl_core_4_4.c" />
     <ClCompile Include="..\src\GPUParticle.cpp" />
     <ClCompile Include="..\src\InputManager.cpp" />
@@ -186,6 +187,7 @@
     <ClInclude Include="..\src\Camera.h" />
     <ClInclude Include="..\src\checkers\Checkers.h" />
     <ClInclude Include="..\src\checkers\CheckersMover.h" />
+    <ClInclude Include="..\src\FlyCamera.h" />
     <ClInclude Include="..\src\gl_core_4_4.h" />
     <ClInclude Include="..\src\GPUParticle.h" />
     <ClInclude Include="..\src\InputManager.h" />

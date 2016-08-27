@@ -85,6 +85,17 @@ private:
 	//Vector containing the world transforms of every object.
 	std::vector<glm::mat4> m_globals;
 
+	//=============================================
+	//FleX project additions
+	//=============================================
+	//These aren't used for actual rendering- they are included for ease of use.
+	std::vector<vec3> m_positions;
+	std::vector<glm::quat> m_rotations;
+	std::vector<vec3> m_scales;
+	//=======================================================
+	//End FleX project additions
+	//=======================================================
+
 	//TODO: change these programs to use an enum. 
 	//Program used for animated models.
 	unsigned int m_animatedProgram;
@@ -243,6 +254,15 @@ private:
 	//Generates the normals for the model at the index passed in.
 	void GenerateNormals(const unsigned int a_index);
 
+	//=======================================================
+	//FleX project additions
+	//=======================================================
+	//Recalculates the globals matrix for the model at the specified index.
+	void RecalaculateGlobal(const unsigned int a_index);
+	//=======================================================
+	//FleX project additions
+	//=======================================================
+
 public:
 	//Constructor for creating a new renderer.
 	Renderer(Camera* const a_camera, TwBar* const a_bar);
@@ -278,9 +298,28 @@ public:
 	void LoadSpecularMap(const std::string& a_filePath, const unsigned int a_index);
 	
 	//Mutator method for the global transform matrices of each model. a_index refers to the index of the model to be transformed.
+	//NOTE: this doesn't update the position/rotation/scale objects for the model, use at your own peril!
 	void SetTransform(const glm::mat4& a_transform, const unsigned int a_index);
 	//Accessor method for the global transform matrices of each model. a_index refers to the index of the model to get the transform of.
 	const glm::mat4& GetTransform(const unsigned int a_index);
+	//=======================================================
+	//FleX project additions
+	//=======================================================
+	//Mutator method for the position of each model. a_index refers to the index of the model to be moved.
+	void SetPosition(const vec3& a_position, const unsigned int a_index);
+	//Accessor method for the position of each model. a_index refers to the index of the model to get the position of.
+	const vec3& GetPosition(const unsigned int a_index);
+	//Mutator method for the rotation of each model. a_index refers to the index of the model to be rotated.
+	void SetRotation(const glm::quat& a_rotation, const unsigned int a_index);
+	//Accessor method for the rotation of each model. a_index refers to the index of the model to get the rotation of.
+	const glm::quat& GetRotation(const unsigned int a_index);
+	//Mutator method for the scale of each model. a_index refers to the index of the model to be scaled.
+	void SetScale(const vec3& a_scale, const unsigned int a_index);
+	//Accessor method for the scale of each model. a_index refers to the index of the model to be scaled.
+	const vec3& GetScale(const unsigned int a_index);
+	//=======================================================
+	//End FleX project additions
+	//=======================================================
 
 	//Generates a grid of vertices on the x-z plane with the specified number of rows and columns. Returns the index of the grid, for use in texturing/transform altering.
 	unsigned int GenerateGrid(const unsigned int a_rows, const unsigned int a_columns);

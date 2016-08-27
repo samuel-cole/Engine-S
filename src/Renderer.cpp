@@ -2,6 +2,7 @@
 #include "gl_core_4_4.h"
 #include "GLFW\glfw3.h"
 #include "glm\ext.hpp"
+#include "glm\gtx\matrix_decompose.hpp"
 #include "Camera.h"
 #include "FBXFile.h"
 #include "Particle.h"
@@ -787,6 +788,71 @@ const mat4& Renderer::GetTransform(const unsigned int a_index)
 		return m_globals[a_index];
 }
 
+void Renderer::SetPosition(const vec3& a_position, const unsigned int a_index)
+{
+	if (a_index >= m_numOfIndices.size() || m_numOfIndices[a_index] == -1)
+	{
+		std::cout << "Error: setting position for invalid object!" << std::endl;
+		return;
+	}
+
+	m_positions[a_index] = a_position;
+	RecalaculateGlobal(a_index);
+}
+const vec3& Renderer::GetPosition(const unsigned int a_index)
+{
+	if (a_index >= m_positions.size() || m_numOfIndices[a_index] == -1)
+	{
+		std::cout << "Error: Getting transform for invalid object.";
+	}
+	return m_positions[a_index];
+}
+
+void Renderer::SetRotation(const glm::quat& a_rotation, const unsigned int a_index)
+{
+	if (a_index >= m_numOfIndices.size() || m_numOfIndices[a_index] == -1)
+	{
+		std::cout << "Error: setting rotation for invalid object!" << std::endl;
+		return;
+	}
+
+	m_rotations[a_index] = a_rotation;
+	RecalaculateGlobal(a_index);
+}
+const glm::quat& Renderer::GetRotation(const unsigned int a_index)
+{
+	if (a_index >= m_rotations.size() || m_numOfIndices[a_index] == -1)
+	{
+		std::cout << "Error: Getting transform for invalid object.";
+	}
+	return m_rotations[a_index];
+}
+
+void Renderer::SetScale(const vec3& a_scale, const unsigned int a_index)
+{
+	if (a_index >= m_numOfIndices.size() || m_numOfIndices[a_index] == -1)
+	{
+		std::cout << "Error: setting scale for invalid object!" << std::endl;
+		return;
+	}
+
+	m_scales[a_index] = a_scale;
+	RecalaculateGlobal(a_index);
+}
+const vec3& Renderer::GetScale(const unsigned int a_index)
+{
+	if (a_index >= m_positions.size() || m_numOfIndices[a_index] == -1)
+	{
+		std::cout << "Error: Getting transform for invalid object.";
+	}
+	return m_scales[a_index];
+}
+
+void Renderer::RecalaculateGlobal(const unsigned int a_index)
+{
+	m_globals[a_index] = glm::translate(m_positions[a_index]) * glm::mat4_cast(m_rotations[a_index]) * glm::scale(m_scales[a_index]);
+}
+
 unsigned int Renderer::GenerateGrid(const unsigned int a_rows, const unsigned int a_columns)
 {
 	if (m_standardProgram == -1)
@@ -1127,6 +1193,7 @@ unsigned int Renderer::LoadFBX(const string& a_filePath, const std::vector<strin
 			if (file->getMeshCount() == 1)
 				m_modelNames[a_filePath] = m_VAO.size() - 1;
 
+			//This might be buggy, now that transforms don't update position/scale/rotation variables.
 			SetTransform(mesh->m_globalTransform, m_numOfIndices.size() - 1);
 
 			delete[] vertices;
@@ -1192,6 +1259,18 @@ unsigned int Renderer::LoadFBX(const string& a_filePath, const std::vector<strin
 			m_mirrors.push_back(-1);
 		if (m_globals.size() < m_numOfIndices.size())
 			m_globals.push_back(glm::mat4());
+		//=======================================================
+		//FleX project additions
+		//=======================================================
+		if (m_positions.size() < m_numOfIndices.size())
+			m_positions.push_back(glm::vec3());
+		if (m_rotations.size() < m_numOfIndices.size())
+			m_rotations.push_back(glm::quat());
+		if (m_scales.size() < m_numOfIndices.size())
+			m_scales.push_back(glm::vec3(1.0f, 1.0f, 1.0f));
+		//=======================================================
+		//End FleX project additions
+		//=======================================================
 
 		if (a_texturePaths->size() > 0)
 		{
@@ -1336,6 +1415,18 @@ unsigned int Renderer::LoadOBJ(const string& a_filePath)
 			m_mirrors.push_back(-1);
 		if (m_globals.size() < m_numOfIndices.size())
 			m_globals.push_back(glm::mat4());
+		//=======================================================
+		//FleX project additions
+		//=======================================================
+		if (m_positions.size() < m_numOfIndices.size())
+			m_positions.push_back(vec3());
+		if (m_rotations.size() < m_numOfIndices.size())
+			m_rotations.push_back(glm::quat());
+		if (m_scales.size() < m_numOfIndices.size())
+			m_scales.push_back(vec3(1.0f, 1.0f, 1.0f));
+		//=======================================================
+		//End FleX project additions
+		//=======================================================
 
 		//Add new buffer variables to the vectors.
 		m_VAO.push_back(m_VAO[m_modelNames[a_filePath]]);
@@ -2159,6 +2250,18 @@ void Renderer::LoadIntoOpenGL(const Vertex* const a_verticesArray, const unsigne
 		m_mirrors.push_back(-1);
 	if (m_globals.size() < m_numOfIndices.size())
 		m_globals.push_back(glm::mat4());
+	//=======================================================
+	//FleX project additions
+	//=======================================================
+	if (m_positions.size() < m_numOfIndices.size())
+		m_positions.push_back(vec3());
+	if (m_rotations.size() < m_numOfIndices.size())
+		m_rotations.push_back(glm::quat());
+	if (m_scales.size() < m_numOfIndices.size())
+		m_scales.push_back(vec3(1.0f, 1.0f, 1.0f));
+	//=======================================================
+	//End FleX project additions
+	//=======================================================
 
 	//Add new buffer variables to the vectors.
 	m_VAO.push_back(-1);
@@ -2246,6 +2349,15 @@ void Renderer::DestroyObject(const unsigned int a_index)
 	m_skeletons[a_index] = nullptr;
 	m_animations[a_index] = nullptr;
 	m_globals[a_index] = mat4();
+	//=======================================================
+	//FleX project additions
+	//=======================================================
+	m_positions[a_index] = vec3();
+	m_rotations[a_index] = glm::quat();
+	m_scales[a_index] = vec3(1.0f, 1.0f, 1.0f);
+	//=======================================================
+	//End FleX project additions
+	//=======================================================
 
 	m_numOfIndices[a_index] = -1;
 }

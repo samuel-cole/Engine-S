@@ -1,5 +1,5 @@
 #include "TestScene.h"
-#include "WalkCamera.h"
+#include "FlyCamera.h"
 #include "Renderer.h"
 #include "glm\gtx\euler_angles.hpp"
 
@@ -12,7 +12,7 @@ int TestScene::Init()
 	if (baseInit != 0)
 		return baseInit;
 
-	m_camera = new WalkCamera(m_debugBar);
+	m_camera = new FlyCamera(m_debugBar);
 	m_camera->SetPerspective(glm::pi<float>() * 0.25f, 16.0f / 9.0f, 0.1f, 10000.0f);
 	m_camera->SetLookAt(vec3(10, 10, 10), vec3(0, 0, 0), vec3(0, 1, 0));
 
@@ -26,10 +26,11 @@ int TestScene::Init()
 	TwAddVarRW(m_debugBar, "Gravity", TW_TYPE_DIR3F, &m_gravityDir[0], "");
 	TwAddVarRW(m_debugBar, "Gravity Strength", TW_TYPE_FLOAT, &m_gravityStrength, " min=0 max=30");
 
-	//m_renderer->GenerateGrid(9, 9);
+	m_numberOfParticles = 2500;
+	int sqrtNumberOfParticles = glm::sqrt(m_numberOfParticles);
 
 	flexInit();
-	m_solver = flexCreateSolver(65536, 0);
+	m_solver = flexCreateSolver(m_numberOfParticles, 0);
 
 	FlexParams params;
 	params.mGravity[0] = m_gravityDir.x * m_gravityStrength;
@@ -98,10 +99,10 @@ int TestScene::Init()
 	params.mParticleFriction = params.mDynamicFriction * 0.1f;
 	params.mShapeCollisionMargin = params.mCollisionDistance * 0.5f;
 	(vec4&)params.mPlanes[0] = vec4(0, 1, 0, 0);
-	(vec4&)params.mPlanes[1] = vec4(0.0f, 0.0f, 1.0f,  10);
-	(vec4&)params.mPlanes[2] = vec4(1.0f, 0.0f, 0.0f,  10);
-	(vec4&)params.mPlanes[3] = vec4(-1.0f, 0.0f, 0.0f, 10);
-	(vec4&)params.mPlanes[4] = vec4(0.0f, 0.0f, -1.0f, 10);
+	(vec4&)params.mPlanes[1] = vec4(0.0f, 0.0f, 1.0f,  30);
+	(vec4&)params.mPlanes[2] = vec4(1.0f, 0.0f, 0.0f,  30);
+	(vec4&)params.mPlanes[3] = vec4(-1.0f, 0.0f, 0.0f, 30);
+	(vec4&)params.mPlanes[4] = vec4(0.0f, 0.0f, -1.0f, 30);
 
 	unsigned int* planes = new unsigned int[5];
 	for (int i = 0; i < 5; ++i)
@@ -111,15 +112,20 @@ int TestScene::Init()
 		m_renderer->LoadTexture("../data/tablecloth.jpg", planes[i]);
 		m_renderer->LoadSpecularMap("../data/tablecloth.jpg", planes[i]);
 	}
-	mat4 testMat = glm::lookAt(vec3(0, 0, 10), vec3(0, 0, 9), vec3(0, 1, 0));
-	m_renderer->SetTransform(glm::lookAt(vec3(0, 0, 10), vec3(0, 0, 11), vec3(0, 1, 0)), planes[1]);
-	
+
+	//m_renderer->SetTransform(glm::translate(vec3(0, 0, 100)) * glm::eulerAngleYXZ(0.0f, 0.0f, glm::half_pi<float>()), planes[1]);
+	m_renderer->SetPosition(vec3(30, 0, 0), planes[1]);
+	m_renderer->SetRotation(glm::quat(vec3(0, 0, glm::pi<float>()/2.0f)), planes[1]);
+	m_renderer->SetPosition(vec3(0, 0, 30), planes[2]);
+	m_renderer->SetRotation(glm::quat(vec3(glm::pi<float>()/2.0f, 0, 0)), planes[2]);
+	m_renderer->SetPosition(vec3(0, 0, -30), planes[3]);
+	m_renderer->SetRotation(glm::quat(vec3(-glm::pi<float>() / 2.0f, 0, 0)), planes[3]);
+	m_renderer->SetPosition(vec3(-30, 0, 0), planes[4]);
+	m_renderer->SetRotation(glm::quat(vec3(0, 0, -glm::pi<float>() / 2.0f)), planes[4]);
 
 
 
 	//======================================
-
-	m_particleRadius = params.mRadius;
 
 	//m_particles = (float*)flexAlloc(100 * 4);
 	//m_velocities = (float*)flexAlloc(100 * 3);
@@ -129,19 +135,23 @@ int TestScene::Init()
 	//m_indices = (int*)flexAlloc(81 * 2 * 3);
 	//m_activeParticles = (int*)flexAlloc(100);
 
-	m_particles = new float[100 * 4];
-	m_velocities = new float[100 * 3];
-	m_phases = new int[100];
 
-	m_verticies = new float[100 * 3];
-	m_indices = new int[81 * 2 * 3];
-	m_activeParticles = new int[100];
+
+	m_particles = new float[m_numberOfParticles * 4];
+	m_velocities = new float[m_numberOfParticles * 3];
+	m_phases = new int[m_numberOfParticles];
+
+	m_verticies = new float[m_numberOfParticles * 3];
+	m_indices = new int[(sqrtNumberOfParticles - 1) * (sqrtNumberOfParticles - 1) * 2 * 3];
+	m_activeParticles = new int[m_numberOfParticles];
 
 	flexSetParams(m_solver, &params);
 
-	AddCloth(10);
+	AddCloth(sqrtNumberOfParticles);
 
 	int version = flexGetVersion();
+
+	timeInScene = 0.0f;
 
 	return 0;
 }
@@ -176,6 +186,10 @@ int TestScene::Deinit()
 
 void TestScene::Update(float a_deltaTime)
 {
+	timeInScene += a_deltaTime;
+
+	//m_renderer->SetRotation(glm::quat(vec3(glm::pi<float>() * glm::sin(timeInScene), 0, 0)), 1);
+
 	if (m_oldgravityDir != m_gravityDir || m_oldGravityStrength != m_gravityStrength)	//rewrite this to account for float equality issues.
 	{
 		m_oldgravityDir = m_gravityDir;
@@ -195,23 +209,14 @@ void TestScene::Update(float a_deltaTime)
 
 	flexUpdateSolver(m_solver, 1.0f/60.0f, 1, NULL);
 
-	flexGetParticles(m_solver, m_particles, 100, eFlexMemoryHostAsync);
-	flexGetVelocities(m_solver, m_velocities, 100, eFlexMemoryHostAsync);
-
-	int numberOfSprings = g_cloth->mNumSprings;
-	int* springIndices = new int[numberOfSprings * 2];
-	float* restLengths = new float[numberOfSprings];
-	float* coefficients = new float[numberOfSprings];
-
-	springIndices = g_cloth->mSpringIndices;
-	restLengths = g_cloth->mSpringRestLengths;
-	coefficients = g_cloth->mSpringCoefficients;
+	flexGetParticles(m_solver, m_particles, m_numberOfParticles, eFlexMemoryHostAsync);
+	flexGetVelocities(m_solver, m_velocities, m_numberOfParticles, eFlexMemoryHostAsync);
 
 	flexSetFence();
 	flexWaitFence();
 
 	std::vector<vec3> particlePositions;
-	for (int i = 0; i < 100; ++i)
+	for (int i = 0; i < m_numberOfParticles; ++i)
 	{
 		float x = m_particles[i * 4 + 0];
 		float y = m_particles[i * 4 + 1];
