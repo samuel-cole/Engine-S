@@ -54,6 +54,20 @@ protected:
 	FlexExtAsset* g_cloth;
 
 	float m_particleRadius;
+
+	float* m_particles;
+	float* m_velocities;
+	int* m_phases;
+
+	int* m_activeParticles;
+	int* m_indices;
+	float* m_verticies;
+
+	vec3 m_gravityDir;
+	float m_gravityStrength;
+
+	vec3 m_oldgravityDir;
+	float m_oldGravityStrength;
 };
 
 
