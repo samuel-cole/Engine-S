@@ -2,6 +2,7 @@
 #include "FlyCamera.h"
 #include "Renderer.h"
 #include "glm\gtx\euler_angles.hpp"
+#include "InputManager.h"
 
 #include <flex.h>
 #include <flexExt.h>
@@ -147,7 +148,8 @@ int TestScene::Init()
 
 	flexSetParams(m_solver, &params);
 
-	AddCloth(sqrtNumberOfParticles);
+	//AddCloth(sqrtNumberOfParticles);
+	AddBox(vec3(0, 10, 0), glm::quat(vec3(0, 0, 0)));
 
 	int version = flexGetVersion();
 
@@ -230,7 +232,8 @@ void TestScene::Update(float a_deltaTime)
 	//	float z = g_cloth->mParticles[i * 4 + 2];
 	//	particlePositions.push_back(vec3(x, y, z));
 	//}
-	m_renderer->ModifyMesh(m_clothModel, particlePositions);
+
+	//m_renderer->ModifyMesh(m_clothModel, particlePositions);
 }
 
 
@@ -302,7 +305,7 @@ void TestScene::AddCloth(unsigned int a_dimensions)
 		}
 	}
 
-	g_cloth = flexExtCreateClothFromMesh(m_particles, sqrDimensions, m_indices, numberOfTriangles, 0.9f, 1.0f, 100.0f, 5.0f, 0.0f);
+	g_cloth = flexExtCreateClothFromMesh(m_particles, sqrDimensions, m_indices, numberOfTriangles, 0.9f, 1.0f, 1.0f, 5.0f, 0.0f);
 
 	for (int i = 0; i < sqrDimensions; ++i)
 	{
@@ -310,6 +313,7 @@ void TestScene::AddCloth(unsigned int a_dimensions)
 	}
 
 	flexSetActive(m_solver, m_activeParticles, sqrDimensions, eFlexMemoryHostAsync);
+	flexSetSprings(m_solver, g_cloth->mSpringIndices, g_cloth->mSpringRestLengths, g_cloth->mSpringCoefficients, g_cloth->mNumSprings, eFlexMemoryHostAsync);
 
 	flexSetDynamicTriangles(m_solver, m_indices, NULL, numberOfTriangles, eFlexMemoryHostAsync);
 	//flexSetTriangles(m_solver, indices, verticies, numberOfTriangles, sqrDimensions, m_particleRadius, FlexMemory::eFlexMemoryHost);
@@ -320,7 +324,73 @@ void TestScene::AddCloth(unsigned int a_dimensions)
 	//m_renderer->SetTransform((mat4)rot * glm::translate(vec3(a_pose.p.x, a_pose.p.y, a_pose.p.z)), m_clothModels[m_clothModels.size() - 1]);
 }
 
-void TestScene::AddBox()
+void TestScene::AddBox(vec3 a_position, glm::quat a_rotation)
 {
+	unsigned int numberOfVertices, numberOfIndices = -1;
+	float* vertices = nullptr;
+	int* indices = nullptr;
 
+	unsigned int cube =  m_renderer->LoadOBJ("../data/cube.obj", numberOfVertices, vertices, numberOfIndices, indices);
+
+	FlexExtAsset* g_cube = flexExtCreateRigidFromMesh(vertices, numberOfVertices, indices, numberOfIndices, 1.0f, 0.0f);
+	
+	int phase = flexMakePhase(2, eFlexPhaseGroupMask);
+	int* phases = new int[g_cube->mNumParticles];
+	float* velocities = new float[g_cube->mNumParticles * 3];
+	for (unsigned int i = 0; i < g_cube->mNumParticles; ++i)
+	{
+		phases[i] = phase;
+		m_activeParticles[i] = i;
+	}
+
+	vec3* cubeRestPositions = new vec3[g_cube->mNumShapeIndices];
+	CalculateRigidOffsets((vec4*)g_cube->mParticles, g_cube->mShapeOffsets, g_cube->mShapeIndices, g_cube->mNumShapes, cubeRestPositions);
+
+	flexSetParticles(m_solver, g_cube->mParticles, g_cube->mNumParticles, eFlexMemoryHostAsync);
+	flexSetVelocities(m_solver, velocities, g_cube->mNumParticles, eFlexMemoryHostAsync);
+	flexSetPhases(m_solver, phases, g_cube->mNumParticles, eFlexMemoryHostAsync);
+	flexSetActive(m_solver, m_activeParticles, g_cube->mNumParticles, eFlexMemoryHostAsync);
+	//This doesn't work. In the flex demo, they occasionally pass NULL into the normals component of this function, however it's the main thing that I suspect of breaking.
+	//Redo this with a proper normal calculation, to see if that fixes it.
+	flexSetRigids(m_solver, g_cube->mShapeOffsets, g_cube->mShapeIndices, (float*)cubeRestPositions, NULL, g_cube->mShapeCoefficients, &a_rotation[0], &a_position[0], g_cube->mNumShapes, eFlexMemoryHostAsync);
+	
+	delete[] phases;
+	delete[] velocities;
+	delete[] vertices;
+	delete[] indices;
+}
+
+
+// Copy + pasted from FleX demo code and modified to use glm vectors instead.
+void TestScene::CalculateRigidOffsets(const vec4* restPositions, const int* offsets, const int* indices, int numRigids, vec3* localPositions)
+{
+	int count = 0;
+
+	for (int r = 0; r < numRigids; ++r)
+	{
+		const int startIndex = offsets[r];
+		const int endIndex = offsets[r + 1];
+
+		const int n = endIndex - startIndex;
+
+		assert(n);
+
+		vec3 com;
+
+		for (int i = startIndex; i < endIndex; ++i)
+		{
+			const int r = indices[i];
+
+			com += vec3(restPositions[r]);
+		}
+
+		com /= float(n);
+
+		for (int i = startIndex; i < endIndex; ++i)
+		{
+			const int r = indices[i];
+
+			localPositions[count++] = vec3(restPositions[r]) - com;
+		}
+	}
 }

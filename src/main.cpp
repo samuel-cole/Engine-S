@@ -1,5 +1,5 @@
 
-//#include "checkers\checkers.h"
+#include "checkers\checkers.h"
 #include "physicsgame\TestScene.h"
 
 int main ()

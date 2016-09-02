@@ -799,7 +799,7 @@ void Renderer::SetPosition(const vec3& a_position, const unsigned int a_index)
 	m_positions[a_index] = a_position;
 	RecalaculateGlobal(a_index);
 }
-const vec3& Renderer::GetPosition(const unsigned int a_index)
+const vec3& Renderer::GetPosition(const unsigned int a_index) const
 {
 	if (a_index >= m_positions.size() || m_numOfIndices[a_index] == -1)
 	{
@@ -819,7 +819,7 @@ void Renderer::SetRotation(const glm::quat& a_rotation, const unsigned int a_ind
 	m_rotations[a_index] = a_rotation;
 	RecalaculateGlobal(a_index);
 }
-const glm::quat& Renderer::GetRotation(const unsigned int a_index)
+const glm::quat& Renderer::GetRotation(const unsigned int a_index) const
 {
 	if (a_index >= m_rotations.size() || m_numOfIndices[a_index] == -1)
 	{
@@ -839,7 +839,7 @@ void Renderer::SetScale(const vec3& a_scale, const unsigned int a_index)
 	m_scales[a_index] = a_scale;
 	RecalaculateGlobal(a_index);
 }
-const vec3& Renderer::GetScale(const unsigned int a_index)
+const vec3& Renderer::GetScale(const unsigned int a_index) const
 {
 	if (a_index >= m_positions.size() || m_numOfIndices[a_index] == -1)
 	{
@@ -1241,6 +1241,7 @@ unsigned int Renderer::LoadFBX(const string& a_filePath, const std::vector<strin
 
 		//Add the newest number of indices to the vector.
 		m_numOfIndices.push_back(m_numOfIndices[m_modelNames[a_filePath]]);
+		m_numOfVertices.push_back(m_numOfVertices[m_modelNames[a_filePath]]);
 
 		//Add whether the object being loaded is animated.
 		m_skeletons.push_back(m_skeletons[m_modelNames[a_filePath]]);
@@ -1397,6 +1398,7 @@ unsigned int Renderer::LoadOBJ(const string& a_filePath)
 
 		//Add the newest number of indices to the vector.
 		m_numOfIndices.push_back(m_numOfIndices[m_modelNames[a_filePath]]);
+		m_numOfVertices.push_back(m_numOfVertices[m_modelNames[a_filePath]]);
 
 		//Add whether the object being loaded is animated.
 		m_skeletons.push_back(nullptr);
@@ -1434,6 +1436,180 @@ unsigned int Renderer::LoadOBJ(const string& a_filePath)
 		m_IBO.push_back(m_IBO[m_modelNames[a_filePath]]);
 	}
 	
+	return m_numOfIndices.size() - 1;
+}
+
+unsigned int Renderer::LoadOBJ(const string& a_filePath, unsigned int& a_numberOfVertices, float*& a_vertices, unsigned int& a_numberOfIndices, int*& a_indices)
+{
+	if (m_standardProgram == -1)
+		m_standardProgram = CreateProgram("../data/shaders/vert.txt", "../data/shaders/frag.txt");
+
+	//If this model has not already been loaded in.
+	if (m_modelNames.find(a_filePath) == m_modelNames.end())
+	{
+		//Load file
+		std::ifstream file(a_filePath);
+		string currentLine;
+
+		//Create vectors to push things into
+		std::vector<vec3> position;
+		std::vector<vec3> normal;
+		std::vector<glm::vec2> uv;
+
+		std::vector<Vertex> vertices;
+		std::vector<unsigned int> indices;
+
+		//Here is where I look at each line and read its values into the appropriate vector.
+		/*
+		v = position
+		vn = normals
+		vt = textureCoords
+		f = indices/uv/normals
+		*/
+
+		while (std::getline(file, currentLine))
+		{
+			if (currentLine[0] == 'v')
+			{
+				if (currentLine[1] == 't')			//UV
+				{
+					unsigned int firstSpace = currentLine.find(' ', 3);
+
+					string firstNum = currentLine.substr(2, firstSpace - 1);
+					string secondNum = currentLine.substr(firstSpace + 1, string::npos);
+
+					uv.push_back(glm::vec2(std::stof(firstNum), 1 - std::stof(secondNum)));
+				}
+				else  if (currentLine[1] == 'n')	//Normal
+				{
+					unsigned int firstSpace = currentLine.find(' ', 3);
+					unsigned int secondSpace = currentLine.find(' ', firstSpace + 1);
+
+					string firstNum = currentLine.substr(2, firstSpace - 1);
+					string secondNum = currentLine.substr(firstSpace + 1, secondSpace - firstSpace);
+					string thirdNum = currentLine.substr(secondSpace + 1, string::npos);
+
+					normal.push_back(vec3(std::stof(firstNum), std::stof(secondNum), std::stof(thirdNum)));
+				}
+				else if (currentLine[1] == ' ')		//Position
+				{
+					unsigned int firstSpace = currentLine.find(' ', 2);
+					unsigned int secondSpace = currentLine.find(' ', firstSpace + 1);
+
+					string firstNum = currentLine.substr(2, firstSpace - 1);
+					string secondNum = currentLine.substr(firstSpace + 1, secondSpace - firstSpace);
+					string thirdNum = currentLine.substr(secondSpace + 1, string::npos);
+
+					position.push_back(vec3(std::stof(firstNum), std::stof(secondNum), std::stof(thirdNum)));
+				}
+			}
+			else if (currentLine[0] == 'f')			//Index
+			{
+				SplitIndex(currentLine, &vertices, &indices, &position, &normal, &uv);
+			}
+		}
+
+		file.close();
+
+		a_numberOfVertices = vertices.size();
+		a_vertices = new float[a_numberOfVertices * 4];
+
+		Vertex* aoVertices = new Vertex[a_numberOfVertices];
+		std::vector<Vertex>::iterator iter = vertices.begin();
+		while (iter != vertices.end())
+		{
+			//Look at the unsigned int part of the vertices.
+			//At that index, give a value of the vertex key.
+			aoVertices[iter - vertices.begin()] = (*iter);
+			a_vertices[(iter - vertices.begin()) * 3 + 0] = iter->position.x;
+			a_vertices[(iter - vertices.begin()) * 3 + 1] = iter->position.y;
+			a_vertices[(iter - vertices.begin()) * 3 + 2] = iter->position.z;
+			++iter;
+		}
+
+		a_numberOfIndices = indices.size();
+		a_indices = new int[a_numberOfIndices];
+		for (unsigned int i = 0; i < indices.size(); ++i)
+		{
+			a_indices[i] = (int)indices[i];
+		}
+
+		LoadIntoOpenGL(aoVertices, a_numberOfVertices, (unsigned int*)a_indices, a_numberOfIndices);
+
+		delete[] aoVertices;
+
+		m_modelNames[a_filePath] = m_VAO.size() - 1;
+	}
+	else
+	{
+		//This model has already been loaded in, fill in all of its details with duplicates of the existing ones data.
+		unsigned int modelIndex = m_modelNames[a_filePath];
+
+		//Add the newest number of indices to the vector.
+		m_numOfIndices.push_back(m_numOfIndices[modelIndex]);
+		m_numOfVertices.push_back(m_numOfVertices[modelIndex]);
+
+		//Add whether the object being loaded is animated.
+		m_skeletons.push_back(nullptr);
+		m_animations.push_back(nullptr);
+
+		//Add a new empty entry into each of this objects appropriate vectors.
+		if (m_textures.size() < m_numOfIndices.size())
+			m_textures.push_back(-1);
+		if (m_ambients.size() < m_numOfIndices.size())
+			m_ambients.push_back(-1);
+		if (m_normals.size() < m_numOfIndices.size())
+			m_normals.push_back(-1);
+		if (m_speculars.size() < m_numOfIndices.size())
+			m_speculars.push_back(-1);
+		if (m_mirrors.size() < m_numOfIndices.size())
+			m_mirrors.push_back(-1);
+		if (m_globals.size() < m_numOfIndices.size())
+			m_globals.push_back(glm::mat4());
+
+		if (m_positions.size() < m_numOfIndices.size())
+			m_positions.push_back(vec3());
+		if (m_rotations.size() < m_numOfIndices.size())
+			m_rotations.push_back(glm::quat());
+		if (m_scales.size() < m_numOfIndices.size())
+			m_scales.push_back(vec3(1.0f, 1.0f, 1.0f));
+
+
+		//Add new buffer variables to the vectors.
+		m_VAO.push_back(m_VAO[modelIndex]);
+		m_VBO.push_back(m_VBO[modelIndex]);
+		m_IBO.push_back(m_IBO[modelIndex]);
+
+		//Bind stuff
+		glBindVertexArray(m_VAO[m_VAO.size() - 1]);
+		glBindBuffer(GL_ARRAY_BUFFER, m_VBO[m_VBO.size() - 1]);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_IBO[m_IBO.size() - 1]);
+	
+		a_numberOfVertices = m_numOfVertices[modelIndex];
+		a_numberOfIndices = m_numOfIndices[modelIndex];
+
+		//Get what the vertices and indices are from OpenGL.
+		Vertex* verticesBuffer = new Vertex[a_numberOfVertices];
+		a_indices = new int[m_numOfIndices[modelIndex]];
+		glGetBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Vertex) * a_numberOfVertices, verticesBuffer);
+		glGetBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(int) * m_numOfIndices[modelIndex], a_indices);
+
+		a_vertices = new float[a_numberOfVertices * 3];
+		for (int i = 0; i < a_numberOfVertices; ++i)
+		{
+			a_vertices[i * 3 + 0] = verticesBuffer[i].position.x;
+			a_vertices[i * 3 + 1] = verticesBuffer[i].position.y;
+			a_vertices[i * 3 + 2] = verticesBuffer[i].position.z;
+		}
+
+		//Unloading stuff.
+		glBindVertexArray(0);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+		delete[] verticesBuffer;
+	}
+
 	return m_numOfIndices.size() - 1;
 }
 
@@ -2232,6 +2408,7 @@ void Renderer::LoadIntoOpenGL(const Vertex* const a_verticesArray, const unsigne
 {
 	//Add the newest number of indices to the vector.
 	m_numOfIndices.push_back(a_numOfIndices);
+	m_numOfVertices.push_back(a_numOfVertices);
 
 	//Add empty values to the animation-related variables. These will be filled in after this function has finished if this model is animated.
 	m_skeletons.push_back(nullptr);
@@ -2360,6 +2537,7 @@ void Renderer::DestroyObject(const unsigned int a_index)
 	//=======================================================
 
 	m_numOfIndices[a_index] = -1;
+	m_numOfVertices[a_index] = -1;
 }
 
 void Renderer::CleanupBuffers()

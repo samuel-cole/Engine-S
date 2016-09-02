@@ -75,6 +75,15 @@ private:
 	//Vector containing the number of indices associated with each IBO.
 	std::vector<unsigned int> m_numOfIndices;
 
+	//=============================================
+	//FleX project additions
+	//=============================================
+	//Vector containing the number of vertices associated with each VBO.
+	std::vector<unsigned int> m_numOfVertices;
+	//=======================================================
+	//End FleX project additions
+	//=======================================================
+
 	//Vector containing the skeletons of animated objects. Set to nullptr for non-animated models.
 	std::vector<FBXSkeleton*> m_skeletons;
 	//Vector containing the animations of animated objects. Set to nullptr for non-animated models.
@@ -308,15 +317,15 @@ public:
 	//Mutator method for the position of each model. a_index refers to the index of the model to be moved.
 	void SetPosition(const vec3& a_position, const unsigned int a_index);
 	//Accessor method for the position of each model. a_index refers to the index of the model to get the position of.
-	const vec3& GetPosition(const unsigned int a_index);
+	const vec3& GetPosition(const unsigned int a_index) const;
 	//Mutator method for the rotation of each model. a_index refers to the index of the model to be rotated.
 	void SetRotation(const glm::quat& a_rotation, const unsigned int a_index);
 	//Accessor method for the rotation of each model. a_index refers to the index of the model to get the rotation of.
-	const glm::quat& GetRotation(const unsigned int a_index);
+	const glm::quat& GetRotation(const unsigned int a_index) const;
 	//Mutator method for the scale of each model. a_index refers to the index of the model to be scaled.
 	void SetScale(const vec3& a_scale, const unsigned int a_index);
 	//Accessor method for the scale of each model. a_index refers to the index of the model to be scaled.
-	const vec3& GetScale(const unsigned int a_index);
+	const vec3& GetScale(const unsigned int a_index) const;
 	//=======================================================
 	//End FleX project additions
 	//=======================================================
@@ -362,6 +371,18 @@ public:
 	
 	//Method for loading an OBJ model. Returns the index of the model, for use in texturing.
 	unsigned int LoadOBJ(const std::string& a_filePath);
+
+	//=======================================================
+	//FleX project additions
+	//=======================================================
+	//Method for loading an OBJ model. Returns the index of the model, for use in texturing.
+	//Overload for receiving information about the obj created, for use in creating a physics representation for the object.
+	//Make sure to delete the arrays passed out by this function!
+	unsigned int LoadOBJ(const std::string& a_filePath, unsigned int& a_numberOfVertices, float*& a_vertices, unsigned int& a_numberOfIndices, int*& a_indices);
+	//=======================================================
+	//End FleX project additions
+	//=======================================================
+
 
 	//Creates a new frame buffer. Returns the texture that is generated. Dimensions sets the size of the texture that is ouputted.
 	//TODO: Get mirrors working correctly (they don't reflect correctly at the moment).
