@@ -27,7 +27,7 @@ int TestScene::Init()
 	TwAddVarRW(m_debugBar, "Gravity", TW_TYPE_DIR3F, &m_gravityDir[0], "");
 	TwAddVarRW(m_debugBar, "Gravity Strength", TW_TYPE_FLOAT, &m_gravityStrength, " min=0 max=30");
 
-	m_numberOfParticles = 2500;
+	m_numberOfParticles = 8;
 	int sqrtNumberOfParticles = glm::sqrt(m_numberOfParticles);
 
 	flexInit();
@@ -214,6 +214,11 @@ void TestScene::Update(float a_deltaTime)
 	flexGetParticles(m_solver, m_particles, m_numberOfParticles, eFlexMemoryHostAsync);
 	flexGetVelocities(m_solver, m_velocities, m_numberOfParticles, eFlexMemoryHostAsync);
 
+	float* rotation = new float[4];
+	float* position = new float[3];
+
+	flexGetRigidTransforms(m_solver, rotation, position, eFlexMemoryHostAsync);
+
 	flexSetFence();
 	flexWaitFence();
 
@@ -233,7 +238,12 @@ void TestScene::Update(float a_deltaTime)
 	//	particlePositions.push_back(vec3(x, y, z));
 	//}
 
-	//m_renderer->ModifyMesh(m_clothModel, particlePositions);
+	//m_renderer->ModifyMesh(m_boxModel, particlePositions);
+	m_renderer->SetPosition(*((vec3*)position), m_boxModel);
+	m_renderer->SetRotation(*((glm::quat*)rotation), m_boxModel);
+
+	delete[] position;
+	delete[] rotation;
 }
 
 
@@ -330,9 +340,10 @@ void TestScene::AddBox(vec3 a_position, glm::quat a_rotation)
 	float* vertices = nullptr;
 	int* indices = nullptr;
 
-	unsigned int cube =  m_renderer->LoadOBJ("../data/cube.obj", numberOfVertices, vertices, numberOfIndices, indices);
+	m_boxModel =  m_renderer->LoadOBJ("../data/cube.obj", numberOfVertices, vertices, numberOfIndices, indices);
+	m_renderer->SetScale(vec3(0.5f, 0.5f, 0.5f), m_boxModel);
 
-	FlexExtAsset* g_cube = flexExtCreateRigidFromMesh(vertices, numberOfVertices, indices, numberOfIndices, 1.0f, 0.0f);
+	g_cube = flexExtCreateRigidFromMesh(vertices, numberOfVertices, indices, numberOfIndices, 1.0f, 0.0f);
 	
 	int phase = flexMakePhase(2, eFlexPhaseGroupMask);
 	int* phases = new int[g_cube->mNumParticles];
@@ -344,14 +355,18 @@ void TestScene::AddBox(vec3 a_position, glm::quat a_rotation)
 	}
 
 	vec3* cubeRestPositions = new vec3[g_cube->mNumShapeIndices];
+	//I suspect these shape offsets are not actually supposed to be stored in the cube- 
+	//the flexSetRigids function suggests that the array should be numShapes + 1 in size, and the first element should be 0,
+	//so I suspect that this should be an inter-object array, with each object's default 'mShapeOffset' as their entry in the array.
+	g_cube->mShapeOffsets[0] = 0;
+	g_cube->mShapeOffsets[1] = 8;
 	CalculateRigidOffsets((vec4*)g_cube->mParticles, g_cube->mShapeOffsets, g_cube->mShapeIndices, g_cube->mNumShapes, cubeRestPositions);
 
 	flexSetParticles(m_solver, g_cube->mParticles, g_cube->mNumParticles, eFlexMemoryHostAsync);
 	flexSetVelocities(m_solver, velocities, g_cube->mNumParticles, eFlexMemoryHostAsync);
 	flexSetPhases(m_solver, phases, g_cube->mNumParticles, eFlexMemoryHostAsync);
 	flexSetActive(m_solver, m_activeParticles, g_cube->mNumParticles, eFlexMemoryHostAsync);
-	//This doesn't work. In the flex demo, they occasionally pass NULL into the normals component of this function, however it's the main thing that I suspect of breaking.
-	//Redo this with a proper normal calculation, to see if that fixes it.
+
 	flexSetRigids(m_solver, g_cube->mShapeOffsets, g_cube->mShapeIndices, (float*)cubeRestPositions, NULL, g_cube->mShapeCoefficients, &a_rotation[0], &a_position[0], g_cube->mNumShapes, eFlexMemoryHostAsync);
 	
 	delete[] phases;
@@ -362,6 +377,7 @@ void TestScene::AddBox(vec3 a_position, glm::quat a_rotation)
 
 
 // Copy + pasted from FleX demo code and modified to use glm vectors instead.
+//This function may not be needed, its end result is just the same as the starting position, as the particles are still at world 0 when this is called.
 void TestScene::CalculateRigidOffsets(const vec4* restPositions, const int* offsets, const int* indices, int numRigids, vec3* localPositions)
 {
 	int count = 0;

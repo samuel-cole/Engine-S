@@ -53,7 +53,9 @@ protected:
 	float timeInScene;
 
 	unsigned int m_clothModel;
+	unsigned int m_boxModel;
 	FlexExtAsset* g_cloth;
+	FlexExtAsset* g_cube;
 
 	int m_numberOfParticles;
 
