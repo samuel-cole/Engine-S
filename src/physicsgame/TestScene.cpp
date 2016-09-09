@@ -27,7 +27,7 @@ int TestScene::Init()
 	TwAddVarRW(m_debugBar, "Gravity", TW_TYPE_DIR3F, &m_gravityDir[0], "");
 	TwAddVarRW(m_debugBar, "Gravity Strength", TW_TYPE_FLOAT, &m_gravityStrength, " min=0 max=30");
 
-	m_numberOfParticles = 8;
+	m_numberOfParticles = 10000;
 	int sqrtNumberOfParticles = glm::sqrt(m_numberOfParticles);
 
 	flexInit();
@@ -146,10 +146,13 @@ int TestScene::Init()
 	m_indices = new int[(sqrtNumberOfParticles - 1) * (sqrtNumberOfParticles - 1) * 2 * 3];
 	m_activeParticles = new int[m_numberOfParticles];
 
+	//Shape offsets should always start with just a 0 in it.
+	m_shapeOffsets.push_back(0);
+
 	flexSetParams(m_solver, &params);
 
 	//AddCloth(sqrtNumberOfParticles);
-	AddBox(vec3(0, 10, 0), glm::quat(vec3(0, 0, 0)));
+	AddBox(vec3(0, 10, 0), glm::quat(vec3(30, 25, 70)));
 
 	int version = flexGetVersion();
 
@@ -206,6 +209,11 @@ void TestScene::Update(float a_deltaTime)
 
 	m_camera->Update(a_deltaTime);
 
+	if (InputManager::GetKey(Keys::SPACE))
+	{
+		AddBox(vec3(0, 10, 0), glm::quat(vec3(30, 25, 70)));
+	}
+
 	//flexSetParticles(m_solver, m_particles, 100, eFlexMemoryHostAsync);
 	//flexSetVelocities(m_solver, m_velocities, 100, eFlexMemoryHostAsync);
 
@@ -214,10 +222,7 @@ void TestScene::Update(float a_deltaTime)
 	flexGetParticles(m_solver, m_particles, m_numberOfParticles, eFlexMemoryHostAsync);
 	flexGetVelocities(m_solver, m_velocities, m_numberOfParticles, eFlexMemoryHostAsync);
 
-	float* rotation = new float[4];
-	float* position = new float[3];
-
-	flexGetRigidTransforms(m_solver, rotation, position, eFlexMemoryHostAsync);
+	flexGetRigidTransforms(m_solver, (float*)&m_rotations[0], (float*)&m_positions[0], eFlexMemoryHostAsync);
 
 	flexSetFence();
 	flexWaitFence();
@@ -239,11 +244,11 @@ void TestScene::Update(float a_deltaTime)
 	//}
 
 	//m_renderer->ModifyMesh(m_boxModel, particlePositions);
-	m_renderer->SetPosition(*((vec3*)position), m_boxModel);
-	m_renderer->SetRotation(*((glm::quat*)rotation), m_boxModel);
-
-	delete[] position;
-	delete[] rotation;
+	for (int i = 0; i < g_cubes.size(); ++i)
+	{
+		m_renderer->SetPosition(m_positions[i], m_boxModels[i]);
+		m_renderer->SetRotation(m_rotations[i], m_boxModels[i]);
+	}
 }
 
 
@@ -340,39 +345,63 @@ void TestScene::AddBox(vec3 a_position, glm::quat a_rotation)
 	float* vertices = nullptr;
 	int* indices = nullptr;
 
-	m_boxModel =  m_renderer->LoadOBJ("../data/cube.obj", numberOfVertices, vertices, numberOfIndices, indices);
-	m_renderer->SetScale(vec3(0.5f, 0.5f, 0.5f), m_boxModel);
+	m_positions.push_back(a_position);
+	m_rotations.push_back(a_rotation);
 
-	g_cube = flexExtCreateRigidFromMesh(vertices, numberOfVertices, indices, numberOfIndices, 1.0f, 0.0f);
+	m_boxModels.push_back(m_renderer->LoadOBJ("../data/cube.obj", numberOfVertices, vertices, numberOfIndices, indices));
+	m_renderer->SetScale(vec3(0.5f, 0.5f, 0.5f), m_boxModels[m_boxModels.size() - 1]);
+
+	FlexExtAsset* g_cube = flexExtCreateRigidFromMesh(vertices, numberOfVertices, indices, numberOfIndices, 1.0f, 0.0f);
 	
 	int phase = flexMakePhase(2, eFlexPhaseGroupMask);
-	int* phases = new int[g_cube->mNumParticles];
-	float* velocities = new float[g_cube->mNumParticles * 3];
-	for (unsigned int i = 0; i < g_cube->mNumParticles; ++i)
+	for (unsigned int i = g_cube->mNumParticles * g_cubes.size(); i < g_cube->mNumParticles * (g_cubes.size() + 1); ++i)
 	{
-		phases[i] = phase;
+		int indexInCurrentCube = i - g_cube->mNumParticles * g_cubes.size();
+		m_phases[i] = phase;
 		m_activeParticles[i] = i;
+
+		m_particles[i * 4 + 0] = g_cube->mParticles[indexInCurrentCube * 4 + 0];
+		m_particles[i * 4 + 1] = g_cube->mParticles[indexInCurrentCube * 4 + 1];
+		m_particles[i * 4 + 2] = g_cube->mParticles[indexInCurrentCube * 4 + 2];
+		m_particles[i * 4 + 3] = g_cube->mParticles[indexInCurrentCube * 4 + 3];
+
+		m_velocities[i * 3 + 0] = 0;
+		m_velocities[i * 3 + 1] = 0;
+		m_velocities[i * 3 + 2] = 0;
+
+		m_restPositions.push_back(m_particles[i * 4 + 0]);
+		m_restPositions.push_back(m_particles[i * 4 + 1]);
+		m_restPositions.push_back(m_particles[i * 4 + 2]);
+		m_restPositions.push_back(m_particles[i * 4 + 3]);
 	}
 
-	vec3* cubeRestPositions = new vec3[g_cube->mNumShapeIndices];
+	
 	//I suspect these shape offsets are not actually supposed to be stored in the cube- 
 	//the flexSetRigids function suggests that the array should be numShapes + 1 in size, and the first element should be 0,
 	//so I suspect that this should be an inter-object array, with each object's default 'mShapeOffset' as their entry in the array.
-	g_cube->mShapeOffsets[0] = 0;
-	g_cube->mShapeOffsets[1] = 8;
-	CalculateRigidOffsets((vec4*)g_cube->mParticles, g_cube->mShapeOffsets, g_cube->mShapeIndices, g_cube->mNumShapes, cubeRestPositions);
+	m_shapeOffsets.push_back(m_shapeOffsets[m_shapeOffsets.size() - 1] + g_cube->mShapeOffsets[0]);
+	
+	for (int i = 0; i < m_shapeOffsets[m_shapeOffsets.size() - 1] - m_shapeOffsets[m_shapeOffsets.size() - 2]; ++i)
+	{
+		m_shapeIndices.push_back(g_cube->mShapeIndices[i]);
+	}
 
-	flexSetParticles(m_solver, g_cube->mParticles, g_cube->mNumParticles, eFlexMemoryHostAsync);
-	flexSetVelocities(m_solver, velocities, g_cube->mNumParticles, eFlexMemoryHostAsync);
-	flexSetPhases(m_solver, phases, g_cube->mNumParticles, eFlexMemoryHostAsync);
+	vec3* cubeLocalRestPositions = new vec3[m_shapeIndices.size()];
+
+	CalculateRigidOffsets((vec4*)&m_restPositions[0], &m_shapeOffsets[0], &m_shapeIndices[0], g_cubes.size(), cubeLocalRestPositions);
+
+	flexSetParticles(m_solver, m_particles, m_numberOfParticles, eFlexMemoryHostAsync);
+	flexSetVelocities(m_solver, m_velocities, g_cube->mNumParticles, eFlexMemoryHostAsync);
+	flexSetPhases(m_solver, m_phases, g_cube->mNumParticles, eFlexMemoryHostAsync);
 	flexSetActive(m_solver, m_activeParticles, g_cube->mNumParticles, eFlexMemoryHostAsync);
 
-	flexSetRigids(m_solver, g_cube->mShapeOffsets, g_cube->mShapeIndices, (float*)cubeRestPositions, NULL, g_cube->mShapeCoefficients, &a_rotation[0], &a_position[0], g_cube->mNumShapes, eFlexMemoryHostAsync);
+	m_shapeCoefficients.push_back(g_cube->mShapeCoefficients[0]);
+
+	flexSetRigids(m_solver, &m_shapeOffsets[0], &m_shapeIndices[0], (float*)cubeLocalRestPositions, NULL, &m_shapeCoefficients[0], (float*)&m_rotations[0], (float*)&m_positions[0], g_cubes.size(), eFlexMemoryHostAsync);
 	
-	delete[] phases;
-	delete[] velocities;
-	delete[] vertices;
-	delete[] indices;
+	delete[] cubeLocalRestPositions;
+
+	g_cubes.push_back(g_cube);
 }
 
 

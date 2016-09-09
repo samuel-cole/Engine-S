@@ -53,9 +53,16 @@ protected:
 	float timeInScene;
 
 	unsigned int m_clothModel;
-	unsigned int m_boxModel;
+	std::vector<unsigned int> m_boxModels;
 	FlexExtAsset* g_cloth;
-	FlexExtAsset* g_cube;
+	std::vector<FlexExtAsset*> g_cubes;
+
+	std::vector<int> m_shapeOffsets;
+	std::vector<int> m_shapeIndices;
+	std::vector<float> m_restPositions;
+	std::vector<float> m_shapeCoefficients;
+	std::vector<vec3> m_positions;
+	std::vector<glm::quat> m_rotations;
 
 	int m_numberOfParticles;
 
