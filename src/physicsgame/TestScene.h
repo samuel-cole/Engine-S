@@ -81,8 +81,8 @@ protected:
 	float m_oldGravityStrength;
 
 	// calculates local space positions given a set of particles and rigid indices
-	// Copy + pasted from FleX demo code and modified to use glm vectors instead.
-	void CalculateRigidOffsets(const vec4* restPositions, const int* offsets, const int* indices, int numRigids, vec3* localPositions);
+	// Copy + pasted from FleX demo code and modified to use glm vectors and return normals.
+	void CalculateRigidOffsets(const vec4* restPositions, const int* offsets, const int* indices, int numRigids, vec3* localPositions, vec4* normals);
 };
 
 

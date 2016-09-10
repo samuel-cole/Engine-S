@@ -114,7 +114,6 @@ int TestScene::Init()
 		m_renderer->LoadSpecularMap("../data/tablecloth.jpg", planes[i]);
 	}
 
-	//m_renderer->SetTransform(glm::translate(vec3(0, 0, 100)) * glm::eulerAngleYXZ(0.0f, 0.0f, glm::half_pi<float>()), planes[1]);
 	m_renderer->SetPosition(vec3(30, 0, 0), planes[1]);
 	m_renderer->SetRotation(glm::quat(vec3(0, 0, glm::pi<float>()/2.0f)), planes[1]);
 	m_renderer->SetPosition(vec3(0, 0, 30), planes[2]);
@@ -153,7 +152,7 @@ int TestScene::Init()
 
 	//AddCloth(sqrtNumberOfParticles);
 	AddBox(vec3(0, 10, 0), glm::quat(vec3(30, 25, 70)));
-	//AddBox(vec3(5, 10, 0), glm::quat(vec3(30, 75, 145)));
+	//AddBox(vec3(5, 10, 0), glm::quat(vec3(0, 0, 0)));
 	//AddBox(vec3(0, 10, 5), glm::quat(vec3(30, 25, 70)));
 	//AddBox(vec3(5, 10, 5), glm::quat(vec3(30, 75, 145)));
 
@@ -220,9 +219,9 @@ void TestScene::Update(float a_deltaTime)
 	//flexSetParticles(m_solver, m_particles, 100, eFlexMemoryHostAsync);
 	//flexSetVelocities(m_solver, m_velocities, 100, eFlexMemoryHostAsync);
 
-	printf("Before update: %f, %f, %f \n", m_positions[0].x, m_positions[0].y, m_positions[0].z);
-	flexGetRigidTransforms(m_solver, (float*)&m_rotations[0], (float*)&m_positions[0], eFlexMemoryHostAsync);
-	printf("After update: %f, %f, %f \n", m_positions[0].x, m_positions[0].y, m_positions[0].z);
+	//printf("Before update: %f, %f, %f \n", m_positions[0].x, m_positions[0].y, m_positions[0].z);
+	//flexGetRigidTransforms(m_solver, (float*)&m_rotations[0], (float*)&m_positions[0], eFlexMemoryHostAsync);
+	//printf("After update: %f, %f, %f \n", m_positions[0].x, m_positions[0].y, m_positions[0].z);
 
 	flexUpdateSolver(m_solver, 1.0f/60.0f, 1, NULL);
 
@@ -231,6 +230,7 @@ void TestScene::Update(float a_deltaTime)
 
 	
 	flexGetRigidTransforms(m_solver, (float*)&m_rotations[0], (float*)&m_positions[0], eFlexMemoryHostAsync);
+	printf("After update: %f, %f, %f \n", m_positions[0].x, m_positions[0].y, m_positions[0].z);
 
 	flexSetFence();
 	flexWaitFence();
@@ -252,7 +252,7 @@ void TestScene::Update(float a_deltaTime)
 	//}
 
 	//m_renderer->ModifyMesh(m_boxModel, particlePositions);
-	for (int i = 0; i < g_cubes.size(); ++i)
+	for (unsigned int i = 0; i < g_cubes.size(); ++i)
 	{
 		m_renderer->SetPosition(m_positions[i], m_boxModels[i]);
 		m_renderer->SetRotation(m_rotations[i], m_boxModels[i]);
@@ -356,11 +356,15 @@ void TestScene::AddBox(vec3 a_position, glm::quat a_rotation)
 	m_positions.push_back(a_position);
 	m_rotations.push_back(a_rotation);
 
-	m_boxModels.push_back(m_renderer->LoadOBJ("../data/cube.obj", numberOfVertices, vertices, numberOfIndices, indices));
-	m_renderer->SetScale(vec3(0.5f, 0.5f, 0.5f), m_boxModels[m_boxModels.size() - 1]);
+	unsigned int model = m_renderer->LoadOBJ("../data/cube.obj", numberOfVertices, vertices, numberOfIndices, indices);
+	m_boxModels.push_back(model);
+	m_renderer->SetScale(vec3(0.5f, 0.5f, 0.5f), model);
+	m_renderer->SetPosition(a_position, model);
+	m_renderer->SetRotation(a_rotation, model);
 
 	FlexExtAsset* g_cube = flexExtCreateRigidFromMesh(vertices, numberOfVertices, indices, numberOfIndices, 1.0f, 0.0f);
 	
+	mat4 transform = m_renderer->GetTransform(model);
 	int phase = flexMakePhase(2, eFlexPhaseGroupMask);
 	for (unsigned int i = g_cube->mNumParticles * g_cubes.size(); i < g_cube->mNumParticles * (g_cubes.size() + 1); ++i)
 	{
@@ -368,9 +372,17 @@ void TestScene::AddBox(vec3 a_position, glm::quat a_rotation)
 		m_phases[i] = phase;
 		m_activeParticles[i] = i;
 
-		m_particles[i * 4 + 0] = g_cube->mParticles[indexInCurrentCube * 4 + 0];
-		m_particles[i * 4 + 1] = g_cube->mParticles[indexInCurrentCube * 4 + 1];
-		m_particles[i * 4 + 2] = g_cube->mParticles[indexInCurrentCube * 4 + 2];
+		float x = g_cube->mParticles[indexInCurrentCube * 4 + 0];
+		float y = g_cube->mParticles[indexInCurrentCube * 4 + 1];
+		float z = g_cube->mParticles[indexInCurrentCube * 4 + 2];
+		//Transforming this just offsets the physics from the model- not what I want!
+		//The idea behind doing this transform is that at the moment, the object is always being spawned at world origin, regardless of the position/rotation passed in.
+		//This is because even though position/rotation is passed into the function for making a rigidbody, the particles themselves aren't set to the correct positions.
+		vec4 vertex = vec4(x, y, z, 1) /* * transform*/;
+
+		m_particles[i * 4 + 0] = vertex.x;
+		m_particles[i * 4 + 1] = vertex.y;
+		m_particles[i * 4 + 2] = vertex.z;
 		m_particles[i * 4 + 3] = g_cube->mParticles[indexInCurrentCube * 4 + 3];
 
 		m_velocities[i * 3 + 0] = 0;
@@ -396,8 +408,9 @@ void TestScene::AddBox(vec3 a_position, glm::quat a_rotation)
 	}
 
 	vec3* cubeLocalRestPositions = new vec3[m_shapeIndices.size()];
+	vec4* cubeLocalNormals = new vec4[m_shapeIndices.size()];
 
-	CalculateRigidOffsets((vec4*)&m_restPositions[0], &m_shapeOffsets[0], &m_shapeIndices[0], g_cubes.size() + 1, cubeLocalRestPositions);
+	CalculateRigidOffsets((vec4*)&m_restPositions[0], &m_shapeOffsets[0], &m_shapeIndices[0], g_cubes.size() + 1, cubeLocalRestPositions, cubeLocalNormals);
 
 	flexSetParticles(m_solver, m_particles, m_numberOfParticles, eFlexMemoryHostAsync);
 	flexSetVelocities(m_solver, m_velocities, g_cube->mNumParticles, eFlexMemoryHostAsync);
@@ -406,7 +419,10 @@ void TestScene::AddBox(vec3 a_position, glm::quat a_rotation)
 
 	m_shapeCoefficients.push_back(g_cube->mShapeCoefficients[0]);
 
-	flexSetRigids(m_solver, &m_shapeOffsets[0], &m_shapeIndices[0], (float*)cubeLocalRestPositions, NULL, &m_shapeCoefficients[0], (float*)&m_rotations[0], (float*)&m_positions[0], g_cubes.size() + 1, eFlexMemoryHostAsync);
+	//The normals are null here because they seem to be null in some situations in the demo, and that works.
+	//In addition, the normals that I'm currently generating will only work for cubes.
+	//In addition, it doesn't seem to behave any differently with normals instead of NULL- maybe it's autogenerating them if they aren't passed in?
+	flexSetRigids(m_solver, &m_shapeOffsets[0], &m_shapeIndices[0], (float*)cubeLocalRestPositions, /*(float*)cubeLocalNormals*/NULL, &m_shapeCoefficients[0], (float*)&m_rotations[0], (float*)&m_positions[0], g_cubes.size() + 1, eFlexMemoryHostAsync);
 	
 	delete[] cubeLocalRestPositions;
 	delete[] vertices;
@@ -416,9 +432,9 @@ void TestScene::AddBox(vec3 a_position, glm::quat a_rotation)
 }
 
 
-// Copy + pasted from FleX demo code and modified to use glm vectors instead.
+// Copy + pasted from FleX demo code and modified to use glm vectors and return normals.
 //This function may not be needed, its end result is just the same as the starting position, as the particles are still at world 0 when this is called.
-void TestScene::CalculateRigidOffsets(const vec4* restPositions, const int* offsets, const int* indices, int numRigids, vec3* localPositions)
+void TestScene::CalculateRigidOffsets(const vec4* restPositions, const int* offsets, const int* indices, int numRigids, vec3* localPositions, vec4* normals)
 {
 	int count = 0;
 
@@ -446,6 +462,7 @@ void TestScene::CalculateRigidOffsets(const vec4* restPositions, const int* offs
 		{
 			const int r = indices[i];
 
+			normals[count] = vec4(vec3(restPositions[r]) - com, -0.01f);
 			localPositions[count++] = vec3(restPositions[r]) - com;
 		}
 	}
