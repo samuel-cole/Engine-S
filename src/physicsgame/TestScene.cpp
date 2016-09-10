@@ -153,6 +153,9 @@ int TestScene::Init()
 
 	//AddCloth(sqrtNumberOfParticles);
 	AddBox(vec3(0, 10, 0), glm::quat(vec3(30, 25, 70)));
+	//AddBox(vec3(5, 10, 0), glm::quat(vec3(30, 75, 145)));
+	//AddBox(vec3(0, 10, 5), glm::quat(vec3(30, 25, 70)));
+	//AddBox(vec3(5, 10, 5), glm::quat(vec3(30, 75, 145)));
 
 	int version = flexGetVersion();
 
@@ -217,11 +220,16 @@ void TestScene::Update(float a_deltaTime)
 	//flexSetParticles(m_solver, m_particles, 100, eFlexMemoryHostAsync);
 	//flexSetVelocities(m_solver, m_velocities, 100, eFlexMemoryHostAsync);
 
+	printf("Before update: %f, %f, %f \n", m_positions[0].x, m_positions[0].y, m_positions[0].z);
+	flexGetRigidTransforms(m_solver, (float*)&m_rotations[0], (float*)&m_positions[0], eFlexMemoryHostAsync);
+	printf("After update: %f, %f, %f \n", m_positions[0].x, m_positions[0].y, m_positions[0].z);
+
 	flexUpdateSolver(m_solver, 1.0f/60.0f, 1, NULL);
 
 	flexGetParticles(m_solver, m_particles, m_numberOfParticles, eFlexMemoryHostAsync);
 	flexGetVelocities(m_solver, m_velocities, m_numberOfParticles, eFlexMemoryHostAsync);
 
+	
 	flexGetRigidTransforms(m_solver, (float*)&m_rotations[0], (float*)&m_positions[0], eFlexMemoryHostAsync);
 
 	flexSetFence();
@@ -331,7 +339,7 @@ void TestScene::AddCloth(unsigned int a_dimensions)
 	flexSetSprings(m_solver, g_cloth->mSpringIndices, g_cloth->mSpringRestLengths, g_cloth->mSpringCoefficients, g_cloth->mNumSprings, eFlexMemoryHostAsync);
 
 	flexSetDynamicTriangles(m_solver, m_indices, NULL, numberOfTriangles, eFlexMemoryHostAsync);
-	//flexSetTriangles(m_solver, indices, verticies, numberOfTriangles, sqrDimensions, m_particleRadius, FlexMemory::eFlexMemoryHost);
+	//flexSetTriangles(m_solver, indices, verticies, numberOfTriangles, sqrDimensions, m_particleRadius, FlexMemory::eFlexMemoryHostAsync);
 
 
 	//m_clothModels.push_back(m_renderer->GenerateGrid(a_dimensions - 1, a_dimensions - 1));
@@ -380,15 +388,16 @@ void TestScene::AddBox(vec3 a_position, glm::quat a_rotation)
 	//the flexSetRigids function suggests that the array should be numShapes + 1 in size, and the first element should be 0,
 	//so I suspect that this should be an inter-object array, with each object's default 'mShapeOffset' as their entry in the array.
 	m_shapeOffsets.push_back(m_shapeOffsets[m_shapeOffsets.size() - 1] + g_cube->mShapeOffsets[0]);
-	
+
 	for (int i = 0; i < m_shapeOffsets[m_shapeOffsets.size() - 1] - m_shapeOffsets[m_shapeOffsets.size() - 2]; ++i)
 	{
-		m_shapeIndices.push_back(g_cube->mShapeIndices[i]);
+		//Continuing the indices on from the previous shape prevents the shape from flying out of the scene, however it instead attaches all of the shapes to each other in a glitchy-looking way.
+		m_shapeIndices.push_back(g_cube->mShapeIndices[i] /*+ m_shapeOffsets[m_shapeOffsets.size() - 2]*/);
 	}
 
 	vec3* cubeLocalRestPositions = new vec3[m_shapeIndices.size()];
 
-	CalculateRigidOffsets((vec4*)&m_restPositions[0], &m_shapeOffsets[0], &m_shapeIndices[0], g_cubes.size(), cubeLocalRestPositions);
+	CalculateRigidOffsets((vec4*)&m_restPositions[0], &m_shapeOffsets[0], &m_shapeIndices[0], g_cubes.size() + 1, cubeLocalRestPositions);
 
 	flexSetParticles(m_solver, m_particles, m_numberOfParticles, eFlexMemoryHostAsync);
 	flexSetVelocities(m_solver, m_velocities, g_cube->mNumParticles, eFlexMemoryHostAsync);
@@ -397,9 +406,11 @@ void TestScene::AddBox(vec3 a_position, glm::quat a_rotation)
 
 	m_shapeCoefficients.push_back(g_cube->mShapeCoefficients[0]);
 
-	flexSetRigids(m_solver, &m_shapeOffsets[0], &m_shapeIndices[0], (float*)cubeLocalRestPositions, NULL, &m_shapeCoefficients[0], (float*)&m_rotations[0], (float*)&m_positions[0], g_cubes.size(), eFlexMemoryHostAsync);
+	flexSetRigids(m_solver, &m_shapeOffsets[0], &m_shapeIndices[0], (float*)cubeLocalRestPositions, NULL, &m_shapeCoefficients[0], (float*)&m_rotations[0], (float*)&m_positions[0], g_cubes.size() + 1, eFlexMemoryHostAsync);
 	
 	delete[] cubeLocalRestPositions;
+	delete[] vertices;
+	delete[] indices;
 
 	g_cubes.push_back(g_cube);
 }
