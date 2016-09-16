@@ -407,7 +407,8 @@ void TestScene::AddBox(vec3 a_position, glm::quat a_rotation)
 	for (int i = 0; i < m_shapeOffsets[m_shapeOffsets.size() - 1] - m_shapeOffsets[m_shapeOffsets.size() - 2]; ++i)
 	{
 		//Continuing the indices on from the previous shape prevents the shape from flying out of the scene, however it instead attaches all of the shapes to each other in a glitchy-looking way.
-		m_shapeIndices.push_back(g_cube->mShapeIndices[i] /*+ m_shapeOffsets[m_shapeOffsets.size() - 2]*/);
+		//However, this is also what the demo does, so I'd presume it is the correct way.
+		m_shapeIndices.push_back(g_cube->mShapeIndices[i] + m_shapeOffsets[m_shapeOffsets.size() - 2]);
 	}
 
 	vec3* cubeLocalRestPositions = new vec3[m_shapeIndices.size()];
@@ -422,10 +423,7 @@ void TestScene::AddBox(vec3 a_position, glm::quat a_rotation)
 
 	m_shapeCoefficients.push_back(g_cube->mShapeCoefficients[0]);
 
-	//The normals are null here because they seem to be null in some situations in the demo, and that works.
-	//In addition, the normals that I'm currently generating will only work for cubes.
-	//In addition, it doesn't seem to behave any differently with normals instead of NULL- maybe it's autogenerating them if they aren't passed in?
-	flexSetRigids(m_solver, &m_shapeOffsets[0], &m_shapeIndices[0], (float*)cubeLocalRestPositions, /*(float*)cubeLocalNormals*/NULL, &m_shapeCoefficients[0], (float*)&m_rotations[0], (float*)&m_positions[0], g_cubes.size() + 1, eFlexMemoryHostAsync);
+	flexSetRigids(m_solver, &m_shapeOffsets[0], &m_shapeIndices[0], (float*)cubeLocalRestPositions, (float*)cubeLocalNormals, &m_shapeCoefficients[0], (float*)&m_rotations[0], (float*)&m_positions[0], g_cubes.size() + 1, eFlexMemoryHostAsync);
 	
 	delete[] cubeLocalRestPositions;
 	delete[] vertices;
@@ -465,8 +463,11 @@ void TestScene::CalculateRigidOffsets(const vec4* restPositions, const int* offs
 		{
 			const int r = indices[i];
 
-			normals[count] = vec4(vec3(restPositions[r]) - com, -0.01f);
-			localPositions[count++] = vec3(restPositions[r]) - com;
+			vec3 position = vec3(restPositions[r]) - com;
+			float distance = glm::length(position);
+			localPositions[count] = position;
+			//normal uses position, but normalized, and with the negative distance as the 4th component.
+			normals[count++] = vec4((1.0f / distance) * position, -distance);
 		}
 	}
 }
