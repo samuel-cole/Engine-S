@@ -65,6 +65,7 @@ protected:
 	std::vector<glm::quat> m_rotations;
 
 	int m_numberOfParticles;
+	int m_numberOfActiveParticles;
 
 	float* m_particles;
 	float* m_velocities;

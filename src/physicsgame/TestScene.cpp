@@ -28,6 +28,7 @@ int TestScene::Init()
 	TwAddVarRW(m_debugBar, "Gravity Strength", TW_TYPE_FLOAT, &m_gravityStrength, " min=0 max=30");
 
 	m_numberOfParticles = 10000;
+	m_numberOfActiveParticles = 0;
 	int sqrtNumberOfParticles = glm::sqrt(m_numberOfParticles);
 
 	flexInit();
@@ -152,11 +153,9 @@ int TestScene::Init()
 
 	//AddCloth(sqrtNumberOfParticles);
 	AddBox(vec3(0, 10, 0), glm::quat(vec3(30, 25, 70)));
-	//AddBox(vec3(5, 10, 0), glm::quat(vec3(0, 0, 0)));
+	AddBox(vec3(5, 10, 0), glm::quat(vec3(0, 0, 0)));
 	//AddBox(vec3(0, 10, 5), glm::quat(vec3(30, 25, 70)));
 	//AddBox(vec3(5, 10, 5), glm::quat(vec3(30, 75, 145)));
-
-	int version = flexGetVersion();
 
 	timeInScene = 0.0f;
 
@@ -195,9 +194,7 @@ void TestScene::Update(float a_deltaTime)
 {
 	timeInScene += a_deltaTime;
 
-	//m_renderer->SetRotation(glm::quat(vec3(glm::pi<float>() * glm::sin(timeInScene), 0, 0)), 1);
-
-	if (m_oldgravityDir != m_gravityDir || m_oldGravityStrength != m_gravityStrength)	//rewrite this to account for float equality issues.
+	if (m_oldgravityDir != m_gravityDir || m_oldGravityStrength != m_gravityStrength)	//TODO: rewrite this to account for float equality issues.
 	{
 		m_oldgravityDir = m_gravityDir;
 		m_oldGravityStrength = m_gravityStrength;
@@ -211,7 +208,7 @@ void TestScene::Update(float a_deltaTime)
 
 	m_camera->Update(a_deltaTime);
 
-	if (InputManager::GetKey(Keys::SPACE))
+	if (InputManager::GetKey(Keys::ENTER))
 	{
 		AddBox(vec3(0, 10, 0), glm::quat(vec3(30, 25, 70)));
 	}
@@ -223,7 +220,8 @@ void TestScene::Update(float a_deltaTime)
 	//flexGetRigidTransforms(m_solver, (float*)&m_rotations[0], (float*)&m_positions[0], eFlexMemoryHostAsync);
 	//printf("After update: %f, %f, %f \n", m_positions[0].x, m_positions[0].y, m_positions[0].z);
 
-	flexUpdateSolver(m_solver, 1.0f/60.0f, 1, NULL);
+	if (InputManager::GetKey(Keys::SPACE))
+		flexUpdateSolver(m_solver, 1.0f/60.0f, 1, NULL);
 
 	flexGetParticles(m_solver, m_particles, m_numberOfParticles, eFlexMemoryHostAsync);
 	flexGetVelocities(m_solver, m_velocities, m_numberOfParticles, eFlexMemoryHostAsync);
@@ -364,8 +362,10 @@ void TestScene::AddBox(vec3 a_position, glm::quat a_rotation)
 
 	FlexExtAsset* g_cube = flexExtCreateRigidFromMesh(vertices, numberOfVertices, indices, numberOfIndices, 1.0f, 0.0f);
 	
+	m_numberOfActiveParticles += g_cube->mNumParticles;
+
 	mat4 transform = m_renderer->GetTransform(model);
-	int phase = flexMakePhase(2, eFlexPhaseGroupMask);
+	int phase = flexMakePhase(2 + g_cubes.size(), 0);
 	for (unsigned int i = g_cube->mNumParticles * g_cubes.size(); i < g_cube->mNumParticles * (g_cubes.size() + 1); ++i)
 	{
 		int indexInCurrentCube = i - g_cube->mNumParticles * g_cubes.size();
@@ -378,7 +378,7 @@ void TestScene::AddBox(vec3 a_position, glm::quat a_rotation)
 		//Transforming this just offsets the physics from the model- not what I want!
 		//The idea behind doing this transform is that at the moment, the object is always being spawned at world origin, regardless of the position/rotation passed in.
 		//This is because even though position/rotation is passed into the function for making a rigidbody, the particles themselves aren't set to the correct positions.
-		vec4 vertex = vec4(x, y, z, 1) /* * transform*/;
+		vec4 vertex = transform * vec4(x, y, z, 1);
 
 		m_particles[i * 4 + 0] = vertex.x;
 		m_particles[i * 4 + 1] = vertex.y;
@@ -389,10 +389,10 @@ void TestScene::AddBox(vec3 a_position, glm::quat a_rotation)
 		m_velocities[i * 3 + 1] = 0;
 		m_velocities[i * 3 + 2] = 0;
 
-		m_restPositions.push_back(m_particles[i * 4 + 0]);
-		m_restPositions.push_back(m_particles[i * 4 + 1]);
-		m_restPositions.push_back(m_particles[i * 4 + 2]);
-		m_restPositions.push_back(m_particles[i * 4 + 3]);
+		m_restPositions.push_back(x);
+		m_restPositions.push_back(y);
+		m_restPositions.push_back(z);
+		m_restPositions.push_back(1);
 	}
 
 	
@@ -413,9 +413,9 @@ void TestScene::AddBox(vec3 a_position, glm::quat a_rotation)
 	CalculateRigidOffsets((vec4*)&m_restPositions[0], &m_shapeOffsets[0], &m_shapeIndices[0], g_cubes.size() + 1, cubeLocalRestPositions, cubeLocalNormals);
 
 	flexSetParticles(m_solver, m_particles, m_numberOfParticles, eFlexMemoryHostAsync);
-	flexSetVelocities(m_solver, m_velocities, g_cube->mNumParticles, eFlexMemoryHostAsync);
-	flexSetPhases(m_solver, m_phases, g_cube->mNumParticles, eFlexMemoryHostAsync);
-	flexSetActive(m_solver, m_activeParticles, g_cube->mNumParticles, eFlexMemoryHostAsync);
+	flexSetVelocities(m_solver, m_velocities, m_numberOfParticles, eFlexMemoryHostAsync);
+	flexSetPhases(m_solver, m_phases, m_numberOfParticles, eFlexMemoryHostAsync);
+	flexSetActive(m_solver, m_activeParticles, m_numberOfActiveParticles, eFlexMemoryHostAsync);
 
 	m_shapeCoefficients.push_back(g_cube->mShapeCoefficients[0]);
 
