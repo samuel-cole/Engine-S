@@ -1595,7 +1595,7 @@ unsigned int Renderer::LoadOBJ(const string& a_filePath, unsigned int& a_numberO
 		glGetBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(int) * m_numOfIndices[modelIndex], a_indices);
 
 		a_vertices = new float[a_numberOfVertices * 3];
-		for (int i = 0; i < a_numberOfVertices; ++i)
+		for (unsigned int i = 0; i < a_numberOfVertices; ++i)
 		{
 			a_vertices[i * 3 + 0] = verticesBuffer[i].position.x;
 			a_vertices[i * 3 + 1] = verticesBuffer[i].position.y;

@@ -45,15 +45,6 @@
     <ClCompile Include="..\src\WalkCamera.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\checkers\CheckersMover.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\checkers\Checkers.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\PhysicsBase.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\physicsgame\TestScene.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -87,15 +78,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\src\WalkCamera.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\checkers\Checkers.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\checkers\CheckersMover.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\PhysicsBase.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\src\physicsgame\TestScene.h">

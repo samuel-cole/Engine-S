@@ -228,7 +228,14 @@ void TestScene::Update(float a_deltaTime)
 
 	
 	flexGetRigidTransforms(m_solver, (float*)&m_rotations[0], (float*)&m_positions[0], eFlexMemoryHostAsync);
-	printf("After update: %f, %f, %f \n", m_positions[0].x, m_positions[0].y, m_positions[0].z);
+	if (InputManager::GetKey(Keys::SPACE))
+	{
+		for (int i = 0; i < g_cubes.size(); ++i)
+		{
+			printf("Object %i after update: %f, %f, %f \n", i, m_positions[i].x, m_positions[i].y, m_positions[i].z);
+		}
+	}
+
 
 	flexSetFence();
 	flexWaitFence();
@@ -375,7 +382,7 @@ void TestScene::AddBox(vec3 a_position, glm::quat a_rotation)
 		float x = g_cube->mParticles[indexInCurrentCube * 4 + 0];
 		float y = g_cube->mParticles[indexInCurrentCube * 4 + 1];
 		float z = g_cube->mParticles[indexInCurrentCube * 4 + 2];
-		//Transforming this just offsets the physics from the model- not what I want!
+
 		//The idea behind doing this transform is that at the moment, the object is always being spawned at world origin, regardless of the position/rotation passed in.
 		//This is because even though position/rotation is passed into the function for making a rigidbody, the particles themselves aren't set to the correct positions.
 		vec4 vertex = transform * vec4(x, y, z, 1);
@@ -395,10 +402,6 @@ void TestScene::AddBox(vec3 a_position, glm::quat a_rotation)
 		m_restPositions.push_back(1);
 	}
 
-	
-	//I suspect these shape offsets are not actually supposed to be stored in the cube- 
-	//the flexSetRigids function suggests that the array should be numShapes + 1 in size, and the first element should be 0,
-	//so I suspect that this should be an inter-object array, with each object's default 'mShapeOffset' as their entry in the array.
 	m_shapeOffsets.push_back(m_shapeOffsets[m_shapeOffsets.size() - 1] + g_cube->mShapeOffsets[0]);
 
 	for (int i = 0; i < m_shapeOffsets[m_shapeOffsets.size() - 1] - m_shapeOffsets[m_shapeOffsets.size() - 2]; ++i)
