@@ -52,6 +52,8 @@ protected:
 
 	float timeInScene;
 
+	float m_particleRadius;
+
 	unsigned int m_clothModel;
 	std::vector<unsigned int> m_boxModels;
 	FlexExtAsset* g_cloth;

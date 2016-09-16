@@ -31,6 +31,8 @@ int TestScene::Init()
 	m_numberOfActiveParticles = 0;
 	int sqrtNumberOfParticles = glm::sqrt(m_numberOfParticles);
 
+	m_particleRadius = 0.5f;
+
 	flexInit();
 	m_solver = flexCreateSolver(m_numberOfParticles, 0);
 
@@ -45,7 +47,7 @@ int TestScene::Init()
 	params.mWind[1] = 0.0f;
 	params.mWind[2] = 0.0f;
 	
-	params.mRadius = 0.05f;
+	params.mRadius = m_particleRadius;
 	params.mViscosity = 0.0f;
 	params.mDynamicFriction = 0.0f;
 	params.mStaticFriction = 0.0f;
@@ -153,9 +155,7 @@ int TestScene::Init()
 
 	//AddCloth(sqrtNumberOfParticles);
 	AddBox(vec3(0, 10, 0), glm::quat(vec3(30, 25, 70)));
-	AddBox(vec3(5, 10, 0), glm::quat(vec3(0, 0, 0)));
-	//AddBox(vec3(0, 10, 5), glm::quat(vec3(30, 25, 70)));
-	//AddBox(vec3(5, 10, 5), glm::quat(vec3(30, 75, 145)));
+	//AddBox(vec3(5, 10, 0), glm::quat(vec3(0, 0, 0)));
 
 	timeInScene = 0.0f;
 
@@ -363,11 +363,10 @@ void TestScene::AddBox(vec3 a_position, glm::quat a_rotation)
 
 	unsigned int model = m_renderer->LoadOBJ("../data/cube.obj", numberOfVertices, vertices, numberOfIndices, indices);
 	m_boxModels.push_back(model);
-	m_renderer->SetScale(vec3(0.5f, 0.5f, 0.5f), model);
 	m_renderer->SetPosition(a_position, model);
 	m_renderer->SetRotation(a_rotation, model);
 
-	FlexExtAsset* g_cube = flexExtCreateRigidFromMesh(vertices, numberOfVertices, indices, numberOfIndices, 1.0f, 0.0f);
+	FlexExtAsset* g_cube = flexExtCreateRigidFromMesh(vertices, numberOfVertices, indices, numberOfIndices, m_particleRadius, 0.0f);
 	
 	m_numberOfActiveParticles += g_cube->mNumParticles;
 
