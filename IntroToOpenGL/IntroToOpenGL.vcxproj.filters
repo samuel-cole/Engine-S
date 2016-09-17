@@ -45,10 +45,13 @@
     <ClCompile Include="..\src\WalkCamera.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\physicsgame\TestScene.cpp">
+    <ClCompile Include="..\src\FlyCamera.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\FlyCamera.cpp">
+    <ClCompile Include="..\src\physicsgame\FleXBase.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\physicsgame\TestScene.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -80,10 +83,13 @@
     <ClInclude Include="..\src\WalkCamera.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\physicsgame\TestScene.h">
+    <ClInclude Include="..\src\FlyCamera.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\FlyCamera.h">
+    <ClInclude Include="..\src\physicsgame\FleXBase.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\physicsgame\TestScene.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

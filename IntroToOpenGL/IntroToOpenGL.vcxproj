@@ -174,6 +174,7 @@
     <ClCompile Include="..\src\InputManager.cpp" />
     <ClCompile Include="..\src\main.cpp" />
     <ClCompile Include="..\src\Particle.cpp" />
+    <ClCompile Include="..\src\physicsgame\FleXBase.cpp" />
     <ClCompile Include="..\src\physicsgame\TestScene.cpp" />
     <ClCompile Include="..\src\Renderer.cpp" />
     <ClCompile Include="..\src\StaticCamera.cpp" />
@@ -187,6 +188,7 @@
     <ClInclude Include="..\src\GPUParticle.h" />
     <ClInclude Include="..\src\InputManager.h" />
     <ClInclude Include="..\src\Particle.h" />
+    <ClInclude Include="..\src\physicsgame\FleXBase.h" />
     <ClInclude Include="..\src\physicsgame\TestScene.h" />
     <ClInclude Include="..\src\Renderer.h" />
     <ClInclude Include="..\src\StaticCamera.h" />
