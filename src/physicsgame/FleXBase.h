@@ -43,6 +43,8 @@ protected:
 
 	FlexSolver* m_solver;
 
+	//TODO: Modify add cloth to provide more control over the cloth that is spawned (position, rotation, static points, etc.)
+	//TODO: Modify add cloth to support multiple cloths, and to support scenes in which the cloth is not created first.
 	void AddCloth(unsigned int a_dimensions);
 	void AddBox(vec3 a_position, quat a_rotation);
 
@@ -62,6 +64,8 @@ protected:
 
 	int m_numberOfParticles;
 	int m_numberOfActiveParticles;
+
+	unsigned int m_currentHighestPhase;
 
 	float* m_particles;
 	float* m_velocities;

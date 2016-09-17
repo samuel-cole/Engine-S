@@ -28,6 +28,9 @@ int FleXBase::Init()
 	flexInit();
 	m_solver = flexCreateSolver(m_numberOfParticles, 0);
 
+	m_currentHighestPhase = 0;
+	g_cloth = nullptr;
+
 	FlexParams params;
 	params.mGravity[0] = 0.0f;
 	params.mGravity[1] = -9.8f;
@@ -158,7 +161,8 @@ void FleXBase::Update(float a_deltaTime)
 {
 	m_camera->Update(a_deltaTime);
 
-	flexUpdateSolver(m_solver, 1.0f/60.0f, 1, NULL);
+	if (InputManager::GetKey(Keys::SPACE))
+		flexUpdateSolver(m_solver, 1.0f/60.0f, 1, NULL);
 
 	flexGetParticles(m_solver, m_particles, m_numberOfParticles, eFlexMemoryHostAsync);
 
@@ -168,15 +172,18 @@ void FleXBase::Update(float a_deltaTime)
 	flexSetFence();
 	flexWaitFence();
 
-	//std::vector<vec3> particlePositions;
-	//for (int i = 0; i < m_numberOfParticles; ++i)
-	//{
-	//	float x = m_particles[i * 4 + 0];
-	//	float y = m_particles[i * 4 + 1];
-	//	float z = m_particles[i * 4 + 2];
-	//	particlePositions.push_back(vec3(x, y, z));
-	//}
-	//m_renderer->ModifyMesh(m_boxModel, particlePositions);
+	if (g_cloth != nullptr && g_cloth != NULL)
+	{
+		std::vector<vec3> particlePositions;
+		for (int i = 0; i < g_cloth->mNumParticles; ++i)
+		{
+			float x = m_particles[i * 4 + 0];
+			float y = m_particles[i * 4 + 1];
+			float z = m_particles[i * 4 + 2];
+			particlePositions.push_back(vec3(x, y, z));
+		}
+		m_renderer->ModifyMesh(m_clothModel, particlePositions);
+	}
 
 	for (unsigned int i = 0; i < g_cubes.size(); ++i)
 	{
@@ -193,13 +200,13 @@ void FleXBase::Draw()
 void FleXBase::AddCloth(unsigned int a_dimensions)
 {
 	const int sqrDimensions = a_dimensions * a_dimensions;
-	int clothPhase = flexMakePhase(1, eFlexPhaseSelfCollide);
+	int clothPhase = flexMakePhase(m_currentHighestPhase++, eFlexPhaseSelfCollide);
 	for (unsigned int r = 0; r < a_dimensions; ++r)
 	{
 		for (unsigned c = 0; c < a_dimensions; ++c)
 		{
 			m_particles[(r * a_dimensions + c) * 4 + 0]  = (float)c - a_dimensions / 2;	//x
-			m_particles[(r * a_dimensions + c) * 4 + 1]  = 10;								//y
+			m_particles[(r * a_dimensions + c) * 4 + 1]  = 10;							//y
 			m_particles[(r * a_dimensions + c) * 4 + 2]  = (float)r - a_dimensions / 2;	//z
 
 			if ((r == 0 && c == 0) || (r == 0 && c == a_dimensions - 1))
@@ -255,6 +262,7 @@ void FleXBase::AddCloth(unsigned int a_dimensions)
 
 	g_cloth = flexExtCreateClothFromMesh(m_particles, sqrDimensions, m_indices, numberOfTriangles, 0.9f, 1.0f, 1.0f, 5.0f, 0.0f);
 
+	m_numberOfActiveParticles += sqrDimensions;
 	for (int i = 0; i < sqrDimensions; ++i)
 	{
 		m_activeParticles[i] = i;
@@ -287,14 +295,13 @@ void FleXBase::AddBox(vec3 a_position, quat a_rotation)
 	m_renderer->SetRotation(a_rotation, model);
 
 	FlexExtAsset* g_cube = flexExtCreateRigidFromMesh(vertices, numberOfVertices, indices, numberOfIndices, m_particleRadius, 0.0f);
-	
-	m_numberOfActiveParticles += g_cube->mNumParticles;
 
 	mat4 transform = m_renderer->GetTransform(model);
-	int phase = flexMakePhase(2 + g_cubes.size(), 0);
-	for (unsigned int i = g_cube->mNumParticles * g_cubes.size(); i < g_cube->mNumParticles * (g_cubes.size() + 1); ++i)
+	//int phase = flexMakePhase(m_currentHighestPhase++, 0);
+	int phase = flexMakePhase(3, 0);
+	for (int i = m_numberOfActiveParticles; i < m_numberOfActiveParticles + g_cube->mNumParticles; ++i)
 	{
-		int indexInCurrentCube = i - g_cube->mNumParticles * g_cubes.size();
+		int indexInCurrentCube = i - m_numberOfActiveParticles;
 		m_phases[i] = phase;
 		m_activeParticles[i] = i;
 
@@ -319,16 +326,13 @@ void FleXBase::AddBox(vec3 a_position, quat a_rotation)
 		m_restPositions.push_back(y);
 		m_restPositions.push_back(z);
 		m_restPositions.push_back(1);
+
+		m_shapeIndices.push_back(i);
 	}
+
+	m_numberOfActiveParticles += g_cube->mNumParticles;
 
 	m_shapeOffsets.push_back(m_shapeOffsets[m_shapeOffsets.size() - 1] + g_cube->mShapeOffsets[0]);
-
-	for (int i = 0; i < m_shapeOffsets[m_shapeOffsets.size() - 1] - m_shapeOffsets[m_shapeOffsets.size() - 2]; ++i)
-	{
-		//Continuing the indices on from the previous shape prevents the shape from flying out of the scene, however it instead attaches all of the shapes to each other in a glitchy-looking way.
-		//However, this is also what the demo does, so I'd presume it is the correct way.
-		m_shapeIndices.push_back(g_cube->mShapeIndices[i] + m_shapeOffsets[m_shapeOffsets.size() - 2]);
-	}
 
 	vec3* cubeLocalRestPositions = new vec3[m_shapeIndices.size()];
 	vec4* cubeLocalNormals = new vec4[m_shapeIndices.size()];

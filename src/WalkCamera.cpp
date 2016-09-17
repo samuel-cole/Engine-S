@@ -6,13 +6,13 @@
 
 using glm::vec4;
 
-WalkCamera::WalkCamera(TwBar* a_debugBar) : m_up(0, 1, 0), m_checkFrame(-100), m_mouseStartPos(0, 0)
+WalkCamera::WalkCamera(TwBar* a_debugBar) : m_up(0, 1, 0), m_checkFrame(-1), m_mouseStartPos(0, 0)
 {
 }
 
 void WalkCamera::Update(float a_deltaTime)
 {
-	if (!InputManager::GetMouseDown(1))
+	if (InputManager::GetMouseDown(1))
 	{
 		InputManager::SetMouseVisibility(false);
 		if (m_checkFrame == 0)

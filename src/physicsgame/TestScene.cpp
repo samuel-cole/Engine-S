@@ -30,13 +30,16 @@ int TestScene::Init()
 	TwAddVarRW(m_debugBar, "Gravity", TW_TYPE_DIR3F, &m_gravityDir[0], "");
 	TwAddVarRW(m_debugBar, "Gravity Strength", TW_TYPE_FLOAT, &m_gravityStrength, "min=0 max=30");
 
+	AddCloth(10);
+	AddBox(vec3(10, 15, 0), quat(vec3(30, 25, 70)));
+	AddBox(vec3(5, 15, 0), quat(vec3(30, 25, 70)));
+	AddBox(vec3(0, 15, 5), quat(vec3(30, 25, 70)));
+
 	return 0;
 }
 
 void TestScene::Update(float a_deltaTime)
 {
-	DebugUpdate(a_deltaTime);
-
 	//Gravity Management
 	if (!isNearlyEqual(m_oldGravityDir, m_gravityDir) || !isNearlyEqual(m_oldGravityStrength, m_gravityStrength))
 	{
@@ -51,12 +54,14 @@ void TestScene::Update(float a_deltaTime)
 	}
 
 	FleXBase::Update(a_deltaTime);
+
+	DebugUpdate(a_deltaTime);
 }
 
 void TestScene::DebugUpdate(float a_deltaTime)
 {
 	if (InputManager::GetKey(Keys::ENTER))
-		AddBox(vec3(0, 10, 0), quat(vec3(30, 25, 70)));
+		AddBox(vec3(0, 15, 0), quat(vec3(30, 25, 70)));
 	
 	if (InputManager::GetKey(Keys::SPACE))
 	{
