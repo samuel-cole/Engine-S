@@ -326,6 +326,11 @@ public:
 	void SetScale(const vec3& a_scale, const unsigned int a_index);
 	//Accessor method for the scale of each model. a_index refers to the index of the model to be scaled.
 	const vec3& GetScale(const unsigned int a_index) const;
+
+	//Generate grid overload for receiving information about the mesh created.
+	//a_vertices will be 4 * a_numberOfVertices in size, in the format (x, y, z, 1)
+	//Make sure to delete the arrays passed out by this function!
+	unsigned int GenerateGrid(const unsigned int a_rows, const unsigned int a_columns, float a_height, unsigned int& a_numberOfVertices, float*& a_vertices, unsigned int& a_numberOfIndices, int*& a_indices);
 	//=======================================================
 	//End FleX project additions
 	//=======================================================

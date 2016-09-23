@@ -860,7 +860,7 @@ unsigned int Renderer::GenerateGrid(const unsigned int a_rows, const unsigned in
 	
 
 	unsigned int rows = a_rows + 1;
-	unsigned int columns = a_rows + 1;
+	unsigned int columns = a_columns + 1;
 
 	Vertex* aoVertices = new Vertex[ rows * columns];
 	for (unsigned int r = 0; r < rows; ++r)
@@ -898,6 +898,61 @@ unsigned int Renderer::GenerateGrid(const unsigned int a_rows, const unsigned in
 
 	delete[] aoVertices;
 	delete[] auiIndices;
+
+	return m_numOfIndices.size() - 1;
+}
+
+unsigned int Renderer::GenerateGrid(const unsigned int a_rows, const unsigned int a_columns, float a_height, unsigned int& a_numberOfVertices, float*& a_vertices, unsigned int& a_numberOfIndices, int*& a_indices)
+{
+	if (m_standardProgram == -1)
+		m_standardProgram = CreateProgram("../data/shaders/vert.txt", "../data/shaders/frag.txt");
+
+
+	unsigned int rows = a_rows + 1;
+	unsigned int columns = a_columns + 1;
+	a_numberOfVertices = rows * columns;
+	a_vertices = new float[a_numberOfVertices * 4];
+
+	Vertex* aoVertices = new Vertex[a_numberOfVertices];
+	for (unsigned int r = 0; r < rows; ++r)
+	{
+		for (unsigned int c = 0; c < columns; ++c)
+		{
+			vec4 position = vec4((float)c - a_columns / 2, a_height, (float)r - a_rows / 2, 1);
+
+			aoVertices[r * columns + c].position = position;
+			aoVertices[r * columns + c].colour =  vec4(1, 1, 1, 1);
+			aoVertices[r * columns + c].normal =  vec4(0, 1, 0, 0);
+			aoVertices[r * columns + c].tangent = vec4(1, 0, 1, 1);
+			aoVertices[r * columns + c].uv = glm::vec2((float)(r + 1) / rows, (float)(c + 1) / columns);
+
+			(vec4&)a_vertices[(r * columns + c) * 4] = position;
+		}
+	}
+
+	a_numberOfIndices = a_rows * a_columns * 6;
+	a_indices = new int[a_numberOfIndices];
+
+	unsigned int index = 0;
+	for (unsigned int r = 0; r < (rows - 1); ++r)
+	{
+		for (unsigned int c = 0; c < (columns - 1); ++c)
+		{
+			//Triangle 1
+			a_indices[index++] = r * columns + c;
+			a_indices[index++] = (r + 1) * columns + c;
+			a_indices[index++] = (r + 1) * columns + (c + 1);
+
+			//Triangle 2
+			a_indices[index++] = r * columns + c;
+			a_indices[index++] = (r + 1) * columns + (c + 1);
+			a_indices[index++] = r * columns + (c + 1);
+		}
+	}
+
+	LoadIntoOpenGL(aoVertices, rows * columns, (unsigned int*)a_indices, (rows - 1) * (columns - 1) * 6);
+
+	delete[] aoVertices;
 
 	return m_numOfIndices.size() - 1;
 }

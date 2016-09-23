@@ -45,14 +45,15 @@ protected:
 
 	//TODO: Modify add cloth to provide more control over the cloth that is spawned (position, rotation, static points, etc.)
 	//TODO: Modify add cloth to support multiple cloths, and to support scenes in which the cloth is not created first.
-	void AddCloth(unsigned int a_dimensions);
+	//Adds a cloth with the specified mesh dimensions. a_tetherIndices specifies which particles should be used as tethers (not use physics).
+	void AddCloth(unsigned int a_dimensions, unsigned int a_numberOfTethers, unsigned int* a_tetherIndices);
 	void AddBox(vec3 a_position, quat a_rotation);
 
 	float m_particleRadius;
 
-	unsigned int m_clothModel;
+	std::vector<unsigned int> m_clothModels;
 	std::vector<unsigned int> m_boxModels;
-	FlexExtAsset* g_cloth;
+	std::vector<FlexExtAsset*> g_cloths;
 	std::vector<FlexExtAsset*> g_cubes;
 
 	std::vector<int> m_shapeOffsets;
@@ -61,6 +62,11 @@ protected:
 	std::vector<float> m_shapeCoefficients;
 	std::vector<vec3> m_positions;
 	std::vector<quat> m_rotations;
+
+	//The triangle indices used within cloth within the game.
+	std::vector<int> m_clothIndices;
+	//Index to which particle within the m_particles array represents the first particle for each piece of cloth.
+	std::vector<int> m_clothParticleStartIndices;
 
 	int m_numberOfParticles;
 	int m_numberOfActiveParticles;
@@ -72,8 +78,7 @@ protected:
 	int* m_phases;
 
 	int* m_activeParticles;
-	int* m_indices;
-	float* m_verticies;
+
 
 	// calculates local space positions given a set of particles and rigid indices
 	// Copy + pasted from FleX demo code and modified to use glm vectors and return normals.

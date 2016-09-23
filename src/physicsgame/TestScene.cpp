@@ -30,10 +30,22 @@ int TestScene::Init()
 	TwAddVarRW(m_debugBar, "Gravity", TW_TYPE_DIR3F, &m_gravityDir[0], "");
 	TwAddVarRW(m_debugBar, "Gravity Strength", TW_TYPE_FLOAT, &m_gravityStrength, "min=0 max=30");
 
-	AddCloth(10);
-	AddBox(vec3(10, 15, 0), quat(vec3(30, 25, 70)));
-	AddBox(vec3(5, 15, 0), quat(vec3(30, 25, 70)));
-	AddBox(vec3(0, 15, 5), quat(vec3(30, 25, 70)));
+	unsigned int tetherPoints[2] = { 0, 9 };
+	AddCloth(10, 2, tetherPoints);
+
+	for (int i = -2; i < 3; ++i)
+	{
+		for (int j = -2; j < 3; ++j)
+		{
+			AddBox(vec3(i * 5.0f, 15.0f, j * 5.0f), quat(vec3(30, 25, 70)));
+		}
+	}
+
+
+	//AddBox(vec3(-5.0f, 15.0f, -5.0f), quat(vec3(30, 25, 70)));
+	//AddBox(vec3(0.0f, 15.0f, -5.0f), quat(vec3(30, 25, 70)));
+	//AddBox(vec3(5.0f, 15.0f, -5.0f), quat(vec3(30, 25, 70)));
+
 
 	return 0;
 }

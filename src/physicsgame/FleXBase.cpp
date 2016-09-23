@@ -29,7 +29,6 @@ int FleXBase::Init()
 	m_solver = flexCreateSolver(m_numberOfParticles, 0);
 
 	m_currentHighestPhase = 0;
-	g_cloth = nullptr;
 
 	FlexParams params;
 	params.mGravity[0] = 0.0f;
@@ -125,8 +124,6 @@ int FleXBase::Init()
 	m_velocities = new float[m_numberOfParticles * 3];
 	m_phases = new int[m_numberOfParticles];
 
-	m_verticies = new float[m_numberOfParticles * 3];
-	m_indices = new int[(sqrtNumberOfParticles - 1) * (sqrtNumberOfParticles - 1) * 2 * 3];
 	m_activeParticles = new int[m_numberOfParticles];
 
 	//Shape offsets should always start with just a 0 in it.
@@ -143,8 +140,6 @@ int FleXBase::Deinit()
 	delete[] m_velocities;
 	delete[] m_phases;
 
-	delete[] m_verticies;
-	delete[] m_indices;
 	delete[] m_activeParticles;
 
 	flexDestroySolver(m_solver);
@@ -165,6 +160,7 @@ void FleXBase::Update(float a_deltaTime)
 		flexUpdateSolver(m_solver, 1.0f/60.0f, 1, NULL);
 
 	flexGetParticles(m_solver, m_particles, m_numberOfParticles, eFlexMemoryHostAsync);
+	flexGetVelocities(m_solver, m_velocities, m_numberOfParticles, eFlexMemoryHostAsync);
 
 	if (m_rotations.size() > 0)
 		flexGetRigidTransforms(m_solver, (float*)&m_rotations[0], (float*)&m_positions[0], eFlexMemoryHostAsync);
@@ -172,17 +168,14 @@ void FleXBase::Update(float a_deltaTime)
 	flexSetFence();
 	flexWaitFence();
 
-	if (g_cloth != nullptr && g_cloth != NULL)
+	for (unsigned int i = 0; i < g_cloths.size(); ++i)
 	{
 		std::vector<vec3> particlePositions;
-		for (int i = 0; i < g_cloth->mNumParticles; ++i)
+		for (int j = m_clothParticleStartIndices[i]; j < m_clothParticleStartIndices[i] + g_cloths[i]->mNumParticles; ++j)
 		{
-			float x = m_particles[i * 4 + 0];
-			float y = m_particles[i * 4 + 1];
-			float z = m_particles[i * 4 + 2];
-			particlePositions.push_back(vec3(x, y, z));
+			particlePositions.push_back((vec3&)m_particles[j * 4]);
 		}
-		m_renderer->ModifyMesh(m_clothModel, particlePositions);
+		m_renderer->ModifyMesh(m_clothModels[i], particlePositions);
 	}
 
 	for (unsigned int i = 0; i < g_cubes.size(); ++i)
@@ -197,87 +190,63 @@ void FleXBase::Draw()
 	m_renderer->Draw();
 }
 
-void FleXBase::AddCloth(unsigned int a_dimensions)
+void FleXBase::AddCloth(unsigned int a_dimensions, unsigned int a_numberOfTethers, unsigned int* a_tetherIndices)
 {
-	const int sqrDimensions = a_dimensions * a_dimensions;
-	int clothPhase = flexMakePhase(m_currentHighestPhase++, eFlexPhaseSelfCollide);
-	for (unsigned int r = 0; r < a_dimensions; ++r)
+	unsigned int numberOfVertices, numberOfIndices = -1;
+	float* vertices = nullptr;
+	int* indices = nullptr;
+
+	m_clothModels.push_back(m_renderer->GenerateGrid(a_dimensions - 1, a_dimensions - 1, 10.0f, numberOfVertices, vertices, numberOfIndices, indices));
+
+	for (unsigned int i = 0; i < a_numberOfTethers; ++i)
 	{
-		for (unsigned c = 0; c < a_dimensions; ++c)
-		{
-			m_particles[(r * a_dimensions + c) * 4 + 0]  = (float)c - a_dimensions / 2;	//x
-			m_particles[(r * a_dimensions + c) * 4 + 1]  = 10;							//y
-			m_particles[(r * a_dimensions + c) * 4 + 2]  = (float)r - a_dimensions / 2;	//z
-
-			if ((r == 0 && c == 0) || (r == 0 && c == a_dimensions - 1))
-				m_particles[(r * a_dimensions + c) * 4 + 3] = 0.0f;						//inverse mass
-			else
-				m_particles[(r * a_dimensions + c) * 4 + 3] = 1.0f;						//inverse mass
-
-			m_velocities[(r * a_dimensions + c) * 3 + 0] = 0;	//x
-			m_velocities[(r * a_dimensions + c) * 3 + 1] = 0;	//y
-			m_velocities[(r * a_dimensions + c) * 3 + 2] = 0;	//z
-
-			m_phases[r * a_dimensions + c] = clothPhase;
-
-			m_verticies[(r * a_dimensions + c) * 3 + 0] = (float)c - a_dimensions / 2;
-			m_verticies[(r * a_dimensions + c) * 3 + 1] = 10;
-			m_verticies[(r * a_dimensions + c) * 3 + 2] = (float)r - a_dimensions / 2;
-		}
+		vertices[a_tetherIndices[i] * 4 + 3] = 0;
 	}
 
-	flexSetParticles(m_solver, m_particles, sqrDimensions, eFlexMemoryHostAsync);
-	flexSetVelocities(m_solver, m_velocities, sqrDimensions, eFlexMemoryHostAsync);
-	flexSetPhases(m_solver, m_phases, sqrDimensions, eFlexMemoryHostAsync);
+	unsigned int numberOfTriangles = numberOfIndices / 3;
+	//Flex says that the indices should be passed through the flexExtCreateWeldedMeshIndices function, consider trying this.
+	FlexExtAsset* g_cloth = flexExtCreateClothFromMesh(vertices, numberOfVertices, indices, numberOfTriangles, 0.9f, 1.0f, 1.0f, 5.0f, 0.0f);
 
-	m_clothModel = m_renderer->GenerateGrid(a_dimensions - 1, a_dimensions - 1);
+	int phase = flexMakePhase(m_currentHighestPhase++, eFlexPhaseSelfCollide);
 
-	const int numberOfTriangles = (a_dimensions - 1) * (a_dimensions - 1) * 2;
-	unsigned int index = 0;
-	for (unsigned int r = 0; r < a_dimensions - 1; ++r)
+	for (int i = m_numberOfActiveParticles; i < m_numberOfActiveParticles + g_cloth->mNumParticles; ++i)
 	{
-		for (unsigned int c = 0; c < a_dimensions - 1; ++c)
-		{
-			//Triangle 1
-			m_indices[index++] = r * a_dimensions + c;
-			m_indices[index++] = (r + 1) * a_dimensions + c;
-			m_indices[index++] = (r + 1) * a_dimensions + (c + 1);
-			
-			//Triangle 2
-			m_indices[index++] = r * a_dimensions + c;
-			m_indices[index++] = (r + 1) * a_dimensions + (c + 1);
-			m_indices[index++] = r * a_dimensions + (c + 1);
+		int indexInCurrentCloth = i - m_numberOfActiveParticles;
 
-			////Triangle 1
-			//m_indices[index++] = r * a_dimensions + c;
-			//m_indices[index++] = (r + 1) * a_dimensions + (c + 1);
-			//m_indices[index++] = (r + 1) * a_dimensions;
-			//
-			////Triangle 2
-			//m_indices[index++] = r * a_dimensions + c;
-			//m_indices[index++] = r * a_dimensions + (c + 1);
-			//m_indices[index++] = (r + 1) * a_dimensions + (c + 1);
-		}
-	}
-
-	g_cloth = flexExtCreateClothFromMesh(m_particles, sqrDimensions, m_indices, numberOfTriangles, 0.9f, 1.0f, 1.0f, 5.0f, 0.0f);
-
-	m_numberOfActiveParticles += sqrDimensions;
-	for (int i = 0; i < sqrDimensions; ++i)
-	{
 		m_activeParticles[i] = i;
+
+		m_particles[i * 4 + 0] = g_cloth->mParticles[indexInCurrentCloth * 4 + 0];
+		m_particles[i * 4 + 1] = g_cloth->mParticles[indexInCurrentCloth * 4 + 1];
+		m_particles[i * 4 + 2] = g_cloth->mParticles[indexInCurrentCloth * 4 + 2];
+		m_particles[i * 4 + 3] = g_cloth->mParticles[indexInCurrentCloth * 4 + 3];
+
+		m_velocities[i * 3 + 0] = 0;
+		m_velocities[i * 3 + 1] = 0;
+		m_velocities[i * 3 + 2] = 0;
+
+		m_phases[i] = phase;
+	}
+	for (unsigned int i = 0; i < numberOfIndices; ++i)
+	{
+		m_clothIndices.push_back(indices[i]);
 	}
 
-	flexSetActive(m_solver, m_activeParticles, sqrDimensions, eFlexMemoryHostAsync);
+	m_clothParticleStartIndices.push_back(m_numberOfActiveParticles);
+	m_numberOfActiveParticles += numberOfVertices;
+
+	flexSetParticles(m_solver, m_particles, m_numberOfActiveParticles, eFlexMemoryHostAsync);
+	flexSetVelocities(m_solver, m_velocities, m_numberOfActiveParticles, eFlexMemoryHostAsync);
+	flexSetPhases(m_solver, m_phases, m_numberOfActiveParticles, eFlexMemoryHostAsync);
+	flexSetActive(m_solver, m_activeParticles, m_numberOfActiveParticles, eFlexMemoryHostAsync);
+
 	flexSetSprings(m_solver, g_cloth->mSpringIndices, g_cloth->mSpringRestLengths, g_cloth->mSpringCoefficients, g_cloth->mNumSprings, eFlexMemoryHostAsync);
 
-	flexSetDynamicTriangles(m_solver, m_indices, NULL, numberOfTriangles, eFlexMemoryHostAsync);
-	//flexSetTriangles(m_solver, indices, verticies, numberOfTriangles, sqrDimensions, m_particleRadius, FlexMemory::eFlexMemoryHostAsync);
+	flexSetDynamicTriangles(m_solver, &m_clothIndices[0], NULL, m_clothIndices.size() / 3, eFlexMemoryHostAsync);
 
+	delete[] vertices;
+	delete[] indices;
 
-	//m_clothModels.push_back(m_renderer->GenerateGrid(a_dimensions - 1, a_dimensions - 1));
-	//quat rot = quat(a_pose.q.w, a_pose.q.x, a_pose.q.y, a_pose.q.z);
-	//m_renderer->SetTransform((mat4)rot * glm::translate(vec3(a_pose.p.x, a_pose.p.y, a_pose.p.z)), m_clothModels[m_clothModels.size() - 1]);
+	g_cloths.push_back(g_cloth);
 }
 
 void FleXBase::AddBox(vec3 a_position, quat a_rotation)
@@ -297,8 +266,7 @@ void FleXBase::AddBox(vec3 a_position, quat a_rotation)
 	FlexExtAsset* g_cube = flexExtCreateRigidFromMesh(vertices, numberOfVertices, indices, numberOfIndices, m_particleRadius, 0.0f);
 
 	mat4 transform = m_renderer->GetTransform(model);
-	//int phase = flexMakePhase(m_currentHighestPhase++, 0);
-	int phase = flexMakePhase(3, 0);
+	int phase = flexMakePhase(m_currentHighestPhase++, 0);
 	for (int i = m_numberOfActiveParticles; i < m_numberOfActiveParticles + g_cube->mNumParticles; ++i)
 	{
 		int indexInCurrentCube = i - m_numberOfActiveParticles;
