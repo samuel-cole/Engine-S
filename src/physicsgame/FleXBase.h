@@ -41,27 +41,38 @@ protected:
 	//The renderer used to render the scene.
 	Renderer* m_renderer;
 
-	FlexSolver* m_solver;
+	FlexSolver* g_solver;
 
 	//TODO: Modify add cloth to provide more control over the cloth that is spawned (position, rotation, etc.)
 	//Adds a cloth with the specified mesh dimensions. a_tetherIndices specifies which particles should be used as tethers (not use physics).
 	void AddCloth(unsigned int a_dimensions, unsigned int a_numberOfTethers, unsigned int* a_tetherIndices, float a_height);
 	void AddBox(vec3 a_position, quat a_rotation);
+	void AddShape();
 
 	float m_particleRadius;
 
+	//Rendering and physics handles
 	std::vector<unsigned int> m_clothModels;
 	std::vector<unsigned int> m_boxModels;
 	std::vector<FlexExtAsset*> g_cloths;
 	std::vector<FlexExtAsset*> g_cubes;
 
-	std::vector<int> m_shapeOffsets;
-	std::vector<int> m_shapeIndices;
-	std::vector<float> m_restPositions;
-	std::vector<float> m_shapeCoefficients;
-	std::vector<vec3> m_positions;
-	std::vector<quat> m_rotations;
+	//Static shape variables
+	//std::vector<FlexCollisionGeometry> g_shapeGeometry;
+	//std::vector<vec4> m_shapePositions;
+	//std::vector<quat> m_shapeRotations;
+	//std::vector<uint32_t> m_shapeStarts;
+	//std::vector<int> m_shapeFlags;
 
+	//Rigidbody variables.
+	std::vector<int> m_rigidOffsets;
+	std::vector<int> m_rigidIndices;
+	std::vector<float> m_rigidRestPositions;
+	std::vector<float> m_rigidCoefficients;
+	std::vector<vec3> m_rigidPositions;
+	std::vector<quat> m_rigidRotations;
+
+	//Cloth/spring variables
 	//The triangle indices used within cloth within the game.
 	std::vector<int> m_clothIndices;
 	//Index to which particle within the m_particles array represents the first particle for each piece of cloth.
@@ -84,7 +95,7 @@ protected:
 
 
 	// calculates local space positions given a set of particles and rigid indices
-	// Copy + pasted from FleX demo code and modified to use glm vectors, return normals, and to use indices that include cloth indices.
+	// Copy + pasted from FleX demo code and modified to use glm vectors, return normals, and to use indices that don't include cloth indices.
 	void CalculateRigidOffsets(const vec4* restPositions, const int* offsets, const int* indices, int numRigids, vec3* localPositions, vec4* normals);
 };
 

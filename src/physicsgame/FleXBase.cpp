@@ -27,7 +27,7 @@ int FleXBase::Init()
 	m_particleRadius = 0.5f;
 
 	flexInit();
-	m_solver = flexCreateSolver(m_numberOfParticles, 0);
+	g_solver = flexCreateSolver(m_numberOfParticles, 0);
 
 	m_currentHighestPhase = 0;
 
@@ -44,13 +44,13 @@ int FleXBase::Init()
 	
 	params.mRadius = m_particleRadius;
 	params.mViscosity = 0.0f;
-	params.mDynamicFriction = 0.0f;
+	params.mDynamicFriction = 0.25f;
 	params.mStaticFriction = 0.0f;
 	params.mParticleFriction = 0.0f; // scale friction between particles by default
 	params.mFreeSurfaceDrag = 0.0f;
 	params.mDrag = 0.0f;
 	params.mLift = 0.0f;
-	params.mNumIterations = 2;
+	params.mNumIterations = 3;
 	params.mFluidRestDistance = 0.0f;
 	params.mSolidRestDistance = 0.0f;
 	
@@ -63,7 +63,7 @@ int FleXBase::Init()
 	params.mDamping = 0.0f;
 	params.mParticleCollisionMargin = 0.0f;
 	params.mShapeCollisionMargin = 0.0f;
-	params.mCollisionDistance = 0.0f;
+	params.mCollisionDistance = 0.05f;
 	params.mPlasticThreshold = 0.0f;
 	params.mPlasticCreep = 0.0f;
 	params.mFluid = false;
@@ -72,7 +72,7 @@ int FleXBase::Init()
 	params.mRestitution = 0.0f;
 	params.mMaxSpeed = FLT_MAX;
 	params.mRelaxationMode = eFlexRelaxationLocal;
-	params.mRelaxationFactor = 1.0f;
+	params.mRelaxationFactor = 0.0f;
 	params.mSolidPressure = 1.0f;
 	params.mAdhesion = 0.0f;
 	params.mCohesion = 0.025f;
@@ -128,9 +128,9 @@ int FleXBase::Init()
 	m_activeParticles = new int[m_numberOfParticles];
 
 	//Shape offsets should always start with just a 0 in it.
-	m_shapeOffsets.push_back(0);
+	m_rigidOffsets.push_back(0);
 
-	flexSetParams(m_solver, &params);
+	flexSetParams(g_solver, &params);
 
 	return 0;
 }
@@ -143,7 +143,7 @@ int FleXBase::Deinit()
 
 	delete[] m_activeParticles;
 
-	flexDestroySolver(m_solver);
+	flexDestroySolver(g_solver);
 	flexShutdown();
 
 	m_renderer->CleanupBuffers();
@@ -157,14 +157,18 @@ void FleXBase::Update(float a_deltaTime)
 {
 	m_camera->Update(a_deltaTime);
 
+	//These are only needed if particles are being moved manually- in most situations, these should be commented out.
+	flexSetParticles(g_solver, m_particles, m_numberOfActiveParticles, eFlexMemoryHostAsync);
+	flexSetVelocities(g_solver, m_velocities, m_numberOfActiveParticles, eFlexMemoryHostAsync);
+
 	if (InputManager::GetKey(Keys::SPACE))
-		flexUpdateSolver(m_solver, 1.0f/60.0f, 1, NULL);
+		flexUpdateSolver(g_solver, 1.0f / 60.0f, 2, NULL);
 
-	flexGetParticles(m_solver, m_particles, m_numberOfParticles, eFlexMemoryHostAsync);
-	flexGetVelocities(m_solver, m_velocities, m_numberOfParticles, eFlexMemoryHostAsync);
+	flexGetParticles(g_solver, m_particles, m_numberOfParticles, eFlexMemoryHostAsync);
+	flexGetVelocities(g_solver, m_velocities, m_numberOfParticles, eFlexMemoryHostAsync);
 
-	if (m_rotations.size() > 0)
-		flexGetRigidTransforms(m_solver, (float*)&m_rotations[0], (float*)&m_positions[0], eFlexMemoryHostAsync);
+	if (m_rigidRotations.size() > 0)
+		flexGetRigidTransforms(g_solver, (float*)&m_rigidRotations[0], (float*)&m_rigidPositions[0], eFlexMemoryHostAsync);
 
 	flexSetFence();
 	flexWaitFence();
@@ -181,8 +185,8 @@ void FleXBase::Update(float a_deltaTime)
 
 	for (unsigned int i = 0; i < g_cubes.size(); ++i)
 	{
-		m_renderer->SetPosition(m_positions[i], m_boxModels[i]);
-		m_renderer->SetRotation(m_rotations[i], m_boxModels[i]);
+		m_renderer->SetPosition(m_rigidPositions[i], m_boxModels[i]);
+		m_renderer->SetRotation(m_rigidRotations[i], m_boxModels[i]);
 	}
 }
 
@@ -206,7 +210,7 @@ void FleXBase::AddCloth(unsigned int a_dimensions, unsigned int a_numberOfTether
 
 	unsigned int numberOfTriangles = numberOfIndices / 3;
 	//Flex says that the indices should be passed through the flexExtCreateWeldedMeshIndices function, consider trying this.
-	FlexExtAsset* g_cloth = flexExtCreateClothFromMesh(vertices, numberOfVertices, indices, numberOfTriangles, 0.9f, 1.0f, 1.0f, 5.0f, 0.0f);
+	FlexExtAsset* g_cloth = flexExtCreateClothFromMesh(vertices, numberOfVertices, indices, numberOfTriangles, 0.9f, 0.8f, 0.5f, 5.0f, 0.0f);
 
 	int phase = flexMakePhase(m_currentHighestPhase++, eFlexPhaseSelfCollide);
 
@@ -243,14 +247,14 @@ void FleXBase::AddCloth(unsigned int a_dimensions, unsigned int a_numberOfTether
 	m_numberOfActiveParticles += numberOfVertices;
 	m_numberOfClothParticles += numberOfVertices;
 
-	flexSetParticles(m_solver, m_particles, m_numberOfActiveParticles, eFlexMemoryHostAsync);
-	flexSetVelocities(m_solver, m_velocities, m_numberOfActiveParticles, eFlexMemoryHostAsync);
-	flexSetPhases(m_solver, m_phases, m_numberOfActiveParticles, eFlexMemoryHostAsync);
-	flexSetActive(m_solver, m_activeParticles, m_numberOfActiveParticles, eFlexMemoryHostAsync);
+	flexSetParticles(g_solver, m_particles, m_numberOfActiveParticles, eFlexMemoryHostAsync);
+	flexSetVelocities(g_solver, m_velocities, m_numberOfActiveParticles, eFlexMemoryHostAsync);
+	flexSetPhases(g_solver, m_phases, m_numberOfActiveParticles, eFlexMemoryHostAsync);
+	flexSetActive(g_solver, m_activeParticles, m_numberOfActiveParticles, eFlexMemoryHostAsync);
 
 	//This won't work with multiple cloths.
-	flexSetSprings(m_solver, &m_springIndices[0], &m_springRestLengths[0], &m_springStiffness[0], m_springStiffness.size(), eFlexMemoryHostAsync);
-	flexSetDynamicTriangles(m_solver, &m_clothIndices[0], NULL, m_clothIndices.size() / 3, eFlexMemoryHostAsync);
+	flexSetSprings(g_solver, &m_springIndices[0], &m_springRestLengths[0], &m_springStiffness[0], m_springStiffness.size(), eFlexMemoryHostAsync);
+	flexSetDynamicTriangles(g_solver, &m_clothIndices[0], NULL, m_clothIndices.size() / 3, eFlexMemoryHostAsync);
 
 	delete[] vertices;
 	delete[] indices;
@@ -264,8 +268,8 @@ void FleXBase::AddBox(vec3 a_position, quat a_rotation)
 	float* vertices = nullptr;
 	int* indices = nullptr;
 
-	m_positions.push_back(a_position);
-	m_rotations.push_back(a_rotation);
+	m_rigidPositions.push_back(a_position);
+	m_rigidRotations.push_back(a_rotation);
 
 	unsigned int model = m_renderer->LoadOBJ("../data/cube.obj", numberOfVertices, vertices, numberOfIndices, indices);
 	m_boxModels.push_back(model);
@@ -299,31 +303,31 @@ void FleXBase::AddBox(vec3 a_position, quat a_rotation)
 		m_velocities[i * 3 + 1] = 0;
 		m_velocities[i * 3 + 2] = 0;
 
-		m_restPositions.push_back(x);
-		m_restPositions.push_back(y);
-		m_restPositions.push_back(z);
-		m_restPositions.push_back(1);
+		m_rigidRestPositions.push_back(x);
+		m_rigidRestPositions.push_back(y);
+		m_rigidRestPositions.push_back(z);
+		m_rigidRestPositions.push_back(1);
 
-		m_shapeIndices.push_back(i);
+		m_rigidIndices.push_back(i);
 	}
 
 	m_numberOfActiveParticles += g_cube->mNumParticles;
 
-	m_shapeOffsets.push_back(m_shapeOffsets[m_shapeOffsets.size() - 1] + g_cube->mShapeOffsets[0]);
+	m_rigidOffsets.push_back(m_rigidOffsets[m_rigidOffsets.size() - 1] + g_cube->mShapeOffsets[0]);
 
-	vec3* cubeLocalRestPositions = new vec3[m_shapeIndices.size()];
-	vec4* cubeLocalNormals = new vec4[m_shapeIndices.size()];
+	vec3* cubeLocalRestPositions = new vec3[m_rigidIndices.size()];
+	vec4* cubeLocalNormals = new vec4[m_rigidIndices.size()];
 
-	CalculateRigidOffsets((vec4*)&m_restPositions[0], &m_shapeOffsets[0], &m_shapeIndices[0], g_cubes.size() + 1, cubeLocalRestPositions, cubeLocalNormals);
+	CalculateRigidOffsets((vec4*)&m_rigidRestPositions[0], &m_rigidOffsets[0], &m_rigidIndices[0], g_cubes.size() + 1, cubeLocalRestPositions, cubeLocalNormals);
 
-	flexSetParticles(m_solver, m_particles, m_numberOfParticles, eFlexMemoryHostAsync);
-	flexSetVelocities(m_solver, m_velocities, m_numberOfParticles, eFlexMemoryHostAsync);
-	flexSetPhases(m_solver, m_phases, m_numberOfParticles, eFlexMemoryHostAsync);
-	flexSetActive(m_solver, m_activeParticles, m_numberOfActiveParticles, eFlexMemoryHostAsync);
+	flexSetParticles(g_solver, m_particles, m_numberOfParticles, eFlexMemoryHostAsync);
+	flexSetVelocities(g_solver, m_velocities, m_numberOfParticles, eFlexMemoryHostAsync);
+	flexSetPhases(g_solver, m_phases, m_numberOfParticles, eFlexMemoryHostAsync);
+	flexSetActive(g_solver, m_activeParticles, m_numberOfActiveParticles, eFlexMemoryHostAsync);
 
-	m_shapeCoefficients.push_back(g_cube->mShapeCoefficients[0]);
+	m_rigidCoefficients.push_back(g_cube->mShapeCoefficients[0]);
 
-	flexSetRigids(m_solver, &m_shapeOffsets[0], &m_shapeIndices[0], (float*)cubeLocalRestPositions, (float*)cubeLocalNormals, &m_shapeCoefficients[0], (float*)&m_rotations[0], (float*)&m_positions[0], g_cubes.size() + 1, eFlexMemoryHostAsync);
+	flexSetRigids(g_solver, &m_rigidOffsets[0], &m_rigidIndices[0], (float*)cubeLocalRestPositions, (float*)cubeLocalNormals, &m_rigidCoefficients[0], (float*)&m_rigidRotations[0], (float*)&m_rigidPositions[0], g_cubes.size() + 1, eFlexMemoryHostAsync);
 	
 	delete[] cubeLocalRestPositions;
 	delete[] vertices;
@@ -332,8 +336,24 @@ void FleXBase::AddBox(vec3 a_position, quat a_rotation)
 	g_cubes.push_back(g_cube);
 }
 
+void FleXBase::AddShape()
+{
+	//TODO: fill out the following information:
+	//g_shapeGeometry
+	//m_shapeStarts
+	//m_shapePositions
+	//m_shapeRotations
+	//m_shapeFlags
+	//(maybe)AABB stuff (also consider replacing nullptr with NULL)
 
-// Copy + pasted from FleX demo code and modified to use glm vectors, return normals, and to use indices that include cloth indices.
+
+	//Update notes imply that AABB min/maxes aren't necessary?
+	//flexSetShapes(g_solver, &g_shapeGeometry[0], (int)g_shapeGeometry.size(), nullptr, nullptr, (int*)&m_shapeStarts[0], (float*)&m_shapePositions[0], (float*)&m_shapeRotations[0], (float*)&m_shapePositions[0], (float*)&m_shapeRotations[0], &m_shapeFlags[0], (int)m_shapeStarts.size(), eFlexMemoryHostAsync);
+					
+}
+
+
+// Copy + pasted from FleX demo code and modified to use glm vectors, return normals, and to use indices that don't include cloth indices.
 //This function may not be needed, its end result is just the same as the starting position, as the particles are still at world 0 when this is called.
 void FleXBase::CalculateRigidOffsets(const vec4* restPositions, const int* offsets, const int* indices, int numRigids, vec3* localPositions, vec4* normals)
 {
