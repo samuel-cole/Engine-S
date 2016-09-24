@@ -20,6 +20,7 @@ int FleXBase::Init()
 	m_renderer = new Renderer(m_camera, m_debugBar);
 
 	m_numberOfParticles = 10000;
+	m_numberOfClothParticles = 0;
 	m_numberOfActiveParticles = 0;
 	int sqrtNumberOfParticles = glm::sqrt(m_numberOfParticles);
 
@@ -49,7 +50,7 @@ int FleXBase::Init()
 	params.mFreeSurfaceDrag = 0.0f;
 	params.mDrag = 0.0f;
 	params.mLift = 0.0f;
-	params.mNumIterations = 3;
+	params.mNumIterations = 2;
 	params.mFluidRestDistance = 0.0f;
 	params.mSolidRestDistance = 0.0f;
 	
@@ -190,13 +191,13 @@ void FleXBase::Draw()
 	m_renderer->Draw();
 }
 
-void FleXBase::AddCloth(unsigned int a_dimensions, unsigned int a_numberOfTethers, unsigned int* a_tetherIndices)
+void FleXBase::AddCloth(unsigned int a_dimensions, unsigned int a_numberOfTethers, unsigned int* a_tetherIndices, float a_height)
 {
 	unsigned int numberOfVertices, numberOfIndices = -1;
 	float* vertices = nullptr;
 	int* indices = nullptr;
 
-	m_clothModels.push_back(m_renderer->GenerateGrid(a_dimensions - 1, a_dimensions - 1, 10.0f, numberOfVertices, vertices, numberOfIndices, indices));
+	m_clothModels.push_back(m_renderer->GenerateGrid(a_dimensions - 1, a_dimensions - 1, m_particleRadius, a_height, numberOfVertices, vertices, numberOfIndices, indices));
 
 	for (unsigned int i = 0; i < a_numberOfTethers; ++i)
 	{
@@ -230,17 +231,25 @@ void FleXBase::AddCloth(unsigned int a_dimensions, unsigned int a_numberOfTether
 	{
 		m_clothIndices.push_back(indices[i]);
 	}
+	for (int i = 0; i < g_cloth->mNumSprings; ++i)
+	{
+		m_springIndices.push_back(g_cloth->mSpringIndices[i * 2] + m_numberOfActiveParticles);
+		m_springIndices.push_back(g_cloth->mSpringIndices[i * 2 + 1] + m_numberOfActiveParticles);
+		m_springRestLengths.push_back(g_cloth->mSpringRestLengths[i]);
+		m_springStiffness.push_back(g_cloth->mSpringCoefficients[i]);
+	}
 
 	m_clothParticleStartIndices.push_back(m_numberOfActiveParticles);
 	m_numberOfActiveParticles += numberOfVertices;
+	m_numberOfClothParticles += numberOfVertices;
 
 	flexSetParticles(m_solver, m_particles, m_numberOfActiveParticles, eFlexMemoryHostAsync);
 	flexSetVelocities(m_solver, m_velocities, m_numberOfActiveParticles, eFlexMemoryHostAsync);
 	flexSetPhases(m_solver, m_phases, m_numberOfActiveParticles, eFlexMemoryHostAsync);
 	flexSetActive(m_solver, m_activeParticles, m_numberOfActiveParticles, eFlexMemoryHostAsync);
 
-	flexSetSprings(m_solver, g_cloth->mSpringIndices, g_cloth->mSpringRestLengths, g_cloth->mSpringCoefficients, g_cloth->mNumSprings, eFlexMemoryHostAsync);
-
+	//This won't work with multiple cloths.
+	flexSetSprings(m_solver, &m_springIndices[0], &m_springRestLengths[0], &m_springStiffness[0], m_springStiffness.size(), eFlexMemoryHostAsync);
 	flexSetDynamicTriangles(m_solver, &m_clothIndices[0], NULL, m_clothIndices.size() / 3, eFlexMemoryHostAsync);
 
 	delete[] vertices;
@@ -324,7 +333,7 @@ void FleXBase::AddBox(vec3 a_position, quat a_rotation)
 }
 
 
-// Copy + pasted from FleX demo code and modified to use glm vectors and return normals.
+// Copy + pasted from FleX demo code and modified to use glm vectors, return normals, and to use indices that include cloth indices.
 //This function may not be needed, its end result is just the same as the starting position, as the particles are still at world 0 when this is called.
 void FleXBase::CalculateRigidOffsets(const vec4* restPositions, const int* offsets, const int* indices, int numRigids, vec3* localPositions, vec4* normals)
 {
@@ -343,7 +352,7 @@ void FleXBase::CalculateRigidOffsets(const vec4* restPositions, const int* offse
 
 		for (int i = startIndex; i < endIndex; ++i)
 		{
-			const int r = indices[i];
+			const int r = indices[i] - m_numberOfClothParticles;
 
 			com += vec3(restPositions[r]);
 		}
@@ -352,7 +361,7 @@ void FleXBase::CalculateRigidOffsets(const vec4* restPositions, const int* offse
 
 		for (int i = startIndex; i < endIndex; ++i)
 		{
-			const int r = indices[i];
+			const int r = indices[i] - m_numberOfClothParticles;
 
 			vec3 position = vec3(restPositions[r]) - com;
 			float distance = glm::length(position);

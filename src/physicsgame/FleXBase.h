@@ -43,10 +43,9 @@ protected:
 
 	FlexSolver* m_solver;
 
-	//TODO: Modify add cloth to provide more control over the cloth that is spawned (position, rotation, static points, etc.)
-	//TODO: Modify add cloth to support multiple cloths, and to support scenes in which the cloth is not created first.
+	//TODO: Modify add cloth to provide more control over the cloth that is spawned (position, rotation, etc.)
 	//Adds a cloth with the specified mesh dimensions. a_tetherIndices specifies which particles should be used as tethers (not use physics).
-	void AddCloth(unsigned int a_dimensions, unsigned int a_numberOfTethers, unsigned int* a_tetherIndices);
+	void AddCloth(unsigned int a_dimensions, unsigned int a_numberOfTethers, unsigned int* a_tetherIndices, float a_height);
 	void AddBox(vec3 a_position, quat a_rotation);
 
 	float m_particleRadius;
@@ -67,8 +66,12 @@ protected:
 	std::vector<int> m_clothIndices;
 	//Index to which particle within the m_particles array represents the first particle for each piece of cloth.
 	std::vector<int> m_clothParticleStartIndices;
+	std::vector<int> m_springIndices;
+	std::vector<float> m_springRestLengths;
+	std::vector<float> m_springStiffness;
 
 	int m_numberOfParticles;
+	int m_numberOfClothParticles;
 	int m_numberOfActiveParticles;
 
 	unsigned int m_currentHighestPhase;
@@ -81,7 +84,7 @@ protected:
 
 
 	// calculates local space positions given a set of particles and rigid indices
-	// Copy + pasted from FleX demo code and modified to use glm vectors and return normals.
+	// Copy + pasted from FleX demo code and modified to use glm vectors, return normals, and to use indices that include cloth indices.
 	void CalculateRigidOffsets(const vec4* restPositions, const int* offsets, const int* indices, int numRigids, vec3* localPositions, vec4* normals);
 };
 

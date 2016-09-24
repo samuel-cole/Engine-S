@@ -902,7 +902,7 @@ unsigned int Renderer::GenerateGrid(const unsigned int a_rows, const unsigned in
 	return m_numOfIndices.size() - 1;
 }
 
-unsigned int Renderer::GenerateGrid(const unsigned int a_rows, const unsigned int a_columns, float a_height, unsigned int& a_numberOfVertices, float*& a_vertices, unsigned int& a_numberOfIndices, int*& a_indices)
+unsigned int Renderer::GenerateGrid(const unsigned int a_rows, const unsigned int a_columns, float a_cellWidth, float a_height, unsigned int& a_numberOfVertices, float*& a_vertices, unsigned int& a_numberOfIndices, int*& a_indices)
 {
 	if (m_standardProgram == -1)
 		m_standardProgram = CreateProgram("../data/shaders/vert.txt", "../data/shaders/frag.txt");
@@ -918,7 +918,7 @@ unsigned int Renderer::GenerateGrid(const unsigned int a_rows, const unsigned in
 	{
 		for (unsigned int c = 0; c < columns; ++c)
 		{
-			vec4 position = vec4((float)c - a_columns / 2, a_height, (float)r - a_rows / 2, 1);
+			vec4 position = vec4(((float)c - a_columns / 2) * a_cellWidth, a_height, ((float)r - a_rows / 2) * a_cellWidth, 1);
 
 			aoVertices[r * columns + c].position = position;
 			aoVertices[r * columns + c].colour =  vec4(1, 1, 1, 1);
