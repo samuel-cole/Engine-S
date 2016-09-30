@@ -1,9 +1,10 @@
-#include "physicsgame\TestScene.h"
+//#include "physicsgame\TestScene.h"
+#include "physicsgame\PhysicsGame.h"
 
 int main ()
 {
-	//Checkers* game = new Checkers;
-	TestScene* game = new TestScene;
+	//TestScene* game = new TestScene;
+	PhysicsGame* game = new PhysicsGame;
 	int returnValue = game->Run();
 	delete game;
 

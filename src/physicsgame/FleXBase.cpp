@@ -195,7 +195,7 @@ void FleXBase::Draw()
 	m_renderer->Draw();
 }
 
-void FleXBase::AddCloth(unsigned int a_dimensions, unsigned int a_numberOfTethers, unsigned int* a_tetherIndices, float a_height)
+unsigned int FleXBase::AddCloth(unsigned int a_dimensions, unsigned int a_numberOfTethers, unsigned int* a_tetherIndices, float a_height)
 {
 	unsigned int numberOfVertices, numberOfIndices = -1;
 	float* vertices = nullptr;
@@ -260,9 +260,11 @@ void FleXBase::AddCloth(unsigned int a_dimensions, unsigned int a_numberOfTether
 	delete[] indices;
 
 	g_cloths.push_back(g_cloth);
+
+	return g_cloths.size() - 1;
 }
 
-void FleXBase::AddBox(vec3 a_position, quat a_rotation)
+unsigned int FleXBase::AddBox(vec3 a_position, quat a_rotation)
 {
 	unsigned int numberOfVertices, numberOfIndices = -1;
 	float* vertices = nullptr;
@@ -334,22 +336,40 @@ void FleXBase::AddBox(vec3 a_position, quat a_rotation)
 	delete[] indices;
 
 	g_cubes.push_back(g_cube);
+
+	return g_cubes.size() - 1;
 }
 
-void FleXBase::AddShape()
+unsigned int FleXBase::AddStaticSphere(float a_radius, vec3 position, bool a_isTrigger)
 {
-	//TODO: fill out the following information:
-	//g_shapeGeometry
-	//m_shapeStarts
-	//m_shapePositions
-	//m_shapeRotations
-	//m_shapeFlags
-	//(maybe)AABB stuff (also consider replacing nullptr with NULL)
+	vec3 scale = vec3(a_radius, a_radius, a_radius);
+
+	unsigned int model = m_renderer->LoadOBJ("../data/sphere.obj");
+	m_renderer->SetScale(scale, model);
+	m_renderer->SetPosition(position, model);
+	m_shapeModels.push_back(model);
+
+	m_shapeStarts.push_back(g_shapeGeometry.size());
+
+	FlexCollisionGeometry geometry;
+	geometry.mSphere.mRadius = a_radius;
+	g_shapeGeometry.push_back(geometry);
+
+	m_shapeAABBmins.push_back(vec4(position - scale, 0));
+	m_shapeAABBmaxes.push_back(vec4(position + scale, 0));
+
+	m_shapePositions.push_back(vec4(position, 0.0f));
+	m_shapeRotations.push_back(quat());
+
+	int shape = flexMakeShapeFlags(eFlexShapeSphere, false);
+	if (a_isTrigger)
+		shape |= eFlexShapeFlagTrigger;
+	m_shapeFlags.push_back(shape);
 
 
-	//Update notes imply that AABB min/maxes aren't necessary?
-	//flexSetShapes(g_solver, &g_shapeGeometry[0], (int)g_shapeGeometry.size(), nullptr, nullptr, (int*)&m_shapeStarts[0], (float*)&m_shapePositions[0], (float*)&m_shapeRotations[0], (float*)&m_shapePositions[0], (float*)&m_shapeRotations[0], &m_shapeFlags[0], (int)m_shapeStarts.size(), eFlexMemoryHostAsync);
-					
+	flexSetShapes(g_solver, &g_shapeGeometry[0], (int)g_shapeGeometry.size(), (float*)&m_shapeAABBmins[0], (float*)&m_shapeAABBmaxes[0], (int*)&m_shapeStarts[0], (float*)&m_shapePositions[0], (float*)&m_shapeRotations[0], (float*)&m_shapePositions[0], (float*)&m_shapeRotations[0], &m_shapeFlags[0], (int)m_shapeStarts.size(), eFlexMemoryHostAsync);			
+
+	return g_shapeGeometry.size() - 1;
 }
 
 

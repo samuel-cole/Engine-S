@@ -18,6 +18,9 @@ protected:
 	float m_oldGravityStrength;
 
 	void DebugUpdate(float a_deltaTime);
+
+	bool isNearlyEqual(float a_float1, float a_float2);
+	bool isNearlyEqual(vec3 a_vec1, vec3 a_vec2);
 };
 
 #endif

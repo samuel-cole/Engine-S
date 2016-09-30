@@ -3,13 +3,13 @@
 
 #include <flex.h>
 
-bool isNearlyEqual(float a_float1, float a_float2)
+bool TestScene::isNearlyEqual(float a_float1, float a_float2)
 {
 	if (abs(a_float1 - a_float2) < 0.01f)
 		return true;
 	return false;
 }
-bool isNearlyEqual(vec3 a_vec1, vec3 a_vec2)
+bool TestScene::isNearlyEqual(vec3 a_vec1, vec3 a_vec2)
 {
 	if (glm::length2(a_vec1 - a_vec2) < 0.01f)
 		return true;
@@ -42,7 +42,17 @@ int TestScene::Init()
 	}
 	
 	tetherPoints[1] = 380;
-	AddCloth(20, 2, tetherPoints, 15.0f);
+	//AddCloth(20, 2, tetherPoints, 15.0f);
+
+	for (int i = -5; i < 6; ++i)
+	{
+		for (int j = -5; j < 6; ++j)
+		{
+			AddStaticSphere(1.0f, vec3(i * 5.0f, 1.0f, j * 5.0f), false);
+		}
+	}
+	
+	//AddStaticSphere(1.0f, vec3(0.0f, 1.0f, 0.0f), false);
 
 	//AddBox(vec3(0.0f, 20.0f, 0.0f), quat(vec3(0, 0, 0)));
 
@@ -79,7 +89,7 @@ void TestScene::DebugUpdate(float a_deltaTime)
 	{
 		for (unsigned int i = 0; i < g_cubes.size(); ++i)
 		{
-			printf("Object %i after update: %f, %f, %f \n", i, m_rigidPositions[i].x, m_rigidPositions[i].y, m_rigidPositions[i].z);
+			//printf("Object %i after update: %f, %f, %f \n", i, m_rigidPositions[i].x, m_rigidPositions[i].y, m_rigidPositions[i].z);
 		}
 	}
 
@@ -92,18 +102,25 @@ void TestScene::DebugUpdate(float a_deltaTime)
 	
 	flexGetContacts(g_solver, (float*)&contactPlanes[0], (float*)&contactVelocities[0], &contactIndices[0], &contactCounts[0], eFlexMemoryHost);
 	
-	//for (int i = 0; i < m_numberOfActiveParticles; ++i)
-	//{
-	//	const int contactIndex = contactIndices[i];
-	//	const unsigned char count = contactCounts[contactIndex];
-	//
-	//	for (int c = 0; c < count; ++c)
-	//	{
-	//		vec4 velocity = contactVelocities[contactIndex * MAX_PARTICLE_CONTACTS + c];
-	//
-	//		vec3 contactPlane = (vec3)contactPlanes[contactIndex * MAX_PARTICLE_CONTACTS + c];
-	//
-	//		(vec3&)m_velocities[i] = contactPlane * 1000.0f;
-	//	}
-	//}
+	for (int i = 0; i < m_numberOfActiveParticles; ++i)
+	{
+		const int contactIndex = contactIndices[i];
+		const unsigned char count = contactCounts[contactIndex];
+	
+		for (int c = 0; c < count; ++c)
+		{
+			vec4 velocity = contactVelocities[contactIndex * MAX_PARTICLE_CONTACTS + c];
+			const int shapeID = (int)velocity.w;
+			
+			if (shapeID != -1)
+			{
+				printf("Particle ID: %i \n", i);
+
+				vec3 contactPlane = (vec3)contactPlanes[contactIndex * MAX_PARTICLE_CONTACTS + c];
+
+				(vec3&)m_velocities[i * 3] = contactPlane * 1000.0f;
+			}
+
+		}
+	}
 }

@@ -11,6 +11,8 @@
 #include <functional>
 #include <numeric>
 
+#include <flex.h>
+
 #include "glm\glm.hpp"
 #include "glm\ext.hpp"
 
@@ -25,8 +27,13 @@ using glm::vec4;
 using glm::vec3;
 using glm::quat;
 
+
 class FleXBase : public Application
 {
+	//TODO: This class has a lot of containers that should always be the same size as each other (eg: there should be a rendering handle for each physics handle).
+	//Consider making new classes/structs and changing these to use them so that vectors that are required to be the same size are replaced by a single vector of a new type.
+	//This may also hurt caching by preventing data of the same type from being contiguous in memoery though, so look into it further before doing.
+
 protected:
 	virtual int Init() override;
 	virtual int Deinit() override;
@@ -43,11 +50,12 @@ protected:
 
 	FlexSolver* g_solver;
 
+	//Each of these functions returns the index of the object they have created within the appropriate vector.
 	//TODO: Modify add cloth to provide more control over the cloth that is spawned (position, rotation, etc.)
 	//Adds a cloth with the specified mesh dimensions. a_tetherIndices specifies which particles should be used as tethers (not use physics).
-	void AddCloth(unsigned int a_dimensions, unsigned int a_numberOfTethers, unsigned int* a_tetherIndices, float a_height);
-	void AddBox(vec3 a_position, quat a_rotation);
-	void AddShape();
+	unsigned int AddCloth(unsigned int a_dimensions, unsigned int a_numberOfTethers, unsigned int* a_tetherIndices, float a_height);
+	unsigned int AddBox(vec3 a_position, quat a_rotation);
+	unsigned int AddStaticSphere(float a_radius, vec3 a_position, bool a_isTrigger);
 
 	float m_particleRadius;
 
@@ -58,11 +66,14 @@ protected:
 	std::vector<FlexExtAsset*> g_cubes;
 
 	//Static shape variables
-	//std::vector<FlexCollisionGeometry> g_shapeGeometry;
-	//std::vector<vec4> m_shapePositions;
-	//std::vector<quat> m_shapeRotations;
-	//std::vector<uint32_t> m_shapeStarts;
-	//std::vector<int> m_shapeFlags;
+	std::vector<unsigned int> m_shapeModels;
+	std::vector<FlexCollisionGeometry> g_shapeGeometry;
+	std::vector<vec4> m_shapePositions;
+	std::vector<quat> m_shapeRotations;
+	std::vector<uint32_t> m_shapeStarts;
+	std::vector<int> m_shapeFlags;
+	std::vector<vec4> m_shapeAABBmins;
+	std::vector<vec4> m_shapeAABBmaxes;
 
 	//Rigidbody variables.
 	std::vector<int> m_rigidOffsets;
