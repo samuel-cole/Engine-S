@@ -44,8 +44,8 @@ int FleXBase::Init()
 	
 	params.mRadius = m_particleRadius;
 	params.mViscosity = 0.0f;
-	params.mDynamicFriction = 0.25f;
-	params.mStaticFriction = 0.0f;
+	params.mDynamicFriction = 0.0f;	//Interesting- having any dynamic friction at all seems to cause objects to become glued to trigger colliders, it seems as though they are still getting friction with the trigger despite not colliding with it.
+	params.mStaticFriction = 0.2f;
 	params.mParticleFriction = 0.0f; // scale friction between particles by default
 	params.mFreeSurfaceDrag = 0.0f;
 	params.mDrag = 0.0f;
@@ -132,6 +132,8 @@ int FleXBase::Init()
 
 	flexSetParams(g_solver, &params);
 
+	m_updateFleXScene = true;
+
 	return 0;
 }
 
@@ -161,7 +163,7 @@ void FleXBase::Update(float a_deltaTime)
 	flexSetParticles(g_solver, m_particles, m_numberOfActiveParticles, eFlexMemoryHostAsync);
 	flexSetVelocities(g_solver, m_velocities, m_numberOfActiveParticles, eFlexMemoryHostAsync);
 
-	if (InputManager::GetKey(Keys::SPACE))
+	if (m_updateFleXScene)
 		flexUpdateSolver(g_solver, 1.0f / 60.0f, 2, NULL);
 
 	flexGetParticles(g_solver, m_particles, m_numberOfParticles, eFlexMemoryHostAsync);
@@ -349,7 +351,7 @@ unsigned int FleXBase::AddStaticSphere(float a_radius, vec3 position, bool a_isT
 	m_renderer->SetPosition(position, model);
 	m_shapeModels.push_back(model);
 
-	m_shapeStarts.push_back(g_shapeGeometry.size());
+	m_shapeStarts.push_back((int)g_shapeGeometry.size());
 
 	FlexCollisionGeometry geometry;
 	geometry.mSphere.mRadius = a_radius;
@@ -367,6 +369,7 @@ unsigned int FleXBase::AddStaticSphere(float a_radius, vec3 position, bool a_isT
 	m_shapeFlags.push_back(shape);
 
 
+	//flexSetShapes(g_solver, &g_shapeGeometry[0], (int)g_shapeGeometry.size(), (float*)&m_shapeAABBmins[0], (float*)&m_shapeAABBmaxes[0], (int*)&m_shapeStarts[0], (float*)&m_shapePositions[0], (float*)&m_shapeRotations[0], (float*)&m_shapePositions[0], (float*)&m_shapeRotations[0], &m_shapeFlags[0], (int)m_shapeStarts.size(), eFlexMemoryHostAsync);			
 	flexSetShapes(g_solver, &g_shapeGeometry[0], (int)g_shapeGeometry.size(), (float*)&m_shapeAABBmins[0], (float*)&m_shapeAABBmaxes[0], (int*)&m_shapeStarts[0], (float*)&m_shapePositions[0], (float*)&m_shapeRotations[0], (float*)&m_shapePositions[0], (float*)&m_shapeRotations[0], &m_shapeFlags[0], (int)m_shapeStarts.size(), eFlexMemoryHostAsync);			
 
 	return g_shapeGeometry.size() - 1;

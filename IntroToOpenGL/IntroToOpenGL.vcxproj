@@ -175,6 +175,7 @@
     <ClCompile Include="..\src\main.cpp" />
     <ClCompile Include="..\src\Particle.cpp" />
     <ClCompile Include="..\src\physicsgame\FleXBase.cpp" />
+    <ClCompile Include="..\src\physicsgame\LevelData.cpp" />
     <ClCompile Include="..\src\physicsgame\PhysicsGame.cpp" />
     <ClCompile Include="..\src\physicsgame\TestScene.cpp" />
     <ClCompile Include="..\src\Renderer.cpp" />
@@ -190,6 +191,7 @@
     <ClInclude Include="..\src\InputManager.h" />
     <ClInclude Include="..\src\Particle.h" />
     <ClInclude Include="..\src\physicsgame\FleXBase.h" />
+    <ClInclude Include="..\src\physicsgame\LevelData.h" />
     <ClInclude Include="..\src\physicsgame\PhysicsGame.h" />
     <ClInclude Include="..\src\physicsgame\TestScene.h" />
     <ClInclude Include="..\src\Renderer.h" />

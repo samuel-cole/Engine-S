@@ -34,6 +34,16 @@ class FleXBase : public Application
 	//Consider making new classes/structs and changing these to use them so that vectors that are required to be the same size are replaced by a single vector of a new type.
 	//This may also hurt caching by preventing data of the same type from being contiguous in memoery though, so look into it further before doing.
 
+
+public:
+	//Each of these functions returns the index of the object they have created within the appropriate vector.
+	//TODO: Modify add cloth to provide more control over the cloth that is spawned (position, rotation, etc.)
+	//Adds a cloth with the specified mesh dimensions. a_tetherIndices specifies which particles should be used as tethers (not use physics).
+	unsigned int AddCloth(unsigned int a_dimensions, unsigned int a_numberOfTethers, unsigned int* a_tetherIndices, float a_height);
+	unsigned int AddBox(vec3 a_position, quat a_rotation);
+	unsigned int AddStaticSphere(float a_radius, vec3 a_position, bool a_isTrigger);
+
+
 protected:
 	virtual int Init() override;
 	virtual int Deinit() override;
@@ -49,13 +59,6 @@ protected:
 	Renderer* m_renderer;
 
 	FlexSolver* g_solver;
-
-	//Each of these functions returns the index of the object they have created within the appropriate vector.
-	//TODO: Modify add cloth to provide more control over the cloth that is spawned (position, rotation, etc.)
-	//Adds a cloth with the specified mesh dimensions. a_tetherIndices specifies which particles should be used as tethers (not use physics).
-	unsigned int AddCloth(unsigned int a_dimensions, unsigned int a_numberOfTethers, unsigned int* a_tetherIndices, float a_height);
-	unsigned int AddBox(vec3 a_position, quat a_rotation);
-	unsigned int AddStaticSphere(float a_radius, vec3 a_position, bool a_isTrigger);
 
 	float m_particleRadius;
 
@@ -104,6 +107,7 @@ protected:
 
 	int* m_activeParticles;
 
+	bool m_updateFleXScene;
 
 	// calculates local space positions given a set of particles and rigid indices
 	// Copy + pasted from FleX demo code and modified to use glm vectors, return normals, and to use indices that don't include cloth indices.

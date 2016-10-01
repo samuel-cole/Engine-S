@@ -1,5 +1,7 @@
 #include "PhysicsGame.h"
 #include "Renderer.h"
+#include "LevelData.h"
+#include "InputManager.h"
 
 bool isNearlyEqual(float a_float1, float a_float2)
 {
@@ -29,17 +31,13 @@ int PhysicsGame::Init()
 	TwAddVarRW(m_debugBar, "Gravity Strength", TW_TYPE_FLOAT, &m_gravityStrength, "min=0 max = 30");
 
 	//TODO: load in a level.
-	//When loading a level, there are three things to set- 
-	//the objects in the scene, the modifiable properties, and the indices for the goal object and target shape.
-	LoadTestLevel();
+	LevelData::LoadLevel(this, 0, m_goalObjectIndex, m_targetShapeIndex);
 
 	//TODO: replace these with better textures.
 	m_renderer->LoadTexture("../data/crate.png", m_boxModels[m_goalObjectIndex]);
 	m_renderer->LoadAmbient("../data/crate.png", m_boxModels[m_goalObjectIndex]);
 	m_renderer->LoadTexture("../data/crate.png", m_shapeModels[m_targetShapeIndex]);
 	m_renderer->LoadAmbient("../data/crate.png", m_shapeModels[m_targetShapeIndex]);
-
-	m_modifiablePropertiesMask = (1 << GRAVITY);
 
 	flexGetParams(g_solver, &g_params);
 	g_params.mGravity[0] = m_gravityDir.x * m_gravityStrength;
@@ -65,6 +63,11 @@ void PhysicsGame::Update(float a_deltaTime)
 		}
 	}
 
+	if (InputManager::GetKey(Keys::SPACE))
+	{
+		m_updateFleXScene = !m_updateFleXScene;
+	}
+
 	FleXBase::Update(a_deltaTime);
 
 	if (CheckWin())
@@ -88,36 +91,15 @@ bool PhysicsGame::CheckWin()
 	{
 		const int contactIndex = contactIndices[i];
 		const unsigned char count = contactCounts[contactIndex];
-
+	
 		for (int c = 0; c < count; ++c)
 		{
 			vec4 velocity = contactVelocities[contactIndex * MAX_PARTICLE_CONTACTS + c];
 			const int shapeID = (int)velocity.w;
-
+	
 			if (shapeID == m_targetShapeIndex)
 				return true;
 		}
 	}
 	return false;
-}
-
-
-void PhysicsGame::LoadTestLevel()
-{
-	unsigned int tetherPoints[2] = { 0, 19 };
-	AddCloth(20, 2, tetherPoints, 10.0f);
-
-	for (int i = -1; i < 2; ++i)
-	{
-		for (int j = -1; j < 2; ++j)
-		{
-			unsigned int newBox = AddBox(vec3(i * 5.0f, 20.0f, j * 5.0f), quat(vec3(30, 25, 70)));
-			if (i == 1 && j == 1)
-			{
-				m_goalObjectIndex = newBox;
-			}
-		}
-	}
-
-	m_targetShapeIndex = AddStaticSphere(1.0f, vec3(-25.0f, 1.0f, -25.0f), false);
 }

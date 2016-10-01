@@ -5,8 +5,7 @@
 
 class PhysicsGame : public FleXBase
 {
-protected:
-
+public:
 	enum PropertyTypes
 	{
 		GRAVITY,
@@ -14,6 +13,7 @@ protected:
 		FRICTION,
 	};
 
+protected:
 	virtual int Init() override;
 
 	virtual void Update(float a_deltaTime) override;
@@ -34,8 +34,6 @@ protected:
 	float m_oldGravityStrength;
 
 	char m_modifiablePropertiesMask;
-
-	void LoadTestLevel();
 };
 
 #endif
