@@ -60,6 +60,9 @@
     <ClCompile Include="..\src\physicsgame\LevelData.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\physicsgame\TrackerCamera.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\gl_core_4_4.h">
@@ -102,6 +105,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\src\physicsgame\LevelData.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\physicsgame\TrackerCamera.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

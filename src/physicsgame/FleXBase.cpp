@@ -190,6 +190,8 @@ void FleXBase::Update(float a_deltaTime)
 		m_renderer->SetPosition(m_rigidPositions[i], m_boxModels[i]);
 		m_renderer->SetRotation(m_rigidRotations[i], m_boxModels[i]);
 	}
+
+	InputManager::Update();
 }
 
 void FleXBase::Draw()
@@ -342,13 +344,13 @@ unsigned int FleXBase::AddBox(vec3 a_position, quat a_rotation)
 	return g_cubes.size() - 1;
 }
 
-unsigned int FleXBase::AddStaticSphere(float a_radius, vec3 position, bool a_isTrigger)
+unsigned int FleXBase::AddStaticSphere(float a_radius, vec3 a_position, bool a_isTrigger)
 {
 	vec3 scale = vec3(a_radius, a_radius, a_radius);
 
 	unsigned int model = m_renderer->LoadOBJ("../data/sphere.obj");
 	m_renderer->SetScale(scale, model);
-	m_renderer->SetPosition(position, model);
+	m_renderer->SetPosition(a_position, model);
 	m_shapeModels.push_back(model);
 
 	m_shapeStarts.push_back((int)g_shapeGeometry.size());
@@ -357,10 +359,10 @@ unsigned int FleXBase::AddStaticSphere(float a_radius, vec3 position, bool a_isT
 	geometry.mSphere.mRadius = a_radius;
 	g_shapeGeometry.push_back(geometry);
 
-	m_shapeAABBmins.push_back(vec4(position - scale, 0));
-	m_shapeAABBmaxes.push_back(vec4(position + scale, 0));
+	m_shapeAABBmins.push_back(vec4(a_position - scale, 0));
+	m_shapeAABBmaxes.push_back(vec4(a_position + scale, 0));
 
-	m_shapePositions.push_back(vec4(position, 0.0f));
+	m_shapePositions.push_back(vec4(a_position, 0.0f));
 	m_shapeRotations.push_back(quat());
 
 	int shape = flexMakeShapeFlags(eFlexShapeSphere, false);
@@ -374,7 +376,6 @@ unsigned int FleXBase::AddStaticSphere(float a_radius, vec3 position, bool a_isT
 
 	return g_shapeGeometry.size() - 1;
 }
-
 
 // Copy + pasted from FleX demo code and modified to use glm vectors, return normals, and to use indices that don't include cloth indices.
 //This function may not be needed, its end result is just the same as the starting position, as the particles are still at world 0 when this is called.

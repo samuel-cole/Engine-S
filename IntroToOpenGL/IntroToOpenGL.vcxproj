@@ -178,6 +178,7 @@
     <ClCompile Include="..\src\physicsgame\LevelData.cpp" />
     <ClCompile Include="..\src\physicsgame\PhysicsGame.cpp" />
     <ClCompile Include="..\src\physicsgame\TestScene.cpp" />
+    <ClCompile Include="..\src\physicsgame\TrackerCamera.cpp" />
     <ClCompile Include="..\src\Renderer.cpp" />
     <ClCompile Include="..\src\StaticCamera.cpp" />
     <ClCompile Include="..\src\WalkCamera.cpp" />
@@ -194,6 +195,7 @@
     <ClInclude Include="..\src\physicsgame\LevelData.h" />
     <ClInclude Include="..\src\physicsgame\PhysicsGame.h" />
     <ClInclude Include="..\src\physicsgame\TestScene.h" />
+    <ClInclude Include="..\src\physicsgame\TrackerCamera.h" />
     <ClInclude Include="..\src\Renderer.h" />
     <ClInclude Include="..\src\StaticCamera.h" />
     <ClInclude Include="..\src\WalkCamera.h" />

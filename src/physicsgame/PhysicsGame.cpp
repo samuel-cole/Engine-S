@@ -30,7 +30,6 @@ int PhysicsGame::Init()
 	TwAddVarRW(m_debugBar, "Gravity", TW_TYPE_DIR3F, &m_gravityDir[0], "");
 	TwAddVarRW(m_debugBar, "Gravity Strength", TW_TYPE_FLOAT, &m_gravityStrength, "min=0 max = 30");
 
-	//TODO: load in a level.
 	LevelData::LoadLevel(this, 0, m_goalObjectIndex, m_targetShapeIndex);
 
 	//TODO: replace these with better textures.
@@ -63,7 +62,7 @@ void PhysicsGame::Update(float a_deltaTime)
 		}
 	}
 
-	if (InputManager::GetKey(Keys::SPACE))
+	if (InputManager::GetKeyDown(Keys::SPACE))
 	{
 		m_updateFleXScene = !m_updateFleXScene;
 	}
