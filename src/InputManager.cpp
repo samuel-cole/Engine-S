@@ -31,6 +31,7 @@ bool InputManager::GetKeyDown(Keys a_key)
 	case Keys::D:
 		return (keysPressedThisFrame & (1 << KeyMasks::D)) > 0;
 	}
+	return false;
 }
 
 bool InputManager::GetMouseDown(int a_mouseButton)

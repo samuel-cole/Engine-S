@@ -18,7 +18,7 @@
 
 
 
-class FlyCamera;
+class TrackerCamera;
 class Renderer;
 struct FlexSolver;
 struct FlexExtAsset;
@@ -55,7 +55,7 @@ protected:
 	virtual void Draw() override;
 
 	//The camera used within the scene.
-	FlyCamera* m_camera;
+	TrackerCamera* m_camera;
 	//The renderer used to render the scene.
 	Renderer* m_renderer;
 

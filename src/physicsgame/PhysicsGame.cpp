@@ -2,6 +2,7 @@
 #include "Renderer.h"
 #include "LevelData.h"
 #include "InputManager.h"
+#include "TrackerCamera.h"
 
 bool isNearlyEqual(float a_float1, float a_float2)
 {
@@ -43,6 +44,8 @@ int PhysicsGame::Init()
 	g_params.mGravity[1] = m_gravityDir.y * m_gravityStrength;
 	g_params.mGravity[2] = m_gravityDir.z * m_gravityStrength;
 	flexSetParams(g_solver, &g_params);
+
+	m_camera->SetObjectToTrack(m_boxModels[m_goalObjectIndex], m_renderer);
 
 	return 0;
 }

@@ -1,5 +1,5 @@
 #include "FleXBase.h"
-#include "FlyCamera.h"
+#include "TrackerCamera.h"
 #include "Renderer.h"
 #include "glm\gtx\euler_angles.hpp"
 #include "InputManager.h"
@@ -13,7 +13,7 @@ int FleXBase::Init()
 	if (baseInit != 0)
 		return baseInit;
 
-	m_camera = new FlyCamera(m_debugBar);
+	m_camera = new TrackerCamera();
 	m_camera->SetPerspective(glm::pi<float>() * 0.25f, 16.0f / 9.0f, 0.1f, 10000.0f);
 	m_camera->SetLookAt(vec3(10, 10, 10), vec3(0, 0, 0), vec3(0, 1, 0));
 
@@ -90,21 +90,22 @@ int FleXBase::Init()
 	params.mInertiaBias = 0.001f;
 	
 	//planes created after particles
-	params.mNumPlanes = 5;
+	params.mNumPlanes = 6;
 	
 	//Values from FleX demo taken, but code isn't taken directly.
 	params.mSolidRestDistance = params.mRadius;
 	params.mCollisionDistance = params.mRadius;
 	params.mParticleFriction = params.mDynamicFriction * 0.1f;
 	params.mShapeCollisionMargin = params.mCollisionDistance * 0.5f;
-	(vec4&)params.mPlanes[0] = vec4(0, 1, 0, 0);
+	(vec4&)params.mPlanes[0] = vec4(0.0f, 1.0f, 0.0f, 0.0f);
 	(vec4&)params.mPlanes[1] = vec4(0.0f, 0.0f, 1.0f,  30);
 	(vec4&)params.mPlanes[2] = vec4(1.0f, 0.0f, 0.0f,  30);
 	(vec4&)params.mPlanes[3] = vec4(-1.0f, 0.0f, 0.0f, 30);
 	(vec4&)params.mPlanes[4] = vec4(0.0f, 0.0f, -1.0f, 30);
+	(vec4&)params.mPlanes[5] = vec4(0.0f, -1.0f, 0.0f, 30);
 
-	unsigned int* planes = new unsigned int[5];
-	for (int i = 0; i < 5; ++i)
+	unsigned int* planes = new unsigned int[6];
+	for (int i = 0; i < 6; ++i)
 	{
 		planes[i] = m_renderer->GenerateGrid(100, 100);
 		m_renderer->LoadAmbient("../data/tablecloth.jpg", planes[i]);
@@ -120,6 +121,8 @@ int FleXBase::Init()
 	m_renderer->SetRotation(quat(vec3(-glm::pi<float>() / 2.0f, 0, 0)), planes[3]);
 	m_renderer->SetPosition(vec3(-30, 0, 0), planes[4]);
 	m_renderer->SetRotation(quat(vec3(0, 0, -glm::pi<float>() / 2.0f)), planes[4]);
+	m_renderer->SetPosition(vec3(0, 30, 0), planes[5]);
+	m_renderer->SetRotation(quat(vec3(glm::pi<float>(), 0, 0)), planes[5]);
 
 	m_particles = new float[m_numberOfParticles * 4];
 	m_velocities = new float[m_numberOfParticles * 3];
