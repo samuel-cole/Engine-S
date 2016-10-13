@@ -33,11 +33,12 @@ int PhysicsGame::Init()
 
 	LevelData::LoadLevel(this, 0, m_goalObjectIndex, m_targetShapeIndex);
 
-	//TODO: replace these with better textures.
-	m_renderer->LoadTexture("../data/crate.png", m_boxModels[m_goalObjectIndex]);
-	m_renderer->LoadAmbient("../data/crate.png", m_boxModels[m_goalObjectIndex]);
-	m_renderer->LoadTexture("../data/crate.png", m_shapeModels[m_targetShapeIndex]);
-	m_renderer->LoadAmbient("../data/crate.png", m_shapeModels[m_targetShapeIndex]);
+	m_renderer->LoadTexture("../data/colours/blue.png", m_boxModels[m_goalObjectIndex]);
+	m_renderer->LoadAmbient("../data/colours/blue.png", m_boxModels[m_goalObjectIndex]);
+	m_renderer->LoadSpecularMap("../data/colours/blue.png", m_boxModels[m_goalObjectIndex]);
+	m_renderer->LoadTexture("../data/colours/green.png", m_shapeModels[m_targetShapeIndex]);
+	m_renderer->LoadAmbient("../data/colours/green.png", m_shapeModels[m_targetShapeIndex]);
+	m_renderer->LoadSpecularMap("../data/colours/green.png", m_shapeModels[m_targetShapeIndex]);
 
 	flexGetParams(g_solver, &g_params);
 	g_params.mGravity[0] = m_gravityDir.x * m_gravityStrength;
