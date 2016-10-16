@@ -18,12 +18,14 @@ protected:
 
 	virtual void Update(float a_deltaTime) override;
 
-	bool CheckWin();
+	void CheckWin();
 
 	//Index of the goal object within the vectors of objects in the scene.
 	unsigned int m_goalObjectIndex;
 	//Index of the target area shape within FleX.
 	unsigned int m_targetShapeIndex;
+	//Indices of each hazard object within the scene.
+	std::vector<unsigned int> m_hazardShapeIndices;
 
 	FlexParams g_params;
 

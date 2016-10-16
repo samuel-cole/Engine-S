@@ -31,7 +31,7 @@ int PhysicsGame::Init()
 	TwAddVarRW(m_debugBar, "Gravity", TW_TYPE_DIR3F, &m_gravityDir[0], "");
 	TwAddVarRW(m_debugBar, "Gravity Strength", TW_TYPE_FLOAT, &m_gravityStrength, "min=0 max = 30");
 
-	LevelData::LoadLevel(this, 0, m_goalObjectIndex, m_targetShapeIndex);
+	LevelData::LoadLevel(this, 0, m_goalObjectIndex, m_targetShapeIndex, m_hazardShapeIndices);
 
 	m_renderer->LoadTexture("../data/colours/blue.png", m_boxModels[m_goalObjectIndex]);
 	m_renderer->LoadAmbient("../data/colours/blue.png", m_boxModels[m_goalObjectIndex]);
@@ -39,6 +39,13 @@ int PhysicsGame::Init()
 	m_renderer->LoadTexture("../data/colours/green.png", m_shapeModels[m_targetShapeIndex]);
 	m_renderer->LoadAmbient("../data/colours/green.png", m_shapeModels[m_targetShapeIndex]);
 	m_renderer->LoadSpecularMap("../data/colours/green.png", m_shapeModels[m_targetShapeIndex]);
+
+	for (unsigned int i = 0; i < m_hazardShapeIndices.size(); ++i)
+	{
+		m_renderer->LoadTexture("../data/colours/red.png", m_shapeModels[m_hazardShapeIndices[i]]);
+		m_renderer->LoadAmbient("../data/colours/red.png", m_shapeModels[m_hazardShapeIndices[i]]);
+		m_renderer->LoadSpecularMap("../data/colours/red.png", m_shapeModels[m_hazardShapeIndices[i]]);
+	}
 
 	flexGetParams(g_solver, &g_params);
 	g_params.mGravity[0] = m_gravityDir.x * m_gravityStrength;
@@ -73,13 +80,10 @@ void PhysicsGame::Update(float a_deltaTime)
 
 	FleXBase::Update(a_deltaTime);
 
-	if (CheckWin())
-	{
-		printf("You win! \n");
-	}
+	CheckWin();
 }
 
-bool PhysicsGame::CheckWin()
+void PhysicsGame::CheckWin()
 {
 	const int MAX_PARTICLE_CONTACTS = 4;
 
@@ -101,8 +105,17 @@ bool PhysicsGame::CheckWin()
 			const int shapeID = (int)velocity.w;
 	
 			if (shapeID == m_targetShapeIndex)
-				return true;
+				printf("You win! \n");
+			else
+			{
+				for (unsigned int j = 0; j < m_hazardShapeIndices.size(); ++j)
+				{
+					if (shapeID == m_hazardShapeIndices[j])
+					{
+						printf("You lose! \n");
+					}
+				}
+			}
 		}
 	}
-	return false;
 }
