@@ -43,7 +43,7 @@ int FleXBase::Init()
 	params.mWind[2] = 0.0f;
 	
 	params.mRadius = m_particleRadius;
-	params.mViscosity = 0.0f;
+	params.mViscosity = 80.0f;
 	params.mDynamicFriction = 0.0f;	//Interesting- having any dynamic friction at all seems to cause objects to become glued to trigger colliders, it seems as though they are still getting friction with the trigger despite not colliding with it.
 	params.mStaticFriction = 0.2f;
 	params.mParticleFriction = 0.0f; // scale friction between particles by default
@@ -51,31 +51,31 @@ int FleXBase::Init()
 	params.mDrag = 0.0f;
 	params.mLift = 0.0f;
 	params.mNumIterations = 3;
-	params.mFluidRestDistance = 0.0f;
+	params.mFluidRestDistance = m_particleRadius / 2.0f;
 	params.mSolidRestDistance = 0.0f;
 	
-	params.mAnisotropyScale = 1.0f;
+	params.mAnisotropyScale = 3.0f / m_particleRadius;
 	params.mAnisotropyMin = 0.1f;
 	params.mAnisotropyMax = 2.0f;
-	params.mSmoothing = 1.0f;
+	params.mSmoothing = 0.35f;
 	
-	params.mDissipation = 0.0f;
+	params.mDissipation = 0.12f;
 	params.mDamping = 0.0f;
 	params.mParticleCollisionMargin = 0.0f;
 	params.mShapeCollisionMargin = 0.0f;
 	params.mCollisionDistance = 0.05f;
 	params.mPlasticThreshold = 0.0f;
 	params.mPlasticCreep = 0.0f;
-	params.mFluid = false;
+	params.mFluid = true;
 	params.mSleepThreshold = 0.0f;
 	params.mShockPropagation = 0.0f;
 	params.mRestitution = 0.0f;
 	params.mMaxSpeed = FLT_MAX;
 	params.mRelaxationMode = eFlexRelaxationLocal;
-	params.mRelaxationFactor = 0.0f;
+	params.mRelaxationFactor = 1.0f;
 	params.mSolidPressure = 1.0f;
-	params.mAdhesion = 0.0f;
-	params.mCohesion = 0.025f;
+	params.mAdhesion = 0.3f;
+	params.mCohesion = 0.15f;
 	params.mSurfaceTension = 0.0f;
 	params.mVorticityConfinement = 0.0f;
 	params.mBuoyancy = 1.0f;
@@ -94,9 +94,9 @@ int FleXBase::Init()
 	
 	//Values from FleX demo taken, but code isn't taken directly.
 	params.mSolidRestDistance = params.mRadius;
-	params.mCollisionDistance = params.mRadius;
+	params.mCollisionDistance = 0.00125f;//params.mRadius;
 	params.mParticleFriction = params.mDynamicFriction * 0.1f;
-	params.mShapeCollisionMargin = params.mCollisionDistance * 0.5f;
+	params.mShapeCollisionMargin = params.mCollisionDistance * 0.25f;
 	(vec4&)params.mPlanes[0] = vec4(0.0f, 1.0f, 0.0f, 0.0f);
 	(vec4&)params.mPlanes[1] = vec4(0.0f, 0.0f, 1.0f,  30);
 	(vec4&)params.mPlanes[2] = vec4(1.0f, 0.0f, 0.0f,  30);
@@ -378,6 +378,15 @@ unsigned int FleXBase::AddStaticSphere(float a_radius, vec3 a_position, bool a_i
 	flexSetShapes(g_solver, &g_shapeGeometry[0], (int)g_shapeGeometry.size(), (float*)&m_shapeAABBmins[0], (float*)&m_shapeAABBmaxes[0], (int*)&m_shapeStarts[0], (float*)&m_shapePositions[0], (float*)&m_shapeRotations[0], (float*)&m_shapePositions[0], (float*)&m_shapeRotations[0], &m_shapeFlags[0], (int)m_shapeStarts.size(), eFlexMemoryHostAsync);			
 
 	return g_shapeGeometry.size() - 1;
+}
+
+unsigned int FleXBase::AddFluid()
+{
+	//Use FlexGetSmoothParticles for getting the fluid particles for rendering.
+	//Need to figure out how to add these particles in the first place though.
+	flexGetSmoothParticles(g_solver, &m_fluidParticles[0], m_numberOfFluidParticles, eFlexMemoryHostAsync);
+
+	return 0;
 }
 
 // Copy + pasted from FleX demo code and modified to use glm vectors, return normals, and to use indices that don't include cloth indices.

@@ -28,6 +28,8 @@ char LevelData::Level0(PhysicsGame* a_game, unsigned int& a_goalObject, unsigned
 			}
 		}
 	}
+	//a_game->AddBox(vec3(5, 20.0f, 0), quat(vec3(30, 25, 70)));
+	//a_goalObject = a_game->AddBox(vec3(0, 20.0f, 0), quat(vec3(30, 25, 70)));
 
 	a_targetShape = a_game->AddStaticSphere(1.0f, vec3(-25.0f, 1.0f, -25.0f), true);
 	a_hazardShapes.push_back(a_game->AddStaticSphere(1.0f, vec3(25.0f, 1.0f, 25.0f), true));
