@@ -69,8 +69,8 @@ m_standardProgram(-1), m_particleProgram(-1), m_animatedProgram(-1), m_postProce
 
 	m_postProcessingProgram = CreateProgram("../data/shaders/vertPostProcessing.txt", "../data/shaders/fragPostProcessing.txt");
 
-	m_defaultAmbient = LoadTexture("../data/default/specular.png");
-	m_defaultDiffuse = LoadTexture("../data/default/diffuse.png");
+	m_defaultAmbient = LoadTexture("../data/colours/lightGrey.png");
+	m_defaultDiffuse = LoadTexture("../data/default/lightGrey.png");
 	m_defaultNormal = LoadTexture("../data/default/normal.png");
 	m_defaultShadow = LoadTexture("../data/default/shadow.png");
 	m_defaultSpec = m_defaultShadow;

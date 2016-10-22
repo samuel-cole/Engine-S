@@ -22,13 +22,12 @@ char LevelData::Level0(PhysicsGame* a_game, unsigned int& a_goalObject, unsigned
 		for (int j = -1; j < 2; ++j)
 		{
 			unsigned int newBox = a_game->AddBox(vec3(i * 5.0f, 20.0f, j * 5.0f), quat(vec3(30, 25, 70)));
-			if (i == 1 && j == 1)
+			if (i == 0 && j == 0)
 			{
 				a_goalObject = newBox;
 			}
 		}
 	}
-	//a_game->AddBox(vec3(5, 20.0f, 0), quat(vec3(30, 25, 70)));
 	//a_goalObject = a_game->AddBox(vec3(0, 20.0f, 0), quat(vec3(30, 25, 70)));
 
 	a_targetShape = a_game->AddStaticSphere(1.0f, vec3(-25.0f, 1.0f, -25.0f), true);

@@ -27,6 +27,9 @@ protected:
 	//Indices of each hazard object within the scene.
 	std::vector<unsigned int> m_hazardShapeIndices;
 
+	//Render handle to the point light used with the goal object.
+	unsigned int m_goalObjectLightIndex;
+
 	FlexParams g_params;
 
 	vec3 m_gravityDir;

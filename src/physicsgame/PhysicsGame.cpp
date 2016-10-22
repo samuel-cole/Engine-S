@@ -36,15 +36,18 @@ int PhysicsGame::Init()
 	m_renderer->LoadTexture("../data/colours/blue.png", m_boxModels[m_goalObjectIndex]);
 	m_renderer->LoadAmbient("../data/colours/blue.png", m_boxModels[m_goalObjectIndex]);
 	m_renderer->LoadSpecularMap("../data/colours/blue.png", m_boxModels[m_goalObjectIndex]);
+	m_goalObjectLightIndex = m_renderer->CreatePointLight(vec3(0.0f, 0.0f, 0.2f), 5.0f, false, m_renderer->GetPosition(m_boxModels[m_goalObjectIndex]));
 	m_renderer->LoadTexture("../data/colours/green.png", m_shapeModels[m_targetShapeIndex]);
 	m_renderer->LoadAmbient("../data/colours/green.png", m_shapeModels[m_targetShapeIndex]);
 	m_renderer->LoadSpecularMap("../data/colours/green.png", m_shapeModels[m_targetShapeIndex]);
+	m_renderer->CreatePointLight(vec3(0.0f, 0.2f, 0.0f), 3.0f, false, m_renderer->GetPosition(m_shapeModels[m_targetShapeIndex]));
 
 	for (unsigned int i = 0; i < m_hazardShapeIndices.size(); ++i)
 	{
 		m_renderer->LoadTexture("../data/colours/red.png", m_shapeModels[m_hazardShapeIndices[i]]);
 		m_renderer->LoadAmbient("../data/colours/red.png", m_shapeModels[m_hazardShapeIndices[i]]);
 		m_renderer->LoadSpecularMap("../data/colours/red.png", m_shapeModels[m_hazardShapeIndices[i]]);
+		m_renderer->CreatePointLight(vec3(0.2f, 0.0f, 0.0f), 3.0f, false, m_renderer->GetPosition(m_shapeModels[m_hazardShapeIndices[i]]));
 	}
 
 	flexGetParams(g_solver, &g_params);
@@ -80,6 +83,8 @@ void PhysicsGame::Update(float a_deltaTime)
 
 	FleXBase::Update(a_deltaTime);
 
+	m_renderer->SetLightPosition(m_goalObjectLightIndex, m_rigidPositions[m_goalObjectIndex]);
+
 	CheckWin();
 }
 
@@ -96,7 +101,7 @@ void PhysicsGame::CheckWin()
 
 	for (int i = m_rigidOffsets[m_goalObjectIndex]; i < m_rigidOffsets[m_goalObjectIndex + 1]; ++i)
 	{
-		const int contactIndex = contactIndices[i];
+		const int contactIndex = contactIndices[m_rigidIndices[i]];
 		const unsigned char count = contactCounts[contactIndex];
 	
 		for (int c = 0; c < count; ++c)

@@ -108,9 +108,9 @@ int FleXBase::Init()
 	for (int i = 0; i < 6; ++i)
 	{
 		planes[i] = m_renderer->GenerateGrid(100, 100);
-		m_renderer->LoadAmbient("../data/tablecloth.jpg", planes[i]);
-		m_renderer->LoadTexture("../data/tablecloth.jpg", planes[i]);
-		m_renderer->LoadSpecularMap("../data/tablecloth.jpg", planes[i]);
+		m_renderer->LoadAmbient("../data/colours/white.png", planes[i]);
+		m_renderer->LoadTexture("../data/colours/white.png", planes[i]);
+		m_renderer->LoadSpecularMap("../data/colours/white.png", planes[i]);
 	}
 
 	m_renderer->SetPosition(vec3(30, 0, 0), planes[1]);

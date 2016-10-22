@@ -4,6 +4,8 @@ in vec2 vUV;
 
 out vec4 FragColour;
 
+const float AMBIENT_STRENGTH = 0.7f;
+
 uniform sampler2D Diffuse;
 uniform sampler2D Ambient;
 uniform sampler2D Specular;
@@ -20,5 +22,5 @@ void main()
 	vec3 ambient = texture(Ambient, vUV).rgb;
 	vec3 specular = texture(Specular, vUV).rgb;
 
-	FragColour =  vec4(ambient, 1) * 0.1f + vec4(diffuse * diffuseLight, 1) + vec4(specular * specLight, 1);
+	FragColour =  vec4(ambient, 1) * AMBIENT_STRENGTH + vec4(diffuse * diffuseLight, 1) + vec4(specular * specLight, 1);
 } 
