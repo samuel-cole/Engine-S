@@ -22,6 +22,7 @@ int FleXBase::Init()
 	m_numberOfParticles = 10000;
 	m_numberOfClothParticles = 0;
 	m_numberOfActiveParticles = 0;
+	m_numberOfFluidParticles = 0;
 	int sqrtNumberOfParticles = glm::sqrt(m_numberOfParticles);
 
 	m_particleRadius = 0.5f;
@@ -38,12 +39,15 @@ int FleXBase::Init()
 
 	//=====================================
 	//Taken from flex demo.
+
+	//Note: see lines ~848 in the demo's main.cpp:
+	//For their wind, they change it in update based on a 1D perlin noise.
 	params.mWind[0] = 0.0f;
 	params.mWind[1] = 0.0f;
 	params.mWind[2] = 0.0f;
 	
 	params.mRadius = m_particleRadius;
-	params.mViscosity = 80.0f;
+	params.mViscosity = 20.0f;
 	params.mDynamicFriction = 0.0f;	//Interesting- having any dynamic friction at all seems to cause objects to become glued to trigger colliders, it seems as though they are still getting friction with the trigger despite not colliding with it.
 	params.mStaticFriction = 0.2f;
 	params.mParticleFriction = 0.0f; // scale friction between particles by default
@@ -57,7 +61,7 @@ int FleXBase::Init()
 	params.mAnisotropyScale = 3.0f / m_particleRadius;
 	params.mAnisotropyMin = 0.1f;
 	params.mAnisotropyMax = 2.0f;
-	params.mSmoothing = 0.35f;
+	params.mSmoothing = 0.0f;
 	
 	params.mDissipation = 0.12f;
 	params.mDamping = 0.0f;
@@ -74,8 +78,8 @@ int FleXBase::Init()
 	params.mRelaxationMode = eFlexRelaxationLocal;
 	params.mRelaxationFactor = 1.0f;
 	params.mSolidPressure = 1.0f;
-	params.mAdhesion = 0.3f;
-	params.mCohesion = 0.15f;
+	params.mAdhesion = 0.1f;
+	params.mCohesion = 0.05f;
 	params.mSurfaceTension = 0.0f;
 	params.mVorticityConfinement = 0.0f;
 	params.mBuoyancy = 1.0f;
@@ -192,6 +196,11 @@ void FleXBase::Update(float a_deltaTime)
 	{
 		m_renderer->SetPosition(m_rigidPositions[i], m_boxModels[i]);
 		m_renderer->SetRotation(m_rigidRotations[i], m_boxModels[i]);
+	}
+
+	for (unsigned int i = 0; i < m_fluidRenderHandles.size(); ++i)
+	{
+		m_renderer->SetPosition((vec3&)m_particles[m_fluidParticles[i] * 4], m_fluidRenderHandles[i]);
 	}
 
 	InputManager::Update();
@@ -380,13 +389,55 @@ unsigned int FleXBase::AddStaticSphere(float a_radius, vec3 a_position, bool a_i
 	return g_shapeGeometry.size() - 1;
 }
 
-unsigned int FleXBase::AddFluid()
+//Some parts of this function have been copy+pasted from CreateParticleGrid() in the FleX demo program.
+void FleXBase::AddFluid(vec3 a_lower, int a_dimX, int a_dimY, int a_dimZ)
 {
-	//Use FlexGetSmoothParticles for getting the fluid particles for rendering.
-	//Need to figure out how to add these particles in the first place though.
-	flexGetSmoothParticles(g_solver, &m_fluidParticles[0], m_numberOfFluidParticles, eFlexMemoryHostAsync);
+	int phase = flexMakePhase(m_currentHighestPhase++, eFlexPhaseSelfCollide | eFlexPhaseFluid);
 
-	return 0;
+	for (int x = 0; x < a_dimX; ++x)
+	{
+		for (int y = 0; y < a_dimY; ++y)
+		{
+			for (int z = 0; z < a_dimZ; ++z)
+			{
+				vec3 randomUnitVector = glm::normalize(vec3((double)rand() / RAND_MAX, (double)rand() / RAND_MAX, (double)rand() / RAND_MAX));
+				vec3 position = a_lower + vec3(x, y, z) * m_particleRadius * 0.6f + randomUnitVector*0.05f;
+	
+				int currentIndex = m_numberOfActiveParticles + x * a_dimX * a_dimY + y * a_dimY + z;
+				m_particles[currentIndex * 4 + 0] = position.x;
+				m_particles[currentIndex * 4 + 1] = position.y;
+				m_particles[currentIndex * 4 + 2] = position.z;
+				m_particles[currentIndex * 4 + 3] = 1;
+	
+				m_velocities[currentIndex * 3 + 0] = 0.0f;
+				m_velocities[currentIndex * 3 + 1] = 0.0f;
+				m_velocities[currentIndex * 3 + 2] = 0.0f;
+	
+				m_phases[currentIndex] = phase;
+
+				m_activeParticles[currentIndex] = currentIndex;
+	
+				unsigned int renderHandle = m_renderer->LoadOBJ("../data/lowPolySphere.obj");
+				m_renderer->LoadAmbient("../data/colours/transparentGrey.png", renderHandle);
+				m_renderer->LoadTexture("../data/colours/transparentGrey.png", renderHandle);
+				m_renderer->SetPosition(position, renderHandle);
+				//1.2 magic number because 0.6f from the size of the particle, but x2 because the low poly sphere mesh is half-sized.
+				m_renderer->SetScale(vec3(m_particleRadius * 1.2f, m_particleRadius * 1.2f, m_particleRadius * 1.2f), renderHandle);
+				m_fluidRenderHandles.push_back(renderHandle);
+
+				m_fluidParticles.push_back(currentIndex);
+			}
+		}
+	}
+	
+	int newParticles = a_dimX * a_dimY * a_dimZ;
+	m_numberOfActiveParticles += newParticles;
+	m_numberOfFluidParticles += newParticles;
+	
+	flexSetParticles(g_solver, m_particles, m_numberOfParticles, eFlexMemoryHostAsync);
+	flexSetVelocities(g_solver, m_velocities, m_numberOfParticles, eFlexMemoryHostAsync);
+	flexSetPhases(g_solver, m_phases, m_numberOfParticles, eFlexMemoryHostAsync);
+	flexSetActive(g_solver, m_activeParticles, m_numberOfActiveParticles, eFlexMemoryHostAsync);
 }
 
 // Copy + pasted from FleX demo code and modified to use glm vectors, return normals, and to use indices that don't include cloth indices.
@@ -408,7 +459,7 @@ void FleXBase::CalculateRigidOffsets(const vec4* restPositions, const int* offse
 
 		for (int i = startIndex; i < endIndex; ++i)
 		{
-			const int r = indices[i] - m_numberOfClothParticles;
+			const int r = indices[i] - (m_numberOfClothParticles + m_numberOfFluidParticles);
 
 			com += vec3(restPositions[r]);
 		}
@@ -417,7 +468,7 @@ void FleXBase::CalculateRigidOffsets(const vec4* restPositions, const int* offse
 
 		for (int i = startIndex; i < endIndex; ++i)
 		{
-			const int r = indices[i] - m_numberOfClothParticles;
+			const int r = indices[i] - (m_numberOfClothParticles + m_numberOfFluidParticles);
 
 			vec3 position = vec3(restPositions[r]) - com;
 			float distance = glm::length(position);

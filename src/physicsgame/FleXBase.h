@@ -42,7 +42,7 @@ public:
 	unsigned int AddCloth(unsigned int a_dimensions, unsigned int a_numberOfTethers, unsigned int* a_tetherIndices, float a_height);
 	unsigned int AddBox(vec3 a_position, quat a_rotation);
 	unsigned int AddStaticSphere(float a_radius, vec3 a_position, bool a_isTrigger);
-	unsigned int AddFluid();
+	void AddFluid(vec3 a_lower, int a_dimX, int a_dimY, int a_dimZ);
 
 
 protected:
@@ -96,7 +96,10 @@ protected:
 	std::vector<float> m_springRestLengths;
 	std::vector<float> m_springStiffness;
 
-	std::vector<float> m_fluidParticles;
+	//Vector of indices to the particle/velocity/phase arrays for where each fluid is.
+	std::vector<unsigned int> m_fluidParticles;
+	//Placeholder- this currently holds render handles to a lot of cubes, which are used for rendering fluid particles.
+	std::vector<unsigned int> m_fluidRenderHandles;
 
 	int m_numberOfParticles;
 	int m_numberOfClothParticles;

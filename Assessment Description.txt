@@ -55,6 +55,10 @@ Crediting:
 	Art:
 		Sphere model provided by AIE.
 
+		Low poly sphere models from the NTU 3D Model Database, http://3d.csie.ntu.edu.tw/~dynamic/database/index.html
+		Ding-Yun Chen, Xiao-Pei Tian, Yu-Te Shen and Ming Ouhyoung, "On Visual Similarity Based 3D Model Retrieval", Computer Graphics Forum (EUROGRAPHICS'03), Vol. 22, No. 3, pp. 223-232, Sept. 2003. 
+
+
 		'Enemyelite' model and textures provided by AIE.
 
 		'This Side Up' crate texture provided by AIE.
