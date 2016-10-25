@@ -47,10 +47,10 @@ int FleXBase::Init()
 	params.mWind[2] = 0.0f;
 	
 	params.mRadius = m_particleRadius;
-	params.mViscosity = 20.0f;
+	params.mViscosity = 10.0f;
 	params.mDynamicFriction = 0.0f;	//Interesting- having any dynamic friction at all seems to cause objects to become glued to trigger colliders, it seems as though they are still getting friction with the trigger despite not colliding with it.
-	params.mStaticFriction = 0.2f;
-	params.mParticleFriction = 0.0f; // scale friction between particles by default
+	params.mStaticFriction = 0.5f;
+	params.mParticleFriction = 0.2f; // scale friction between particles by default
 	params.mFreeSurfaceDrag = 0.0f;
 	params.mDrag = 0.0f;
 	params.mLift = 0.0f;
@@ -63,26 +63,26 @@ int FleXBase::Init()
 	params.mAnisotropyMax = 2.0f;
 	params.mSmoothing = 0.0f;
 	
-	params.mDissipation = 0.12f;
-	params.mDamping = 0.0f;
-	params.mParticleCollisionMargin = 0.0f;
+	params.mDissipation = 0.01f;
+	params.mDamping = 0.1f;
+	params.mParticleCollisionMargin = 0.05f;
 	params.mShapeCollisionMargin = 0.0f;
 	params.mCollisionDistance = 0.05f;
 	params.mPlasticThreshold = 0.0f;
 	params.mPlasticCreep = 0.0f;
 	params.mFluid = true;
-	params.mSleepThreshold = 0.0f;
+	params.mSleepThreshold = 0.01f;
 	params.mShockPropagation = 0.0f;
-	params.mRestitution = 0.0f;
+	params.mRestitution = 0.01f;
 	params.mMaxSpeed = FLT_MAX;
 	params.mRelaxationMode = eFlexRelaxationLocal;
 	params.mRelaxationFactor = 1.0f;
 	params.mSolidPressure = 1.0f;
 	params.mAdhesion = 0.1f;
 	params.mCohesion = 0.05f;
-	params.mSurfaceTension = 0.0f;
-	params.mVorticityConfinement = 0.0f;
-	params.mBuoyancy = 1.0f;
+	params.mSurfaceTension = 0.01f;
+	params.mVorticityConfinement = 0.1f;
+	params.mBuoyancy = 2.0f;
 	params.mDiffuseThreshold = 100.0f;
 	params.mDiffuseBuoyancy = 1.0f;
 	params.mDiffuseDrag = 0.8f;
@@ -390,9 +390,9 @@ unsigned int FleXBase::AddStaticSphere(float a_radius, vec3 a_position, bool a_i
 }
 
 //Some parts of this function have been copy+pasted from CreateParticleGrid() in the FleX demo program.
-void FleXBase::AddFluid(vec3 a_lower, int a_dimX, int a_dimY, int a_dimZ)
+void FleXBase::AddFluid(vec3 a_lower, int a_dimX, int a_dimY, int a_dimZ, int a_phaseNumber)
 {
-	int phase = flexMakePhase(m_currentHighestPhase++, eFlexPhaseSelfCollide | eFlexPhaseFluid);
+	int phase = flexMakePhase(a_phaseNumber, eFlexPhaseSelfCollide | eFlexPhaseFluid);
 
 	for (int x = 0; x < a_dimX; ++x)
 	{

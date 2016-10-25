@@ -42,7 +42,7 @@ public:
 	unsigned int AddCloth(unsigned int a_dimensions, unsigned int a_numberOfTethers, unsigned int* a_tetherIndices, float a_height);
 	unsigned int AddBox(vec3 a_position, quat a_rotation);
 	unsigned int AddStaticSphere(float a_radius, vec3 a_position, bool a_isTrigger);
-	void AddFluid(vec3 a_lower, int a_dimX, int a_dimY, int a_dimZ);
+	void AddFluid(vec3 a_lower, int a_dimX, int a_dimY, int a_dimZ, int a_phaseNumber);
 
 
 protected:
