@@ -38,6 +38,9 @@ protected:
 	vec3 m_oldGravityDir;
 	float m_oldGravityStrength;
 
+	float m_restitution;
+	float m_oldRestitution;
+
 	char m_modifiablePropertiesMask;
 };
 

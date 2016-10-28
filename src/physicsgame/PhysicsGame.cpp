@@ -28,8 +28,12 @@ int PhysicsGame::Init()
 	m_oldGravityDir = vec3(0, -1, 0);
 	m_oldGravityStrength = 9.8f;
 
+	m_restitution = 0.2f;
+	m_oldRestitution = 0.2f;
+
 	TwAddVarRW(m_debugBar, "Gravity", TW_TYPE_DIR3F, &m_gravityDir[0], "");
 	TwAddVarRW(m_debugBar, "Gravity Strength", TW_TYPE_FLOAT, &m_gravityStrength, "min=0 max = 30");
+	TwAddVarRW(m_debugBar, "Restitution", TW_TYPE_FLOAT, &m_restitution, "min=0 max=1 step = 0.02");
 
 	LevelData::LoadLevel(this, 0, m_goalObjectIndex, m_targetShapeIndex, m_hazardShapeIndices);
 
@@ -54,6 +58,7 @@ int PhysicsGame::Init()
 	g_params.mGravity[0] = m_gravityDir.x * m_gravityStrength;
 	g_params.mGravity[1] = m_gravityDir.y * m_gravityStrength;
 	g_params.mGravity[2] = m_gravityDir.z * m_gravityStrength;
+	g_params.mRestitution = m_restitution;
 	flexSetParams(g_solver, &g_params);
 
 	m_camera->SetObjectToTrack(m_boxModels[m_goalObjectIndex], m_renderer);
@@ -72,6 +77,17 @@ void PhysicsGame::Update(float a_deltaTime)
 			g_params.mGravity[0] = m_gravityDir.x * m_gravityStrength;
 			g_params.mGravity[1] = m_gravityDir.y * m_gravityStrength;
 			g_params.mGravity[2] = m_gravityDir.z * m_gravityStrength;
+			flexSetParams(g_solver, &g_params);
+		}
+	}
+
+	//TODO: Restitution doesn't work as expected! Restitution only accounts for collisions with shapes, particle collisions are always inelastic, find the property to set how much they rebound by.
+	if ((m_modifiablePropertiesMask & (1 << RESTITUTION)) > 0)
+	{
+		if (!isNearlyEqual(m_restitution, m_oldRestitution))
+		{
+			m_oldRestitution = m_restitution;
+			g_params.mRestitution = m_restitution;
 			flexSetParams(g_solver, &g_params);
 		}
 	}
