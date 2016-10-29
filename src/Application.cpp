@@ -59,6 +59,8 @@ int Application::Init()
 	InputManager::SetupAntBarCallbacks();
 
 	m_debugBar = TwNewBar("Options Bar");
+	float refreshRate = 0.01f;
+	TwSetParam(m_debugBar, NULL, "refresh", TwParamValueType::TW_PARAM_FLOAT, 1, &refreshRate);
 
 	srand((unsigned int)time(0));
 

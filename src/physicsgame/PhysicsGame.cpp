@@ -44,6 +44,8 @@ void PhysicsGame::LoadLevel(const int a_level, const bool a_startingGame)
 	//If this isn't the start of the game (just loading a new level), this will ensure that only the properties that are needed for that level are displayed.
 	TwRemoveAllVars(m_debugBar);
 
+	TwAddVarRO(m_debugBar, "Level Time", TW_TYPE_FLOAT, &m_currentLevelTime, "");
+
 	//Initialise the new level.
 	m_gravityDir = vec3(0, -1, 0);
 	m_gravityStrength = 9.8f;
@@ -95,6 +97,8 @@ void PhysicsGame::LoadLevel(const int a_level, const bool a_startingGame)
 	flexSetParams(g_solver, &g_params);
 
 	m_camera->SetObjectToTrack(m_boxModels[m_goalObjectIndex], m_renderer);
+
+	m_currentLevelTime = 0.0f;
 }
 
 void PhysicsGame::Update(float a_deltaTime)
@@ -132,6 +136,9 @@ void PhysicsGame::Update(float a_deltaTime)
 		LoadLevel(m_loadedLevel);
 	}
 
+	if (m_updateFleXScene)
+		m_currentLevelTime += a_deltaTime;
+
 	FleXBase::Update(a_deltaTime);
 
 	m_renderer->SetLightPosition(m_goalObjectLightIndex, m_rigidPositions[m_goalObjectIndex]);
@@ -163,6 +170,7 @@ void PhysicsGame::CheckWin()
 			if (shapeID == m_targetShapeIndex)
 			{
 				printf("You win! \n");
+				printf("Level completed in: %f seconds! \n", m_currentLevelTime);
 				LoadLevel(m_loadedLevel + 1);
 			}
 			else

@@ -46,6 +46,8 @@ private:
 	float m_restitution;
 	float m_oldRestitution;
 
+	float m_currentLevelTime;
+
 	char m_modifiablePropertiesMask;
 };
 
