@@ -23,6 +23,7 @@ int FleXBase::Init()
 	m_numberOfClothParticles = 0;
 	m_numberOfActiveParticles = 0;
 	m_numberOfFluidParticles = 0;
+	m_currentHighestPhase = 0;
 	int sqrtNumberOfParticles = glm::sqrt(m_numberOfParticles);
 
 	m_particleRadius = 0.5f;
@@ -30,7 +31,7 @@ int FleXBase::Init()
 	flexInit();
 	g_solver = flexCreateSolver(m_numberOfParticles, 0);
 
-	m_currentHighestPhase = 0;
+
 
 	FlexParams params;
 	params.mGravity[0] = 0.0f;
@@ -211,6 +212,77 @@ void FleXBase::Draw()
 	m_renderer->Draw();
 }
 
+void FleXBase::DestroyAll()
+{
+	for (unsigned int i = 0; i < m_clothModels.size(); ++i)
+	{
+		m_renderer->DestroyObject(m_clothModels[i]);
+		flexExtDestroyAsset(g_cloths[i]);
+	}
+	m_clothModels.clear();
+	g_cloths.clear();
+
+	for (unsigned int i = 0; i < m_boxModels.size(); ++i)
+	{
+		m_renderer->DestroyObject(m_boxModels[i]);
+		flexExtDestroyAsset(g_cubes[i]);
+	}
+	m_boxModels.clear();
+	g_cubes.clear();
+
+	for (unsigned int i = 0; i < m_shapeModels.size(); ++i)
+	{
+		m_renderer->DestroyObject(m_shapeModels[i]);
+	}
+	m_shapeModels.clear();
+	g_shapeGeometry.clear();
+	m_shapePositions.clear();
+	m_shapeRotations.clear();
+	m_shapeStarts.clear();
+	m_shapeFlags.clear();
+	m_shapeAABBmins.clear();
+	m_shapeAABBmaxes.clear();
+
+	m_rigidOffsets.clear();
+	m_rigidIndices.clear();
+	m_rigidRestPositions.clear();
+	m_rigidCoefficients.clear();
+	m_rigidPositions.clear();
+	m_rigidRotations.clear();
+
+	m_clothIndices.clear();
+	m_clothParticleStartIndices.clear();
+	m_springIndices.clear();
+	m_springRestLengths.clear();
+	m_springStiffness.clear();
+
+	for (unsigned int i = 0; i < m_fluidRenderHandles.size(); ++i)
+	{
+		m_renderer->DestroyObject(m_fluidRenderHandles[i]);
+	}
+	m_fluidParticles.clear();
+	m_fluidRenderHandles.clear();
+
+
+	m_rigidOffsets.push_back(0);
+
+	m_numberOfClothParticles = 0;
+	m_numberOfActiveParticles = 0;
+	m_numberOfFluidParticles = 0;
+	m_currentHighestPhase = 0;
+
+	flexSetParticles(g_solver, m_particles, 0, eFlexMemoryHostAsync);
+	flexSetVelocities(g_solver, m_velocities, 0, eFlexMemoryHostAsync);
+	flexSetPhases(g_solver, m_phases, 0, eFlexMemoryHostAsync);
+	flexSetActive(g_solver, m_activeParticles, 0, eFlexMemoryHostAsync);
+	flexSetSprings(g_solver, nullptr, nullptr, nullptr, 0, eFlexMemoryHostAsync);
+	flexSetDynamicTriangles(g_solver, nullptr, nullptr, 0, eFlexMemoryHostAsync);
+	flexSetRigids(g_solver, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, 0, eFlexMemoryHostAsync);
+	flexSetShapes(g_solver, nullptr, 0, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, 0, eFlexMemoryHostAsync);
+
+	m_updateFleXScene = true;
+}
+
 unsigned int FleXBase::AddCloth(unsigned int a_dimensions, unsigned int a_numberOfTethers, unsigned int* a_tetherIndices, float a_height)
 {
 	unsigned int numberOfVertices, numberOfIndices = -1;
@@ -268,7 +340,6 @@ unsigned int FleXBase::AddCloth(unsigned int a_dimensions, unsigned int a_number
 	flexSetPhases(g_solver, m_phases, m_numberOfActiveParticles, eFlexMemoryHostAsync);
 	flexSetActive(g_solver, m_activeParticles, m_numberOfActiveParticles, eFlexMemoryHostAsync);
 
-	//This won't work with multiple cloths.
 	flexSetSprings(g_solver, &m_springIndices[0], &m_springRestLengths[0], &m_springStiffness[0], m_springStiffness.size(), eFlexMemoryHostAsync);
 	flexSetDynamicTriangles(g_solver, &m_clothIndices[0], NULL, m_clothIndices.size() / 3, eFlexMemoryHostAsync);
 

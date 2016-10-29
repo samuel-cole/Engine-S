@@ -54,6 +54,9 @@ protected:
 	virtual void Update(float a_deltaTime) override;
 	virtual void Draw() override;
 
+	//Destroy All removes all objects from the game, however doesn't remove the assets present in every scene (eg: renderer, camera, etc.)
+	void DestroyAll();
+
 	//The camera used within the scene.
 	TrackerCamera* m_camera;
 	//The renderer used to render the scene.

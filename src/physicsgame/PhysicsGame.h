@@ -13,12 +13,17 @@ public:
 		FRICTION,
 	};
 
-protected:
-	virtual int Init() override;
+private:
+	int Init() override;
 
-	virtual void Update(float a_deltaTime) override;
+	void Update(float a_deltaTime) override;
 
 	void CheckWin();
+
+	//Loads the level specified as an argument. Starting game argument is for whether this is the first level loaded in, or if another level already exists.
+	void LoadLevel(const int a_level, const bool a_startingGame = false);
+
+	int m_loadedLevel;
 
 	//Index of the goal object within the vectors of objects in the scene.
 	unsigned int m_goalObjectIndex;

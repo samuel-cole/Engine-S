@@ -30,6 +30,8 @@ bool InputManager::GetKeyDown(Keys a_key)
 		return (keysPressedThisFrame & (1 << KeyMasks::S)) > 0;
 	case Keys::D:
 		return (keysPressedThisFrame & (1 << KeyMasks::D)) > 0;
+	case Keys::R:
+		return (keysPressedThisFrame & (1 << KeyMasks::R)) > 0;
 	}
 	return false;
 }
@@ -102,6 +104,8 @@ void InputManager::OnKey(GLFWwindow*, int keycode, int scancode, int action, int
 		case Keys::D:
 			keysPressedThisFrame |= (1 << KeyMasks::D);
 			break;
+		case Keys::R:
+			keysPressedThisFrame |= (1 << KeyMasks::R);
 		}
 	}
 	else if (action == GLFW_RELEASE)
@@ -138,6 +142,8 @@ void InputManager::OnKey(GLFWwindow*, int keycode, int scancode, int action, int
 		case Keys::D:
 			keysPressedThisFrame &= ~(1 << KeyMasks::D);
 			break;
+		case Keys::R:
+			keysPressedThisFrame &= ~(1 << KeyMasks::R);
 		}
 	}
 

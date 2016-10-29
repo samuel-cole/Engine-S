@@ -23,6 +23,28 @@ int PhysicsGame::Init()
 	if (baseInit != 0)
 		return baseInit;
 
+	LoadLevel(0, true);
+
+	return 0;
+}
+
+void PhysicsGame::LoadLevel(const int a_level, const bool a_startingGame)
+{
+	m_loadedLevel = a_level;
+
+	//If the game is already being played, all of the data from the current game needs to be unloaded.
+	if (!a_startingGame)
+	{
+		m_hazardShapeIndices.clear();
+		m_renderer->ResetPointLights();
+		DestroyAll();
+	}
+
+	//If we are starting the game, this will remove debug lighting variables, that aren't important to the game.
+	//If this isn't the start of the game (just loading a new level), this will ensure that only the properties that are needed for that level are displayed.
+	TwRemoveAllVars(m_debugBar);
+
+	//Initialise the new level.
 	m_gravityDir = vec3(0, -1, 0);
 	m_gravityStrength = 9.8f;
 	m_oldGravityDir = vec3(0, -1, 0);
@@ -31,11 +53,22 @@ int PhysicsGame::Init()
 	m_restitution = 0.2f;
 	m_oldRestitution = 0.2f;
 
-	TwAddVarRW(m_debugBar, "Gravity", TW_TYPE_DIR3F, &m_gravityDir[0], "");
-	TwAddVarRW(m_debugBar, "Gravity Strength", TW_TYPE_FLOAT, &m_gravityStrength, "min=0 max = 30");
-	TwAddVarRW(m_debugBar, "Restitution", TW_TYPE_FLOAT, &m_restitution, "min=0 max=1 step = 0.02");
+	char levelProperties = LevelData::LoadLevel(this, a_level, m_goalObjectIndex, m_targetShapeIndex, m_hazardShapeIndices);
 
-	LevelData::LoadLevel(this, 0, m_goalObjectIndex, m_targetShapeIndex, m_hazardShapeIndices);
+	if (levelProperties == -1)
+	{	
+		//We've finished the game/hit an invalid level, restart the game instead.
+		m_loadedLevel = 0;
+		levelProperties = LevelData::LoadLevel(this, 0, m_goalObjectIndex, m_targetShapeIndex, m_hazardShapeIndices);
+	}
+
+	if ((levelProperties & (1 << GRAVITY)) > 0)
+	{
+		TwAddVarRW(m_debugBar, "Gravity", TW_TYPE_DIR3F, &m_gravityDir[0], "");
+		TwAddVarRW(m_debugBar, "Gravity Strength", TW_TYPE_FLOAT, &m_gravityStrength, "min=0 max = 30");
+	}
+	if ((levelProperties & (1 << RESTITUTION)) > 0)
+		TwAddVarRW(m_debugBar, "Restitution", TW_TYPE_FLOAT, &m_restitution, "min=0 max=1000 step = 0.02");
 
 	m_renderer->LoadTexture("../data/colours/blue.png", m_boxModels[m_goalObjectIndex]);
 	m_renderer->LoadAmbient("../data/colours/blue.png", m_boxModels[m_goalObjectIndex]);
@@ -62,8 +95,6 @@ int PhysicsGame::Init()
 	flexSetParams(g_solver, &g_params);
 
 	m_camera->SetObjectToTrack(m_boxModels[m_goalObjectIndex], m_renderer);
-
-	return 0;
 }
 
 void PhysicsGame::Update(float a_deltaTime)
@@ -96,6 +127,10 @@ void PhysicsGame::Update(float a_deltaTime)
 	{
 		m_updateFleXScene = !m_updateFleXScene;
 	}
+	if (InputManager::GetKeyDown(Keys::R))
+	{
+		LoadLevel(m_loadedLevel);
+	}
 
 	FleXBase::Update(a_deltaTime);
 
@@ -126,7 +161,10 @@ void PhysicsGame::CheckWin()
 			const int shapeID = (int)velocity.w;
 	
 			if (shapeID == m_targetShapeIndex)
+			{
 				printf("You win! \n");
+				LoadLevel(m_loadedLevel + 1);
+			}
 			else
 			{
 				for (unsigned int j = 0; j < m_hazardShapeIndices.size(); ++j)
@@ -134,6 +172,7 @@ void PhysicsGame::CheckWin()
 					if (shapeID == m_hazardShapeIndices[j])
 					{
 						printf("You lose! \n");
+						LoadLevel(m_loadedLevel);
 					}
 				}
 			}

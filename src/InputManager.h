@@ -18,7 +18,8 @@ enum Keys
 	W = GLFW_KEY_W,
 	A = GLFW_KEY_A,
 	S = GLFW_KEY_S,
-	D = GLFW_KEY_D 
+	D = GLFW_KEY_D,
+	R = GLFW_KEY_R
 };
 
 //Class used for managing input. Wraps some GLFW input handling.
@@ -91,7 +92,8 @@ private:
 		W,
 		A,
 		S,
-		D
+		D,
+		R
 	};
 
 	static GLFWwindow* s_window;

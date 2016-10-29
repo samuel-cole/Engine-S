@@ -2539,6 +2539,13 @@ void Renderer::LoadIntoOpenGL(const Vertex* const a_verticesArray, const unsigne
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
+void Renderer::ResetPointLights()
+{
+	m_pointColours.clear();
+	m_pointRadii.clear();
+	m_pointPositions.clear();
+}
+
 void Renderer::DestroyObject(const unsigned int a_index)
 {
 	std::map<std::string, unsigned int>::iterator iter = m_modelNames.begin();
@@ -2546,10 +2553,10 @@ void Renderer::DestroyObject(const unsigned int a_index)
 	{
 		if (iter->second == a_index)
 		{
-			iter = m_textureNames.erase(iter);
+			m_modelNames.erase(iter);
+			break;
 		}
 		++iter;
-		
 	}
 
 	glDeleteVertexArrays(1, &m_VAO[a_index]);
@@ -2564,7 +2571,8 @@ void Renderer::DestroyObject(const unsigned int a_index)
 	{
 		if (iter->second == m_textures[a_index] || iter->second == m_ambients[a_index] || iter->second == m_normals[a_index] || iter->second == m_speculars[a_index])
 		{
-			iter = m_textureNames.erase(iter);
+			m_textureNames.erase(iter);
+			break;
 		}
 		++iter;
 	}

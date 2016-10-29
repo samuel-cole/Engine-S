@@ -410,6 +410,15 @@ public:
 	//Destroys the object at the specified index. TODO: Make new objects check for -1 values within the buffer vectors and place themselves there, instead of pushing back new values to the vector.
 	void DestroyObject(const unsigned int a_index);
 
+	//=======================================================
+	//FleX project additions
+	//=======================================================
+	//Removes all point lights.
+	void ResetPointLights();
+	//=======================================================
+	//End FleX project additions
+	//=======================================================
+
 	//Cleans up by deleting all OpenGL buffers and programs currently in use.
 	void CleanupBuffers();
 
