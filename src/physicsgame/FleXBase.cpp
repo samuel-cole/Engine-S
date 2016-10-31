@@ -31,8 +31,6 @@ int FleXBase::Init()
 	flexInit();
 	g_solver = flexCreateSolver(m_numberOfParticles, 0);
 
-
-
 	FlexParams params;
 	params.mGravity[0] = 0.0f;
 	params.mGravity[1] = -9.8f;
@@ -168,8 +166,8 @@ void FleXBase::Update(float a_deltaTime)
 	m_camera->Update(a_deltaTime);
 
 	//These are only needed if particles are being moved manually- in most situations, these should be commented out.
-	flexSetParticles(g_solver, m_particles, m_numberOfActiveParticles, eFlexMemoryHostAsync);
-	flexSetVelocities(g_solver, m_velocities, m_numberOfActiveParticles, eFlexMemoryHostAsync);
+	//flexSetParticles(g_solver, m_particles, m_numberOfActiveParticles, eFlexMemoryHostAsync);
+	//flexSetVelocities(g_solver, m_velocities, m_numberOfActiveParticles, eFlexMemoryHostAsync);
 
 	if (m_updateFleXScene)
 		flexUpdateSolver(g_solver, 1.0f / 60.0f, 2, NULL);
