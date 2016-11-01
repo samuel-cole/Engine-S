@@ -46,19 +46,28 @@ private:
 	//Render handle to the point light used with the goal object.
 	unsigned int m_goalObjectLightIndex;
 
+	//Object to store all of the settings used by FleX.
 	FlexParams g_params;
 
+	//The current direction that gravity is in. Can be modified by the player through Anttweakbar.
 	vec3 m_gravityDir;
+	//The current strength of gravity. Can be modified by the player through Anttweakbar.
 	float m_gravityStrength;
 
+	//The previous direction that gravity was facing. Used for checking when the player has modified the direction of gravity.
 	vec3 m_oldGravityDir;
+	//The previous strength of gravity. Used for checking when the player has modified the strength of gravity.
 	float m_oldGravityStrength;
-
+	
+	//The current restitution value for the scene. Can be modified by the player through Anttweakbar.
 	float m_restitution;
+	//The previous restitution value for the scene. Used for checking when the player has modified the restitution for the scene.
 	float m_oldRestitution;
 
+	//The amount of time that has passed so far within the current level.
 	float m_currentLevelTime;
 
+	//Bitmask that stores which physical properties are modifiable in the current level- the PropertyTypes enum defines which bits are used for which properties.
 	char m_modifiablePropertiesMask;
 };
 

@@ -98,8 +98,11 @@ private:
 	//FleX project additions
 	//=============================================
 	//These aren't used for actual rendering- they are included for ease of use.
+	//Vector containing the positions of each render object.
 	std::vector<vec3> m_positions;
+	//Vector containing the rotations of each render object.
 	std::vector<glm::quat> m_rotations;
+	//Vector containing the scales of each render object.
 	std::vector<vec3> m_scales;
 	//=======================================================
 	//End FleX project additions
