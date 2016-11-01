@@ -29,8 +29,14 @@ public:
 	//Gets whether the specified key is currently down.
 	static bool GetKey(const Keys a_key);
 
+	//=======================================================
+	//FleX project addition
+	//=======================================================
 	//Gets whether the specified key was pressed down this frame.
 	static bool GetKeyDown(const Keys a_key);
+	//=======================================================
+	//End FleX project addition
+	//=======================================================
 
 	//Get whether the mouse button passed in as an argument is being pressed. Starts at 0 (for left click).
 	static bool GetMouseDown(const int a_mouseButton);
@@ -61,7 +67,17 @@ public:
 	{
 		TwEventMouseWheelGLFW((int)y);
 	}
+
+	//=======================================================
+	//FleX project modification:
+	//This function previously only handled sending information to Anttweakbar, however it now also updates keysPressedThisFrame. 
+	//=======================================================
+	//Callback function for glfw on key input events.
+	//Sends information to Anttweakbar, and updates the keys pressed this frame.
 	static void OnKey(GLFWwindow*, int k, int s, int a, int m);
+	//=======================================================
+	//End FleX project modification
+	//=======================================================
 
 	inline static void OnChar(GLFWwindow*, unsigned int c)
 	{
@@ -81,6 +97,10 @@ public:
 
 private:
 
+	//=======================================================
+	//FleX project addition
+	//=======================================================
+	//Enum used to specify which bits should be used for which keys within the keysPressedThisFrame bitmask.
 	enum KeyMasks
 	{
 		UP,
@@ -95,11 +115,14 @@ private:
 		D,
 		R
 	};
-
-	static GLFWwindow* s_window;
 	
 	//Bitmask for which keys have been pushed this frame.
 	static int keysPressedThisFrame;
+	//=======================================================
+	//End FleX project addition
+	//=======================================================
+
+	static GLFWwindow* s_window;
 };
 
 #endif

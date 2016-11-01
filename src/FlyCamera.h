@@ -7,12 +7,13 @@
 //=======================================================
 //FleX project addition
 //=======================================================
-//Class that handles camera movement.
+//Debug class for moving a camera through 3d space.
 class FlyCamera : public WalkCamera
 {
 public:
 	FlyCamera(TwBar* a_debugBar);
 
+	//Moves the camera in the direction specified by the user's input.
 	void Update(const float deltaTime) override;
 };
 

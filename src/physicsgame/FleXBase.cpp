@@ -261,7 +261,7 @@ void FleXBase::DestroyAll()
 	m_fluidParticles.clear();
 	m_fluidRenderHandles.clear();
 
-
+	//Shape offsets should always start with just a 0 in it.
 	m_rigidOffsets.push_back(0);
 
 	m_numberOfClothParticles = 0;
@@ -451,8 +451,6 @@ unsigned int FleXBase::AddStaticSphere(float a_radius, vec3 a_position, bool a_i
 		shape |= eFlexShapeFlagTrigger;
 	m_shapeFlags.push_back(shape);
 
-
-	//flexSetShapes(g_solver, &g_shapeGeometry[0], (int)g_shapeGeometry.size(), (float*)&m_shapeAABBmins[0], (float*)&m_shapeAABBmaxes[0], (int*)&m_shapeStarts[0], (float*)&m_shapePositions[0], (float*)&m_shapeRotations[0], (float*)&m_shapePositions[0], (float*)&m_shapeRotations[0], &m_shapeFlags[0], (int)m_shapeStarts.size(), eFlexMemoryHostAsync);			
 	flexSetShapes(g_solver, &g_shapeGeometry[0], (int)g_shapeGeometry.size(), (float*)&m_shapeAABBmins[0], (float*)&m_shapeAABBmaxes[0], (int*)&m_shapeStarts[0], (float*)&m_shapePositions[0], (float*)&m_shapeRotations[0], (float*)&m_shapePositions[0], (float*)&m_shapeRotations[0], &m_shapeFlags[0], (int)m_shapeStarts.size(), eFlexMemoryHostAsync);			
 
 	return g_shapeGeometry.size() - 1;
@@ -510,7 +508,6 @@ void FleXBase::AddFluid(vec3 a_lower, int a_dimX, int a_dimY, int a_dimZ, int a_
 }
 
 // Copy + pasted from FleX demo code and modified to use glm vectors, return normals, and to use indices that don't include cloth indices.
-//This function may not be needed, its end result is just the same as the starting position, as the particles are still at world 0 when this is called.
 void FleXBase::CalculateRigidOffsets(const vec4* restPositions, const int* offsets, const int* indices, int numRigids, vec3* localPositions, vec4* normals)
 {
 	int count = 0;
@@ -542,7 +539,7 @@ void FleXBase::CalculateRigidOffsets(const vec4* restPositions, const int* offse
 			vec3 position = vec3(restPositions[r]) - com;
 			float distance = glm::length(position);
 			localPositions[count] = position;
-			//normal uses position, but normalized, and with the negative distance as the 4th component.
+			//Normals use position, but normalized, and with the negative distance as the 4th component.
 			normals[count++] = vec4((1.0f / distance) * position, -distance);
 		}
 	}

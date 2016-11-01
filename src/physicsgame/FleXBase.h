@@ -25,6 +25,9 @@ using glm::vec4;
 using glm::vec3;
 using glm::quat;
 
+//=======================================================
+//FleX project addition
+//=======================================================
 //Base class for FleX applications- handles wrapping FleX functions for simple tasks, and managing general boilerplate code that it necessary for any FleX project.
 class FleXBase : public Application
 {
@@ -102,15 +105,22 @@ protected:
 	std::vector<unsigned int> m_boxModels;
 	//FleX handles for each cube in the scene.
 	std::vector<FlexExtAsset*> g_cubes;
+	//Vector used for telling FleX which rigid indices are used for each rigidbody- the i'th rigid body will use all of the rigid indices from m_rigidOffsets[i] to m_rigidOffsets[i + 1].
 	std::vector<int> m_rigidOffsets;
+	//Vector containing each particle used in a rigid body's index within the main particle array.
 	std::vector<int> m_rigidIndices;
+	//The default positions of each particle within its rigid body (before that rigid body has moved at all). Should be 4 times the number of particles in length, in the format (x, y, z, inverse mass)
 	std::vector<float> m_rigidRestPositions;
+	//The stiffness coefficient of each rigidbody. Given that the renderer doesn't currently support deformation of rigid bodies, this should always be filled with 1's.
 	std::vector<float> m_rigidCoefficients;
+	//The positions of each rigid body.
 	std::vector<vec3> m_rigidPositions;
+	//The rotations of each rigid body.
 	std::vector<quat> m_rigidRotations;
 
 	//======================
 	//Cloth/spring variables
+	//NOTE: at the moment, springs aren't used for anything except cloth.
 	//======================
 	//Rendering handles for each cloth object in the scene.
 	std::vector<unsigned int> m_clothModels;
@@ -120,31 +130,49 @@ protected:
 	std::vector<int> m_clothIndices;
 	//Index to which particle within the m_particles array represents the first particle for each piece of cloth.
 	std::vector<int> m_clothParticleStartIndices;
+	//Set of indices into the main particle array for which particles should be connected by springs. Should always be twice the number of springs in length, specified in pairs.
 	std::vector<int> m_springIndices;
+	//The length that each spring will attempt to restore itself to.
 	std::vector<float> m_springRestLengths;
+	//The stiffness of each spring.
 	std::vector<float> m_springStiffness;
 
+	//================
+	//Fluid variables
+	//================
 	//Vector of indices to the particle/velocity/phase arrays for where each fluid is.
 	std::vector<unsigned int> m_fluidParticles;
-	//Placeholder- this currently holds render handles to a lot of cubes, which are used for rendering fluid particles.
+	//Render handles for each sphere used for rendering fluid particles.
 	std::vector<unsigned int> m_fluidRenderHandles;
 
+	//The maximum number of particles for the scene.
 	int m_numberOfParticles;
-	int m_numberOfClothParticles;
+	//The number of particles that are currently in the scene.
 	int m_numberOfActiveParticles;
+	//The number of cloth particles that are currently in the scene.
+	int m_numberOfClothParticles;
+	//The number of fluid particles that are currently in the scene.
 	int m_numberOfFluidParticles;
 
+	//Number used for giving each object a different collision phase- is incremented for each new object, except in special cases where that new object shouldn't collide with objects (such as fluid).
+	//Doesn't contain the extra information used by FleX for phases, such as flags for self colliding objects or fluids.
 	unsigned int m_currentHighestPhase;
 
+	//The main array used for storing particles within the scene. Is set to four times the number of particles in length, and is specified in the format x, y, z, inverse mass.
 	float* m_particles;
+	//The array used for storing the velocity of each particle within the scene. Is set to three times the number of particles in length, and is specified in the format x, y, z.
 	float* m_velocities;
+	//The array used for storing the phase of each particle within the scene. Is set to the number of particles in length. 
+	//Each phase stores it's collision group in the lower 24 bits of its int, and extra collision flags in the rest.
 	int* m_phases;
 
+	//Array of indices to the main particle array, used for specifying which particles should be active.
 	int* m_activeParticles;
 
+	//Setting for whether the physics scene should be being updated or not- set to false to pause physics simulation.
 	bool m_updateFleXScene;
 
-	// calculates local space positions given a set of particles and rigid indices
+	// Calculates local space positions given a set of particles and rigid indices
 	// Copy + pasted from FleX demo code and modified to use glm vectors, return normals, and to use indices that don't include cloth indices.
 	void CalculateRigidOffsets(const vec4* restPositions, const int* offsets, const int* indices, int numRigids, vec3* localPositions, vec4* normals);
 };
