@@ -55,6 +55,9 @@ void PhysicsGame::LoadLevel(const int a_level, const bool a_startingGame)
 	m_restitution = 0.2f;
 	m_oldRestitution = 0.2f;
 
+	m_bouyancy = 2.0f;
+	m_oldBouyancy = 2.0f;
+
 	char levelProperties = LevelData::LoadLevel(this, a_level, m_goalObjectIndex, m_targetShapeIndex, m_hazardShapeIndices);
 
 	if (levelProperties == -1)
@@ -71,6 +74,8 @@ void PhysicsGame::LoadLevel(const int a_level, const bool a_startingGame)
 	}
 	if ((levelProperties & (1 << RESTITUTION)) > 0)
 		TwAddVarRW(m_debugBar, "Restitution", TW_TYPE_FLOAT, &m_restitution, "min=0 max=1000 step = 0.02");
+	if ((levelProperties & (1 << BOUYANCY)) > 0)
+		TwAddVarRW(m_debugBar, "Fluid Gravity Strength", TW_TYPE_FLOAT, &m_bouyancy, "min=0 max=20 step=0.1");
 
 	m_renderer->LoadTexture("../data/colours/blue.png", m_boxModels[m_goalObjectIndex]);
 	m_renderer->LoadAmbient("../data/colours/blue.png", m_boxModels[m_goalObjectIndex]);
@@ -94,6 +99,7 @@ void PhysicsGame::LoadLevel(const int a_level, const bool a_startingGame)
 	g_params.mGravity[1] = m_gravityDir.y * m_gravityStrength;
 	g_params.mGravity[2] = m_gravityDir.z * m_gravityStrength;
 	g_params.mRestitution = m_restitution;
+	g_params.mBuoyancy = m_bouyancy;
 	flexSetParams(g_solver, &g_params);
 
 	m_camera->SetObjectToTrack(m_boxModels[m_goalObjectIndex], m_renderer);
@@ -123,6 +129,16 @@ void PhysicsGame::Update(float a_deltaTime)
 		{
 			m_oldRestitution = m_restitution;
 			g_params.mRestitution = m_restitution;
+			flexSetParams(g_solver, &g_params);
+		}
+	}
+
+	if ((m_modifiablePropertiesMask & (1 << BOUYANCY)) > 0)
+	{
+		if (!isNearlyEqual(m_bouyancy, m_oldBouyancy))
+		{
+			m_oldBouyancy = m_bouyancy;
+			g_params.mBuoyancy = m_bouyancy;
 			flexSetParams(g_solver, &g_params);
 		}
 	}

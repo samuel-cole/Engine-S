@@ -41,7 +41,7 @@ char LevelData::Level0(PhysicsGame* a_game, unsigned int& a_goalObject, unsigned
 	
 	a_game->AddFluid(vec3(-10, 0, -10), 20, 20, 20, 5);
 
-	return (1 << PhysicsGame::GRAVITY) | (1 << PhysicsGame::RESTITUTION);
+	return (1 << PhysicsGame::GRAVITY) | (1 << PhysicsGame::RESTITUTION) | (1 << PhysicsGame::BOUYANCY);
 }
 
 //Level 1: death-box level, in which the player starts surrounded by hazard objects on all bar one side, and must stop time at the start of the game in order to re-orient gravity to escape the box.

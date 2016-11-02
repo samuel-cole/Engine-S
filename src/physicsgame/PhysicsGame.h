@@ -16,6 +16,7 @@ public:
 		GRAVITY,
 		RESTITUTION,
 		FRICTION,
+		BOUYANCY
 	};
 
 private:
@@ -63,6 +64,11 @@ private:
 	float m_restitution;
 	//The previous restitution value for the scene. Used for checking when the player has modified the restitution for the scene.
 	float m_oldRestitution;
+
+	//The curreny bouyancy value for the scene. Can be modified by the player through Anttweakbar.
+	float m_bouyancy;
+	//The previous bouyancy value for the scene. Used for checking when the player has modified the bouyancy for the scene.
+	float m_oldBouyancy;
 
 	//The amount of time that has passed so far within the current level.
 	float m_currentLevelTime;
