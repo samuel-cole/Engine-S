@@ -77,10 +77,31 @@ void PhysicsGame::LoadLevel(const int a_level, const bool a_startingGame)
 	if ((levelProperties & (1 << BOUYANCY)) > 0)
 		TwAddVarRW(m_debugBar, "Fluid Gravity Strength", TW_TYPE_FLOAT, &m_bouyancy, "min=0 max=20 step=0.1");
 
-	m_renderer->LoadTexture("../data/colours/blue.png", m_boxModels[m_goalObjectIndex]);
-	m_renderer->LoadAmbient("../data/colours/blue.png", m_boxModels[m_goalObjectIndex]);
-	m_renderer->LoadSpecularMap("../data/colours/blue.png", m_boxModels[m_goalObjectIndex]);
-	m_goalObjectLightIndex = m_renderer->CreatePointLight(vec3(0.0f, 0.0f, 0.2f), 5.0f, false, m_renderer->GetPosition(m_boxModels[m_goalObjectIndex]));
+	//Set goal object materials.
+	if (m_goalObjectIndex != -2)
+	{
+		//The goal object is a box.
+		m_renderer->LoadTexture("../data/colours/blue.png", m_boxModels[m_goalObjectIndex]);
+		m_renderer->LoadAmbient("../data/colours/blue.png", m_boxModels[m_goalObjectIndex]);
+		m_renderer->LoadSpecularMap("../data/colours/blue.png", m_boxModels[m_goalObjectIndex]);
+		m_goalObjectLightIndex = m_renderer->CreatePointLight(vec3(0.0f, 0.0f, 0.2f), 5.0f, false, m_renderer->GetPosition(m_boxModels[m_goalObjectIndex]));
+		m_camera->SetObjectToTrack(m_boxModels[m_goalObjectIndex], m_renderer);
+	}
+	else
+	{
+		//The goal object is the fluid in the scene.
+		for (unsigned int i = 0; i < m_fluidRenderHandles.size(); ++i)
+		{
+			m_renderer->LoadTexture("../data/colours/blue.png", m_fluidRenderHandles[i]);
+			m_renderer->LoadAmbient("../data/colours/blue.png", m_fluidRenderHandles[i]);
+			m_renderer->LoadSpecularMap("../data/colours/blue.png", m_fluidRenderHandles[i]);
+		}
+
+		m_camera->SetObjectToTrack(m_fluidRenderHandles[0], m_renderer);
+	}
+
+
+	//Set target shape materials.
 	m_renderer->LoadTexture("../data/colours/green.png", m_shapeModels[m_targetShapeIndex]);
 	m_renderer->LoadAmbient("../data/colours/green.png", m_shapeModels[m_targetShapeIndex]);
 	m_renderer->LoadSpecularMap("../data/colours/green.png", m_shapeModels[m_targetShapeIndex]);
@@ -101,8 +122,6 @@ void PhysicsGame::LoadLevel(const int a_level, const bool a_startingGame)
 	g_params.mRestitution = m_restitution;
 	g_params.mBuoyancy = m_bouyancy;
 	flexSetParams(g_solver, &g_params);
-
-	m_camera->SetObjectToTrack(m_boxModels[m_goalObjectIndex], m_renderer);
 
 	m_currentLevelTime = 0.0f;
 }
@@ -157,7 +176,8 @@ void PhysicsGame::Update(float a_deltaTime)
 
 	FleXBase::Update(a_deltaTime);
 
-	m_renderer->SetLightPosition(m_goalObjectLightIndex, m_rigidPositions[m_goalObjectIndex]);
+	if (m_goalObjectIndex != -2)
+		m_renderer->SetLightPosition(m_goalObjectLightIndex, m_rigidPositions[m_goalObjectIndex]);
 
 	CheckWin();
 }
@@ -173,9 +193,29 @@ void PhysicsGame::CheckWin()
 
 	flexGetContacts(g_solver, (float*)&contactPlanes[0], (float*)&contactVelocities[0], &contactIndices[0], &contactCounts[0], eFlexMemoryHost);
 
-	for (int i = m_rigidOffsets[m_goalObjectIndex]; i < m_rigidOffsets[m_goalObjectIndex + 1]; ++i)
+	int goalObjectStartIndex;
+	int goalObjectEndIndex;
+
+	bool fluidGoal = m_goalObjectIndex == -2;
+	if (fluidGoal)
 	{
-		const int contactIndex = contactIndices[m_rigidIndices[i]];
+		goalObjectStartIndex = 0;//m_fluidParticles[0];
+		goalObjectEndIndex = m_fluidParticles.size() - 1; //m_fluidParticles[m_fluidParticles.size() - 1];
+	}
+	else
+	{
+		goalObjectStartIndex = m_rigidOffsets[m_goalObjectIndex];
+		goalObjectEndIndex = m_rigidOffsets[m_goalObjectIndex + 1];
+	}
+
+	for (int i = goalObjectStartIndex; i < goalObjectEndIndex; ++i)
+	{
+		int contactIndex;
+		if (fluidGoal)
+			contactIndex = m_fluidParticles[i];
+		else
+			contactIndex = contactIndices[m_rigidIndices[i]];
+
 		const unsigned char count = contactCounts[contactIndex];
 	
 		for (int c = 0; c < count; ++c)
@@ -188,6 +228,7 @@ void PhysicsGame::CheckWin()
 				printf("You win! \n");
 				printf("Level completed in: %f seconds! \n", m_currentLevelTime);
 				LoadLevel(m_loadedLevel + 1);
+				return;
 			}
 			else
 			{
@@ -197,6 +238,7 @@ void PhysicsGame::CheckWin()
 					{
 						printf("You lose! \n");
 						LoadLevel(m_loadedLevel);
+						return;
 					}
 				}
 			}

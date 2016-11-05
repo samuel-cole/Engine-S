@@ -16,13 +16,18 @@ class LevelData
 public:
 	//Loads the specified level, returns the modifiable properties mask for the level created.
 	//a_goalObject and a_targetShape are out parameters for the indexes of the goal object and the target shape.
+	//Set goal object to -2 to treat all fluids in the scene as goal objects.
 	static char LoadLevel(PhysicsGame* a_game, int a_level, unsigned int& a_goalObject, unsigned int& a_targetShape, std::vector<unsigned int>& a_hazardShapes);
 
 private:
-	//Loads the data for level 0- a test level used debugging any changes to the game or handling of FleX.
+	//Loads the data for level 0- a sandbox level, featuring most elements of the game in a simple puzzle.
 	static char Level0(PhysicsGame* a_game, unsigned int& a_goalObject, unsigned int& a_targetShape, std::vector<unsigned int>& a_hazardShapes);
-	//Loads the data for level 1- a puzzle in which the player must stop time, then set gravity to up in order to avoid some hazard objects. 
+	//Loads the data for level 1- the death-box level, in which the player starts surrounded by hazard objects on all bar one side, 
+	//and must stop time at the start of the game in order to re-orient gravity to escape the box.
 	static char Level1(PhysicsGame* a_game, unsigned int& a_goalObject, unsigned int& a_targetShape, std::vector<unsigned int>& a_hazardShapes);
+	//Loads the data for level 2- 
+	static char Level2(PhysicsGame* a_game, unsigned int& a_goalObject, unsigned int& a_targetShape, std::vector<unsigned int>& a_hazardShapes);
+
 
 	LevelData() {};
 };

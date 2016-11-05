@@ -82,14 +82,14 @@ int FleXBase::Init()
 	params.mSurfaceTension = 0.01f;
 	params.mVorticityConfinement = 0.1f;
 	params.mBuoyancy = 2.0f;
-	params.mDiffuseThreshold = 100.0f;
+	params.mDiffuseThreshold = 10000.0f;
 	params.mDiffuseBuoyancy = 1.0f;
 	params.mDiffuseDrag = 0.8f;
 	params.mDiffuseBallistic = 16;
 	params.mDiffuseSortAxis[0] = 0.0f;
 	params.mDiffuseSortAxis[1] = 0.0f;
 	params.mDiffuseSortAxis[2] = 0.0f;
-	params.mDiffuseLifetime = 2.0f;
+	params.mDiffuseLifetime = 0.0f;
 	params.mInertiaBias = 0.001f;
 	
 	//planes created after particles

@@ -33,9 +33,10 @@ private:
 	void LoadLevel(const int a_level, const bool a_startingGame = false);
 	//The index of the currently loaded level.
 	int m_loadedLevel;
-
+	
 	//Index of the goal object within the vectors of objects in the scene.
 	//The goal object is the object that the player must attempt to move to the target shape as the goal of the game.
+	//Set to -2 to treat all fluids in the scene as goal objects.
 	unsigned int m_goalObjectIndex;
 	//Index of the target area shape within FleX.
 	//The target shape is the area that the player must move the goal object to in order to win the game.
@@ -65,7 +66,7 @@ private:
 	//The previous restitution value for the scene. Used for checking when the player has modified the restitution for the scene.
 	float m_oldRestitution;
 
-	//The curreny bouyancy value for the scene. Can be modified by the player through Anttweakbar.
+	//The current bouyancy value for the scene. Can be modified by the player through Anttweakbar.
 	float m_bouyancy;
 	//The previous bouyancy value for the scene. Used for checking when the player has modified the bouyancy for the scene.
 	float m_oldBouyancy;

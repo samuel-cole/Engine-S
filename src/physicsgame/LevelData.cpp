@@ -10,6 +10,8 @@ char LevelData::LoadLevel(PhysicsGame* a_game, int a_level, unsigned int& a_goal
 	case 1:
 		return Level1(a_game, a_goalObject, a_targetShape, a_hazardShapes);
 	case 2:
+		return Level2(a_game, a_goalObject, a_targetShape, a_hazardShapes);
+	case 3:
 		printf("Congratulations, you completed the game!");
 		return (char)-1;
 	default:
@@ -18,7 +20,6 @@ char LevelData::LoadLevel(PhysicsGame* a_game, int a_level, unsigned int& a_goal
 	}
 }
 
-//Level 0: test level, where I add all kinds of random physics objects for testing how they work.
 char LevelData::Level0(PhysicsGame* a_game, unsigned int& a_goalObject, unsigned int& a_targetShape, std::vector<unsigned int>& a_hazardShapes)
 {
 	unsigned int tetherPoints[2] = { 0, 19 };
@@ -44,7 +45,6 @@ char LevelData::Level0(PhysicsGame* a_game, unsigned int& a_goalObject, unsigned
 	return (1 << PhysicsGame::GRAVITY) | (1 << PhysicsGame::RESTITUTION) | (1 << PhysicsGame::BOUYANCY);
 }
 
-//Level 1: death-box level, in which the player starts surrounded by hazard objects on all bar one side, and must stop time at the start of the game in order to re-orient gravity to escape the box.
 char LevelData::Level1(PhysicsGame* a_game, unsigned int& a_goalObject, unsigned int& a_targetShape, std::vector<unsigned int>& a_hazardShapes)
 {
 	a_goalObject = a_game->AddBox(vec3(0.0f, 10, 0.0f), quat(vec3(30, 25, 70)));
@@ -58,5 +58,18 @@ char LevelData::Level1(PhysicsGame* a_game, unsigned int& a_goalObject, unsigned
 	a_targetShape = a_game->AddStaticSphere(1.0f, vec3(-25.0f, 1.0f, -25.0f), true);
 
 	return (1 << PhysicsGame::GRAVITY);
+}
+
+char LevelData::Level2(PhysicsGame* a_game, unsigned int& a_goalObject, unsigned int& a_targetShape, std::vector<unsigned int>& a_hazardShapes)
+{
+	a_goalObject = -2;
+
+	a_game->AddBox(vec3(0.0f, 10, 0.0f), quat(vec3(30, 25, 70)));
+
+	a_game->AddFluid(vec3(-10, 0, -10), 20, 20, 20, 0);
+
+	a_targetShape = a_game->AddStaticSphere(1.0f, vec3(0.0f, 30.0f, 0.0f), true);
+
+	return (1 << PhysicsGame::GRAVITY) | (1 << PhysicsGame::BOUYANCY);
 }
 
