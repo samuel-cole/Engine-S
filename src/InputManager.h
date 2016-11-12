@@ -19,7 +19,12 @@ enum Keys
 	A = GLFW_KEY_A,
 	S = GLFW_KEY_S,
 	D = GLFW_KEY_D,
-	R = GLFW_KEY_R
+	R = GLFW_KEY_R,
+	NUM_1 = GLFW_KEY_1,
+	NUM_2 = GLFW_KEY_2,
+	NUM_3 = GLFW_KEY_3,
+	NUM_4 = GLFW_KEY_4,
+	NUM_5 = GLFW_KEY_5
 };
 
 //Class used for managing input. Wraps some GLFW input handling.
@@ -113,7 +118,12 @@ private:
 		A,
 		S,
 		D,
-		R
+		R,
+		NUM_1,
+		NUM_2,
+		NUM_3,
+		NUM_4,
+		NUM_5
 	};
 	
 	//Bitmask for which keys have been pushed this frame.

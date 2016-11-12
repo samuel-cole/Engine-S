@@ -187,6 +187,17 @@ void PhysicsGame::Update(float a_deltaTime)
 	{
 		LoadLevel(m_loadedLevel);
 	}
+	if (InputManager::GetKeyDown(Keys::NUM_1))
+		LoadLevel(0);
+	if (InputManager::GetKeyDown(Keys::NUM_2))
+		LoadLevel(1);
+	if (InputManager::GetKeyDown(Keys::NUM_3))
+		LoadLevel(2);
+	if (InputManager::GetKeyDown(Keys::NUM_4))
+		LoadLevel(3);
+	if (InputManager::GetKeyDown(Keys::NUM_5))
+		LoadLevel(4);
+
 
 	if (m_updateFleXScene)
 		m_currentLevelTime += a_deltaTime;
