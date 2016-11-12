@@ -29,6 +29,8 @@ private:
 	static char Level2(PhysicsGame* a_game, unsigned int& a_goalObject, unsigned int& a_targetShape, std::vector<unsigned int>& a_hazardShapes);
 	//Loads the data for level 3- a puzzle in which the goal is hidden on the ceiling, which introduces fluid as a goal object.
 	static char Level3(PhysicsGame* a_game, unsigned int& a_goalObject, unsigned int& a_targetShape, std::vector<unsigned int>& a_hazardShapes);
+	//Loads the data for level 4- a puzzle in which the player must carefully move a goal fluid to avoid an obstacle course of hazard shapes.
+	static char Level4(PhysicsGame* a_game, unsigned int& a_goalObject, unsigned int& a_targetShape, std::vector<unsigned int>& a_hazardShapes);
 
 
 	LevelData() {};

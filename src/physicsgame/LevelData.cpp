@@ -14,6 +14,8 @@ char LevelData::LoadLevel(PhysicsGame* a_game, int a_level, unsigned int& a_goal
 	case 3:
 		return Level3(a_game, a_goalObject, a_targetShape, a_hazardShapes);
 	case 4:
+		return Level4(a_game, a_goalObject, a_targetShape, a_hazardShapes);
+	case 5:
 		printf("Congratulations, you completed the game!");
 		return (char)-1;
 	default:
@@ -38,7 +40,7 @@ char LevelData::Level0(PhysicsGame* a_game, unsigned int& a_goalObject, unsigned
 			}
 		}
 	}
-	//a_goalObject = a_game->AddBox(vec3(0, 20.0f, 0), quat(vec3(30, 25, 70)));
+
 	a_targetShape = a_game->AddStaticSphere(1.0f, vec3(-25.0f, 1.0f, -25.0f), true);
 	a_hazardShapes.push_back(a_game->AddStaticSphere(1.0f, vec3(25.0f, 1.0f, 25.0f), true));
 	
@@ -85,5 +87,22 @@ char LevelData::Level3(PhysicsGame* a_game, unsigned int& a_goalObject, unsigned
 	a_targetShape = a_game->AddStaticSphere(1.0f, vec3(0.0f, 30.0f, 0.0f), true);
 
 	return (1 << PhysicsGame::GRAVITY) | (1 << PhysicsGame::BOUYANCY) | (1 << PhysicsGame::VISCOSITY) | (1 << PhysicsGame::PAUSE_GAME);
+}
+
+char LevelData::Level4(PhysicsGame* a_game, unsigned int& a_goalObject, unsigned int& a_targetShape, std::vector<unsigned int>& a_hazardShapes)
+{
+	a_goalObject = -2;
+
+	a_game->AddFluid(vec3(20, 0, 20), 5, 5, 5, 0);
+
+	a_targetShape = a_game->AddStaticSphere(1.0f, vec3(-2.0f, 1.0f, -8.0f), true);
+
+	a_hazardShapes.push_back(a_game->AddStaticSphere(20.0f, vec3(-20.0f, 0.0f, 20.0f), true));
+	a_hazardShapes.push_back(a_game->AddStaticSphere(20.0f, vec3(20.0f, 0.0f, -20.0f), true));
+	a_hazardShapes.push_back(a_game->AddStaticSphere(20.0f, vec3(0.0f, 30.0f, 0.0f), true));
+	a_hazardShapes.push_back(a_game->AddStaticSphere(5.0f, vec3(1.0f, -2.0f, 4.0f), true));
+	a_hazardShapes.push_back(a_game->AddStaticSphere(1.0f, vec3(-3.0f, 8.0f, 3.0f), true));
+
+	return (1 << PhysicsGame::GRAVITY) | (1 << PhysicsGame::BOUYANCY) | (1 << PhysicsGame::VISCOSITY);
 }
 

@@ -230,8 +230,8 @@ void PhysicsGame::CheckWin()
 	bool fluidGoal = m_goalObjectIndex == -2;
 	if (fluidGoal)
 	{
-		goalObjectStartIndex = 0;//m_fluidParticles[0];
-		goalObjectEndIndex = m_fluidParticles.size() - 1; //m_fluidParticles[m_fluidParticles.size() - 1];
+		goalObjectStartIndex = 0;
+		goalObjectEndIndex = m_fluidParticles.size() - 1;
 	}
 	else
 	{
