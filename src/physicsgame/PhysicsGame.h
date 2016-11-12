@@ -14,7 +14,7 @@ public:
 	enum PropertyTypes
 	{
 		GRAVITY,
-		RESTITUTION,
+		VISCOSITY,
 		FRICTION,
 		BOUYANCY,
 		PAUSE_GAME
@@ -66,9 +66,9 @@ private:
 	float m_oldGravityStrength;
 	
 	//The current restitution value for the scene. Can be modified by the player through Anttweakbar.
-	float m_restitution;
+	float m_viscosity;
 	//The previous restitution value for the scene. Used for checking when the player has modified the restitution for the scene.
-	float m_oldRestitution;
+	float m_oldViscosity;
 
 	//The current bouyancy value for the scene. Can be modified by the player through Anttweakbar.
 	float m_bouyancy;

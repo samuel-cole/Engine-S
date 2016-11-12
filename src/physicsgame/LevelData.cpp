@@ -44,7 +44,7 @@ char LevelData::Level0(PhysicsGame* a_game, unsigned int& a_goalObject, unsigned
 	
 	a_game->AddFluid(vec3(-10, 0, -10), 20, 20, 20, 5);
 
-	return (1 << PhysicsGame::GRAVITY) | (1 << PhysicsGame::BOUYANCY);
+	return (1 << PhysicsGame::GRAVITY) | (1 << PhysicsGame::BOUYANCY) | (1 << PhysicsGame::VISCOSITY);
 }
 
 char LevelData::Level1(PhysicsGame* a_game, unsigned int& a_goalObject, unsigned int& a_targetShape, std::vector<unsigned int>& a_hazardShapes)
@@ -53,7 +53,7 @@ char LevelData::Level1(PhysicsGame* a_game, unsigned int& a_goalObject, unsigned
 
 	a_targetShape = a_game->AddStaticSphere(1.0f, vec3(0.0f, 5.0f, 0.0f), true);
 
-	return (1 << PhysicsGame::GRAVITY) | (1 << PhysicsGame::BOUYANCY) | (1 << PhysicsGame::PAUSE_GAME);
+	return (1 << PhysicsGame::GRAVITY) | (1 << PhysicsGame::PAUSE_GAME);
 }
 
 char LevelData::Level2(PhysicsGame* a_game, unsigned int& a_goalObject, unsigned int& a_targetShape, std::vector<unsigned int>& a_hazardShapes)
@@ -84,6 +84,6 @@ char LevelData::Level3(PhysicsGame* a_game, unsigned int& a_goalObject, unsigned
 
 	a_targetShape = a_game->AddStaticSphere(1.0f, vec3(0.0f, 30.0f, 0.0f), true);
 
-	return (1 << PhysicsGame::GRAVITY) | (1 << PhysicsGame::BOUYANCY) | (1 << PhysicsGame::PAUSE_GAME);
+	return (1 << PhysicsGame::GRAVITY) | (1 << PhysicsGame::BOUYANCY) | (1 << PhysicsGame::VISCOSITY) | (1 << PhysicsGame::PAUSE_GAME);
 }
 

@@ -67,8 +67,8 @@ void PhysicsGame::LoadLevel(const int a_level, const bool a_startingGame)
 	m_oldGravityDir = vec3(0, -1, 0);
 	m_oldGravityStrength = 9.8f;
 
-	m_restitution = 0.2f;
-	m_oldRestitution = 0.2f;
+	m_viscosity = 10.0f;
+	m_oldViscosity = 10.0f;
 
 	m_bouyancy = 2.0f;
 	m_oldBouyancy = 2.0f;
@@ -87,8 +87,8 @@ void PhysicsGame::LoadLevel(const int a_level, const bool a_startingGame)
 		TwAddVarRW(m_debugBar, "Gravity", TW_TYPE_DIR3F, &m_gravityDir[0], "");
 		TwAddVarRW(m_debugBar, "Gravity Strength", TW_TYPE_FLOAT, &m_gravityStrength, "min=0 max = 30");
 	}
-	if ((m_modifiablePropertiesMask & (1 << RESTITUTION)) > 0)
-		TwAddVarRW(m_debugBar, "Restitution", TW_TYPE_FLOAT, &m_restitution, "min=0 max=1000 step = 0.02");
+	if ((m_modifiablePropertiesMask & (1 << VISCOSITY)) > 0)
+		TwAddVarRW(m_debugBar, "Viscosity", TW_TYPE_FLOAT, &m_viscosity, "min=0 max=500 step = 0.5");
 	if ((m_modifiablePropertiesMask & (1 << BOUYANCY)) > 0)
 		TwAddVarRW(m_debugBar, "Fluid Gravity Strength", TW_TYPE_FLOAT, &m_bouyancy, "min=0 max=20 step=0.1");
 	if ((m_modifiablePropertiesMask & (1 << PAUSE_GAME)) > 0)
@@ -135,7 +135,7 @@ void PhysicsGame::LoadLevel(const int a_level, const bool a_startingGame)
 	g_params.mGravity[0] = m_gravityDir.x * m_gravityStrength;
 	g_params.mGravity[1] = m_gravityDir.y * m_gravityStrength;
 	g_params.mGravity[2] = m_gravityDir.z * m_gravityStrength;
-	g_params.mRestitution = m_restitution;
+	g_params.mViscosity = m_viscosity;
 	g_params.mBuoyancy = m_bouyancy;
 	flexSetParams(g_solver, &g_params);
 
@@ -159,12 +159,12 @@ void PhysicsGame::Update(float a_deltaTime)
 		}
 	}
 
-	if ((m_modifiablePropertiesMask & (1 << RESTITUTION)) > 0)
+	if ((m_modifiablePropertiesMask & (1 << VISCOSITY)) > 0)
 	{
-		if (!IsNearlyEqual(m_restitution, m_oldRestitution))
+		if (!IsNearlyEqual(m_viscosity, m_oldViscosity))
 		{
-			m_oldRestitution = m_restitution;
-			g_params.mRestitution = m_restitution;
+			m_oldViscosity = m_viscosity;
+			g_params.mViscosity = m_viscosity;
 			flexSetParams(g_solver, &g_params);
 		}
 	}
