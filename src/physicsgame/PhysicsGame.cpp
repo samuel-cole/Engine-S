@@ -212,6 +212,9 @@ void PhysicsGame::Update(float a_deltaTime)
 
 void PhysicsGame::CheckWin()
 {
+	if (m_currentLevelTime < 0.01f)	//Particles are sometimes in odd positions during the first frame after a level is loaded.
+		return;
+
 	const int MAX_PARTICLE_CONTACTS = 4;
 
 	std::vector<vec4> contactPlanes(m_numberOfParticles * MAX_PARTICLE_CONTACTS);
