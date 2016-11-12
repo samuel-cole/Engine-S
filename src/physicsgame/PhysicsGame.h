@@ -20,6 +20,9 @@ public:
 		PAUSE_GAME
 	};
 
+	//Sets the current gravity vector to the one passed in.
+	void SetGravity(vec3 a_gravity);
+
 private:
 	//Called when the game is started, handles setting up the first level.
 	int Init() override;

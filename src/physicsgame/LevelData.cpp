@@ -44,7 +44,7 @@ char LevelData::Level0(PhysicsGame* a_game, unsigned int& a_goalObject, unsigned
 	
 	a_game->AddFluid(vec3(-10, 0, -10), 20, 20, 20, 5);
 
-	return (1 << PhysicsGame::GRAVITY) | (1 << PhysicsGame::RESTITUTION) | (1 << PhysicsGame::BOUYANCY);
+	return (1 << PhysicsGame::GRAVITY) | (1 << PhysicsGame::BOUYANCY);
 }
 
 char LevelData::Level1(PhysicsGame* a_game, unsigned int& a_goalObject, unsigned int& a_targetShape, std::vector<unsigned int>& a_hazardShapes)
@@ -60,11 +60,14 @@ char LevelData::Level2(PhysicsGame* a_game, unsigned int& a_goalObject, unsigned
 {
 	a_goalObject = a_game->AddBox(vec3(0.0f, 10, 0.0f), quat(vec3(30, 25, 70)));
 
-	a_hazardShapes.push_back(a_game->AddStaticSphere(2.0f, vec3(0.0f, 5.0f, 0.0f), true));
-	a_hazardShapes.push_back(a_game->AddStaticSphere(2.0f, vec3(-5.0f, 10.0f, 0.0f), true));
-	a_hazardShapes.push_back(a_game->AddStaticSphere(2.0f, vec3(5.0f, 10.0f, 0.0f), true));
-	a_hazardShapes.push_back(a_game->AddStaticSphere(2.0f, vec3(0.0f, 10.0f, -5.0f), true));
-	a_hazardShapes.push_back(a_game->AddStaticSphere(2.0f, vec3(0.0f, 10.0f, 5.0f), true));
+	a_game->SetGravity(vec3(0, -1, 0));
+
+	a_hazardShapes.push_back(a_game->AddStaticSphere(2.0f, vec3(0.0f, 14.0f, 0.0f), true));
+	a_hazardShapes.push_back(a_game->AddStaticSphere(2.0f, vec3(0.0f, 6.0f, 0.0f), true));
+	a_hazardShapes.push_back(a_game->AddStaticSphere(2.0f, vec3(-3.5f, 10.0f, 3.5f), true));
+	a_hazardShapes.push_back(a_game->AddStaticSphere(2.0f, vec3(2.5f, 10.0f, -4.5f), true));
+	a_hazardShapes.push_back(a_game->AddStaticSphere(2.0f, vec3(-2.5f, 10.0f, -4.5f), true));
+	a_hazardShapes.push_back(a_game->AddStaticSphere(2.0f, vec3(3.5f, 10.0f, 3.5f), true));
 
 	a_targetShape = a_game->AddStaticSphere(1.0f, vec3(-25.0f, 1.0f, -25.0f), true);
 

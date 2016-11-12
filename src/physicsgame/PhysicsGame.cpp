@@ -4,6 +4,16 @@
 #include "InputManager.h"
 #include "TrackerCamera.h"
 
+void PhysicsGame::SetGravity(vec3 a_gravity)
+{
+	float magnitude = glm::length(a_gravity);
+	m_gravityStrength = magnitude;
+	m_oldGravityStrength = magnitude;
+	vec3 gravityDir = a_gravity / magnitude;
+	m_gravityDir = gravityDir;
+	m_oldGravityDir = gravityDir;
+}
+
 bool PhysicsGame::IsNearlyEqual(float a_float1, float a_float2)
 {
 	if (abs(a_float1 - a_float2) < 0.01f)
@@ -47,9 +57,9 @@ void PhysicsGame::LoadLevel(const int a_level, const bool a_startingGame)
 	m_debugBar = TwNewBar("Options Bar");
 	float refreshRate = 0.01f;
 	TwSetParam(m_debugBar, NULL, "refresh", TwParamValueType::TW_PARAM_FLOAT, 1, &refreshRate);
-	
 
 	TwAddVarRO(m_debugBar, "Level Time", TW_TYPE_FLOAT, &m_currentLevelTime, "");
+	TwAddVarRW(m_debugBar, "Time Playing", TW_TYPE_BOOL8, &m_updateFleXScene, "");
 
 	//Initialise the new level.
 	m_gravityDir = vec3(0, -1, 0);
