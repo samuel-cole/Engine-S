@@ -57,7 +57,7 @@ int FleXBase::Init()
 	params.mFluidRestDistance = m_particleRadius / 2.0f;
 	params.mSolidRestDistance = 0.0f;
 	
-	params.mAnisotropyScale = 3.0f / m_particleRadius;
+	params.mAnisotropyScale = 0;
 	params.mAnisotropyMin = 0.1f;
 	params.mAnisotropyMax = 2.0f;
 	params.mSmoothing = 0.0f;

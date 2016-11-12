@@ -4,13 +4,13 @@
 #include "InputManager.h"
 #include "TrackerCamera.h"
 
-bool isNearlyEqual(float a_float1, float a_float2)
+bool PhysicsGame::IsNearlyEqual(float a_float1, float a_float2)
 {
 	if (abs(a_float1 - a_float2) < 0.01f)
 		return true;
 	return false;
 }
-bool isNearlyEqual(vec3 a_vec1, vec3 a_vec2)
+bool PhysicsGame::IsNearlyEqual(vec3 a_vec1, vec3 a_vec2)
 {
 	if (glm::length2(a_vec1 - a_vec2) < 0.01f)
 		return true;
@@ -58,24 +58,26 @@ void PhysicsGame::LoadLevel(const int a_level, const bool a_startingGame)
 	m_bouyancy = 2.0f;
 	m_oldBouyancy = 2.0f;
 
-	char levelProperties = LevelData::LoadLevel(this, a_level, m_goalObjectIndex, m_targetShapeIndex, m_hazardShapeIndices);
+	m_modifiablePropertiesMask = LevelData::LoadLevel(this, a_level, m_goalObjectIndex, m_targetShapeIndex, m_hazardShapeIndices);
 
-	if (levelProperties == -1)
+	if (m_modifiablePropertiesMask == -1)
 	{	
 		//We've finished the game/hit an invalid level, restart the game instead.
 		m_loadedLevel = 0;
-		levelProperties = LevelData::LoadLevel(this, 0, m_goalObjectIndex, m_targetShapeIndex, m_hazardShapeIndices);
+		m_modifiablePropertiesMask = LevelData::LoadLevel(this, 0, m_goalObjectIndex, m_targetShapeIndex, m_hazardShapeIndices);
 	}
 
-	if ((levelProperties & (1 << GRAVITY)) > 0)
+	if ((m_modifiablePropertiesMask & (1 << GRAVITY)) > 0)
 	{
 		TwAddVarRW(m_debugBar, "Gravity", TW_TYPE_DIR3F, &m_gravityDir[0], "");
 		TwAddVarRW(m_debugBar, "Gravity Strength", TW_TYPE_FLOAT, &m_gravityStrength, "min=0 max = 30");
 	}
-	if ((levelProperties & (1 << RESTITUTION)) > 0)
+	if ((m_modifiablePropertiesMask & (1 << RESTITUTION)) > 0)
 		TwAddVarRW(m_debugBar, "Restitution", TW_TYPE_FLOAT, &m_restitution, "min=0 max=1000 step = 0.02");
-	if ((levelProperties & (1 << BOUYANCY)) > 0)
+	if ((m_modifiablePropertiesMask & (1 << BOUYANCY)) > 0)
 		TwAddVarRW(m_debugBar, "Fluid Gravity Strength", TW_TYPE_FLOAT, &m_bouyancy, "min=0 max=20 step=0.1");
+	if ((m_modifiablePropertiesMask & (1 << PAUSE_GAME)) > 0)
+		m_updateFleXScene = false;
 
 	//Set goal object materials.
 	if (m_goalObjectIndex != -2)
@@ -130,7 +132,7 @@ void PhysicsGame::Update(float a_deltaTime)
 {
 	if ((m_modifiablePropertiesMask & (1 << GRAVITY)) > 0)
 	{
-		if (!isNearlyEqual(m_oldGravityDir, m_gravityDir) || !isNearlyEqual(m_oldGravityStrength, m_gravityStrength))
+		if (!IsNearlyEqual(m_oldGravityDir, m_gravityDir) || !IsNearlyEqual(m_oldGravityStrength, m_gravityStrength))
 		{
 			m_oldGravityDir = m_gravityDir;
 			m_oldGravityStrength = m_gravityStrength;
@@ -141,10 +143,9 @@ void PhysicsGame::Update(float a_deltaTime)
 		}
 	}
 
-	//TODO: Restitution doesn't work as expected! Restitution only accounts for collisions with shapes, particle collisions are always inelastic, find the property to set how much they rebound by.
 	if ((m_modifiablePropertiesMask & (1 << RESTITUTION)) > 0)
 	{
-		if (!isNearlyEqual(m_restitution, m_oldRestitution))
+		if (!IsNearlyEqual(m_restitution, m_oldRestitution))
 		{
 			m_oldRestitution = m_restitution;
 			g_params.mRestitution = m_restitution;
@@ -154,7 +155,7 @@ void PhysicsGame::Update(float a_deltaTime)
 
 	if ((m_modifiablePropertiesMask & (1 << BOUYANCY)) > 0)
 	{
-		if (!isNearlyEqual(m_bouyancy, m_oldBouyancy))
+		if (!IsNearlyEqual(m_bouyancy, m_oldBouyancy))
 		{
 			m_oldBouyancy = m_bouyancy;
 			g_params.mBuoyancy = m_bouyancy;

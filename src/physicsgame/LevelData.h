@@ -22,11 +22,13 @@ public:
 private:
 	//Loads the data for level 0- a sandbox level, featuring most elements of the game in a simple puzzle.
 	static char Level0(PhysicsGame* a_game, unsigned int& a_goalObject, unsigned int& a_targetShape, std::vector<unsigned int>& a_hazardShapes);
-	//Loads the data for level 1- the death-box level, in which the player starts surrounded by hazard objects on all bar one side, 
-	//and must stop time at the start of the game in order to re-orient gravity to escape the box.
+	//Loads the data for level 1- a puzzle to teach the player usage of the pause/unpause button, in which the player just needs to unpause the game.
 	static char Level1(PhysicsGame* a_game, unsigned int& a_goalObject, unsigned int& a_targetShape, std::vector<unsigned int>& a_hazardShapes);
-	//Loads the data for level 2- 
+	//Loads the data for level 2- the death-box level, in which the player starts surrounded by hazard objects on all bar one side, 
+	//and must stop time at the start of the game in order to re-orient gravity to escape the box.
 	static char Level2(PhysicsGame* a_game, unsigned int& a_goalObject, unsigned int& a_targetShape, std::vector<unsigned int>& a_hazardShapes);
+	//Loads the data for level 3- a puzzle in which the goal is hidden on the ceiling, which introduces fluid as a goal object.
+	static char Level3(PhysicsGame* a_game, unsigned int& a_goalObject, unsigned int& a_targetShape, std::vector<unsigned int>& a_hazardShapes);
 
 
 	LevelData() {};

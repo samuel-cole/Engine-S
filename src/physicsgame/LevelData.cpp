@@ -12,6 +12,8 @@ char LevelData::LoadLevel(PhysicsGame* a_game, int a_level, unsigned int& a_goal
 	case 2:
 		return Level2(a_game, a_goalObject, a_targetShape, a_hazardShapes);
 	case 3:
+		return Level3(a_game, a_goalObject, a_targetShape, a_hazardShapes);
+	case 4:
 		printf("Congratulations, you completed the game!");
 		return (char)-1;
 	default:
@@ -49,6 +51,15 @@ char LevelData::Level1(PhysicsGame* a_game, unsigned int& a_goalObject, unsigned
 {
 	a_goalObject = a_game->AddBox(vec3(0.0f, 10, 0.0f), quat(vec3(30, 25, 70)));
 
+	a_targetShape = a_game->AddStaticSphere(1.0f, vec3(0.0f, 5.0f, 0.0f), true);
+
+	return (1 << PhysicsGame::GRAVITY) | (1 << PhysicsGame::BOUYANCY) | (1 << PhysicsGame::PAUSE_GAME);
+}
+
+char LevelData::Level2(PhysicsGame* a_game, unsigned int& a_goalObject, unsigned int& a_targetShape, std::vector<unsigned int>& a_hazardShapes)
+{
+	a_goalObject = a_game->AddBox(vec3(0.0f, 10, 0.0f), quat(vec3(30, 25, 70)));
+
 	a_hazardShapes.push_back(a_game->AddStaticSphere(2.0f, vec3(0.0f, 5.0f, 0.0f), true));
 	a_hazardShapes.push_back(a_game->AddStaticSphere(2.0f, vec3(-5.0f, 10.0f, 0.0f), true));
 	a_hazardShapes.push_back(a_game->AddStaticSphere(2.0f, vec3(5.0f, 10.0f, 0.0f), true));
@@ -60,7 +71,7 @@ char LevelData::Level1(PhysicsGame* a_game, unsigned int& a_goalObject, unsigned
 	return (1 << PhysicsGame::GRAVITY);
 }
 
-char LevelData::Level2(PhysicsGame* a_game, unsigned int& a_goalObject, unsigned int& a_targetShape, std::vector<unsigned int>& a_hazardShapes)
+char LevelData::Level3(PhysicsGame* a_game, unsigned int& a_goalObject, unsigned int& a_targetShape, std::vector<unsigned int>& a_hazardShapes)
 {
 	a_goalObject = -2;
 
@@ -70,6 +81,6 @@ char LevelData::Level2(PhysicsGame* a_game, unsigned int& a_goalObject, unsigned
 
 	a_targetShape = a_game->AddStaticSphere(1.0f, vec3(0.0f, 30.0f, 0.0f), true);
 
-	return (1 << PhysicsGame::GRAVITY) | (1 << PhysicsGame::BOUYANCY);
+	return (1 << PhysicsGame::GRAVITY) | (1 << PhysicsGame::BOUYANCY) | (1 << PhysicsGame::PAUSE_GAME);
 }
 

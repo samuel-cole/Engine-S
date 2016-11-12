@@ -16,7 +16,8 @@ public:
 		GRAVITY,
 		RESTITUTION,
 		FRICTION,
-		BOUYANCY
+		BOUYANCY,
+		PAUSE_GAME
 	};
 
 private:
@@ -76,6 +77,11 @@ private:
 
 	//Bitmask that stores which physical properties are modifiable in the current level- the PropertyTypes enum defines which bits are used for which properties.
 	char m_modifiablePropertiesMask;
+
+	//Gets whether two vectors are nearly equal to each other, used in determining if a physics property has been changed by Anttweakbar.
+	bool IsNearlyEqual(vec3 a_vec1, vec3 a_vec2);
+	//Gets whether two floats are nearly equal to each other, used in determining if a physics property has been changed by Anttweakbar.
+	bool IsNearlyEqual(float a_float1, float a_float2);
 };
 
 #endif
