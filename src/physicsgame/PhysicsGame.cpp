@@ -42,7 +42,12 @@ void PhysicsGame::LoadLevel(const int a_level, const bool a_startingGame)
 
 	//If we are starting the game, this will remove debug lighting variables, that aren't important to the game.
 	//If this isn't the start of the game (just loading a new level), this will ensure that only the properties that are needed for that level are displayed.
-	TwRemoveAllVars(m_debugBar);
+	//The bar is deleted/recreated instead of just cleared because clearing the bar while it is being modified leads to Anttweakbar becoming unresponsive.
+	TwDeleteBar(m_debugBar);
+	m_debugBar = TwNewBar("Options Bar");
+	float refreshRate = 0.01f;
+	TwSetParam(m_debugBar, NULL, "refresh", TwParamValueType::TW_PARAM_FLOAT, 1, &refreshRate);
+	
 
 	TwAddVarRO(m_debugBar, "Level Time", TW_TYPE_FLOAT, &m_currentLevelTime, "");
 
@@ -102,7 +107,6 @@ void PhysicsGame::LoadLevel(const int a_level, const bool a_startingGame)
 		m_camera->SetObjectToTrack(m_fluidRenderHandles[0], m_renderer);
 	}
 
-
 	//Set target shape materials.
 	m_renderer->LoadTexture("../data/colours/green.png", m_shapeModels[m_targetShapeIndex]);
 	m_renderer->LoadAmbient("../data/colours/green.png", m_shapeModels[m_targetShapeIndex]);
@@ -126,6 +130,8 @@ void PhysicsGame::LoadLevel(const int a_level, const bool a_startingGame)
 	flexSetParams(g_solver, &g_params);
 
 	m_currentLevelTime = 0.0f;
+
+	InputManager::SetupAntBarCallbacks();
 }
 
 void PhysicsGame::Update(float a_deltaTime)
