@@ -23,6 +23,12 @@ public:
 	//Sets the current gravity vector to the one passed in.
 	void SetGravity(vec3 a_gravity);
 
+	//Sets the current bouyancy value for the scene to the one passed in.
+	void SetBouyancy(float a_bouyancy);
+
+	//Sets the current viscosity value for the scene to the one passed in.
+	void SetCohesion(float a_cohesion);
+
 private:
 	//Called when the game is started, handles setting up the first level.
 	int Init() override;
@@ -66,9 +72,9 @@ private:
 	float m_oldGravityStrength;
 	
 	//The current restitution value for the scene. Can be modified by the player through Anttweakbar.
-	float m_viscosity;
+	float m_cohesion;
 	//The previous restitution value for the scene. Used for checking when the player has modified the restitution for the scene.
-	float m_oldViscosity;
+	float m_oldCohesion;
 
 	//The current bouyancy value for the scene. Can be modified by the player through Anttweakbar.
 	float m_bouyancy;

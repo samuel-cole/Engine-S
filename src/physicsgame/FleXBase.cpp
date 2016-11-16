@@ -457,7 +457,7 @@ unsigned int FleXBase::AddStaticSphere(float a_radius, vec3 a_position, bool a_i
 }
 
 //Some parts of this function have been copy+pasted from CreateParticleGrid() in the FleX demo program.
-void FleXBase::AddFluid(vec3 a_lower, int a_dimX, int a_dimY, int a_dimZ, int a_phaseNumber)
+void FleXBase::AddFluid(vec3 a_lower, int a_dimX, int a_dimY, int a_dimZ, int a_phaseNumber, float a_particleDistance)
 {
 	int phase = flexMakePhase(a_phaseNumber, eFlexPhaseSelfCollide | eFlexPhaseFluid);
 
@@ -468,7 +468,7 @@ void FleXBase::AddFluid(vec3 a_lower, int a_dimX, int a_dimY, int a_dimZ, int a_
 			for (int z = 0; z < a_dimZ; ++z)
 			{
 				vec3 randomUnitVector = glm::normalize(vec3((double)rand() / RAND_MAX, (double)rand() / RAND_MAX, (double)rand() / RAND_MAX));
-				vec3 position = a_lower + vec3(x, y, z) * m_particleRadius * 0.6f + randomUnitVector*0.05f;
+				vec3 position = a_lower + vec3(x, y, z) * m_particleRadius * a_particleDistance + randomUnitVector*0.05f;
 	
 				int currentIndex = m_numberOfActiveParticles + x * a_dimX * a_dimY + y * a_dimY + z;
 				m_particles[currentIndex * 4 + 0] = position.x;

@@ -49,7 +49,7 @@ public:
 	unsigned int AddStaticSphere(float a_radius, vec3 a_position, bool a_isTrigger);
 	//Adds fluid to the scene. NOTE: in order for this to work, the physics properties from the scene must be set up to handle fluids.
 	//The dimension variables are used for specifying how many particles will be created, and where they'll be in relation to a_lower.
-	void AddFluid(vec3 a_lower, int a_dimX, int a_dimY, int a_dimZ, int a_phaseNumber);
+	void AddFluid(vec3 a_lower, int a_dimX, int a_dimY, int a_dimZ, int a_phaseNumber, float a_particleDistance = 0.6f);
 
 
 protected:

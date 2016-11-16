@@ -14,6 +14,24 @@ void PhysicsGame::SetGravity(vec3 a_gravity)
 	m_oldGravityDir = gravityDir;
 }
 
+void PhysicsGame::SetBouyancy(float a_bouyancy)
+{
+	m_bouyancy = a_bouyancy;
+	
+	flexGetParams(g_solver, &g_params);
+	g_params.mCohesion = m_bouyancy;
+	flexSetParams(g_solver, &g_params);
+}
+
+void PhysicsGame::SetCohesion(float a_cohesion)
+{
+	m_cohesion = a_cohesion;
+
+	flexGetParams(g_solver, &g_params);
+	g_params.mCohesion = m_cohesion;
+	flexSetParams(g_solver, &g_params);
+}
+
 bool PhysicsGame::IsNearlyEqual(float a_float1, float a_float2)
 {
 	if (abs(a_float1 - a_float2) < 0.01f)
@@ -67,11 +85,11 @@ void PhysicsGame::LoadLevel(const int a_level, const bool a_startingGame)
 	m_oldGravityDir = vec3(0, -1, 0);
 	m_oldGravityStrength = 9.8f;
 
-	m_viscosity = 10.0f;
-	m_oldViscosity = 10.0f;
+	m_cohesion = 0.05f;
+	m_oldCohesion = 0.05f;
 
-	m_bouyancy = 2.0f;
-	m_oldBouyancy = 2.0f;
+	m_bouyancy = 1;
+	m_oldBouyancy = 1;
 
 	m_modifiablePropertiesMask = LevelData::LoadLevel(this, a_level, m_goalObjectIndex, m_targetShapeIndex, m_hazardShapeIndices);
 
@@ -88,9 +106,9 @@ void PhysicsGame::LoadLevel(const int a_level, const bool a_startingGame)
 		TwAddVarRW(m_debugBar, "Gravity Strength", TW_TYPE_FLOAT, &m_gravityStrength, "min=0 max = 30");
 	}
 	if ((m_modifiablePropertiesMask & (1 << VISCOSITY)) > 0)
-		TwAddVarRW(m_debugBar, "Viscosity", TW_TYPE_FLOAT, &m_viscosity, "min=0 max=500 step = 0.5");
+		TwAddVarRW(m_debugBar, "Fluid Cohesion", TW_TYPE_FLOAT, &m_cohesion, "min=0 max=0.5 step = 0.05");
 	if ((m_modifiablePropertiesMask & (1 << BOUYANCY)) > 0)
-		TwAddVarRW(m_debugBar, "Fluid Gravity Strength", TW_TYPE_FLOAT, &m_bouyancy, "min=0 max=20 step=0.1");
+		TwAddVarRW(m_debugBar, "Fluid Gravity Scale", TW_TYPE_FLOAT, &m_bouyancy, "min=0 max=10 step=0.01");
 	if ((m_modifiablePropertiesMask & (1 << PAUSE_GAME)) > 0)
 		m_updateFleXScene = false;
 
@@ -135,7 +153,7 @@ void PhysicsGame::LoadLevel(const int a_level, const bool a_startingGame)
 	g_params.mGravity[0] = m_gravityDir.x * m_gravityStrength;
 	g_params.mGravity[1] = m_gravityDir.y * m_gravityStrength;
 	g_params.mGravity[2] = m_gravityDir.z * m_gravityStrength;
-	g_params.mViscosity = m_viscosity;
+	g_params.mCohesion = m_cohesion;
 	g_params.mBuoyancy = m_bouyancy;
 	flexSetParams(g_solver, &g_params);
 
@@ -161,10 +179,10 @@ void PhysicsGame::Update(float a_deltaTime)
 
 	if ((m_modifiablePropertiesMask & (1 << VISCOSITY)) > 0)
 	{
-		if (!IsNearlyEqual(m_viscosity, m_oldViscosity))
+		if (!IsNearlyEqual(m_cohesion, m_oldCohesion))
 		{
-			m_oldViscosity = m_viscosity;
-			g_params.mViscosity = m_viscosity;
+			m_oldCohesion = m_cohesion;
+			g_params.mCohesion = m_cohesion;
 			flexSetParams(g_solver, &g_params);
 		}
 	}

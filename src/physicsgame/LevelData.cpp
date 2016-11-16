@@ -93,6 +93,8 @@ char LevelData::Level4(PhysicsGame* a_game, unsigned int& a_goalObject, unsigned
 {
 	a_goalObject = -2;
 
+	a_game->SetCohesion(0.0f);
+
 	a_game->AddFluid(vec3(20, 0, 20), 5, 5, 5, 0);
 
 	a_targetShape = a_game->AddStaticSphere(1.0f, vec3(-2.0f, 1.0f, -8.0f), true);
