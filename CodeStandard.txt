@@ -2,10 +2,9 @@ Coding Standards:
 C++:
 Functions in UpperCamelCase.						eg: MyFunction()
 Variables in lowerCamelCase.						eg: myVariable
-PhysX-related member variables start with a 'g_'			eg: g_physicsVariable
+FleX-type member variables start with a 'g_'				eg: g_physicsVariable
 Other member variables start with an 'm_'				eg: m_memberVariable
 Function arguments start with an 'a_'					eg: a_argument
-Static variables start with an 's_'					eg: s_staticVariable
 Enum values and const member variables in UPPER_CASE_WITH_UNDERSCORES	eg: CONST_VARIABLE
 Braces start on the next line.						eg: void MyFunction(float a_argument)
 									    {
