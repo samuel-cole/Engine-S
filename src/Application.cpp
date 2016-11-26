@@ -33,6 +33,7 @@ int Application::Init()
 	if (glfwInit() == false)
 		return -1;
 
+	glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 	m_window = glfwCreateWindow(1280, 720, "FleX Physics Game", nullptr, nullptr);
 
 	if (m_window == nullptr)
