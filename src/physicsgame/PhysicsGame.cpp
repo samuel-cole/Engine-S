@@ -74,9 +74,13 @@ void PhysicsGame::LoadLevel(const int a_level, const bool a_startingGame)
 	TwDeleteBar(m_debugBar);
 	m_debugBar = TwNewBar("Options Bar");
 	float refreshRate = 0.01f;
-	TwSetParam(m_debugBar, NULL, "refresh", TwParamValueType::TW_PARAM_FLOAT, 1, &refreshRate);
+	TwSetParam(m_debugBar, NULL, "refresh", TW_PARAM_FLOAT, 1, &refreshRate);
+	TwSetParam(m_debugBar, NULL, "text", TW_PARAM_CSTRING, 1, "dark");
+	TwSetParam(m_debugBar, NULL, "size", TW_PARAM_CSTRING, 1, "260 400");
 
 	TwAddVarRO(m_debugBar, "Level Time", TW_TYPE_FLOAT, &m_currentLevelTime, "");
+
+	TwAddButton(m_debugBar, "GravityInfo", NULL, NULL, " label='Stop time to get more time to react!'");
 	TwAddVarRW(m_debugBar, "Time Playing", TW_TYPE_BOOL8, &m_updateFleXScene, "");
 
 	//Initialise the new level.
@@ -102,13 +106,21 @@ void PhysicsGame::LoadLevel(const int a_level, const bool a_startingGame)
 
 	if ((m_modifiablePropertiesMask & (1 << GRAVITY)) > 0)
 	{
+		TwAddButton(m_debugBar, "GravityInfo2", NULL, NULL, " label='Use gravity to move objects around!'");
 		TwAddVarRW(m_debugBar, "Gravity", TW_TYPE_DIR3F, &m_gravityDir[0], "");
 		TwAddVarRW(m_debugBar, "Gravity Strength", TW_TYPE_FLOAT, &m_gravityStrength, "min=0 max = 30");
 	}
 	if ((m_modifiablePropertiesMask & (1 << VISCOSITY)) > 0)
+	{
+		TwAddButton(m_debugBar, "CohesionInfo", NULL, NULL, " label='Use cohesion to stick fluid together!'");
 		TwAddVarRW(m_debugBar, "Fluid Cohesion", TW_TYPE_FLOAT, &m_cohesion, "min=0 max=0.5 step = 0.05");
+	}
 	if ((m_modifiablePropertiesMask & (1 << BOUYANCY)) > 0)
+	{
+		TwAddButton(m_debugBar, "FluidGravityScaleInfo", NULL, NULL, " label='Use fluid gravity scale to move'");
+		TwAddButton(m_debugBar, "FluidGravityScaleInfo2", NULL, NULL, " label='fluids differently from others!'");
 		TwAddVarRW(m_debugBar, "Fluid Gravity Scale", TW_TYPE_FLOAT, &m_bouyancy, "min=0 max=10 step=0.01");
+	}
 	if ((m_modifiablePropertiesMask & (1 << PAUSE_GAME)) > 0)
 		m_updateFleXScene = false;
 
