@@ -4,7 +4,6 @@
 #include "glm\ext.hpp"
 #include "glm\gtx\matrix_decompose.hpp"
 #include "Camera.h"
-#include "FBXFile.h"
 #include "Particle.h"
 #include "GPUParticle.h"
 #include "StaticCamera.h"
@@ -1204,153 +1203,6 @@ void Renderer::DestroyEmitter(const unsigned int a_emitterIndex, const bool a_gp
 	}
 }
 
-unsigned int Renderer::LoadFBX(const string& a_filePath, const std::vector<string>* const a_texturePaths, const std::vector<string>* const a_normalMapPaths, const std::vector<string>* const a_specularMapPaths)
-{
-	if (m_standardProgram == -1)
-	{
-		m_standardProgram = CreateProgram("../data/shaders/vert.txt", "../data/shaders/frag.txt");
-	}
-
-	//If this model has not already been loaded in.
-	if (m_modelNames.find(a_filePath) == m_modelNames.end())
-	{
-		FBXFile* file = new FBXFile();
-		file->load(a_filePath.c_str());
-		m_fbxFiles.push_back(file);
-		unsigned int meshCount = file->getMeshCount();
-
-		for (unsigned int j = 0; j < meshCount; ++j)
-		{
-			FBXMeshNode* mesh = file->getMeshByIndex(j);
-			file->initialiseOpenGLTextures();
-
-			Vertex* vertices = new Vertex[mesh->m_vertices.size()];
-			for (unsigned int i = 0; i < mesh->m_vertices.size(); ++i)
-			{
-				vertices[i].position = mesh->m_vertices[i].position;
-				vertices[i].normal = mesh->m_vertices[i].normal;
-				vertices[i].uv = mesh->m_vertices[i].texCoord1;
-				vertices[i].colour = mesh->m_vertices[i].colour;
-				vertices[i].tangent = mesh->m_vertices[i].tangent;
-				vertices[i].weights = mesh->m_vertices[i].weights;
-				vertices[i].indices = mesh->m_vertices[i].indices;
-			}
-
-			unsigned int* indices = new unsigned int[mesh->m_indices.size()];
-			for (unsigned int i = 0; i < mesh->m_indices.size(); ++i)
-			{
-				indices[i] = mesh->m_indices[i];
-			}
-
-			LoadIntoOpenGL(vertices, mesh->m_vertices.size(), indices, mesh->m_indices.size());
-
-			//Currently only models with a single mesh are reused.
-			if (file->getMeshCount() == 1)
-				m_modelNames[a_filePath] = m_VAO.size() - 1;
-
-			//This might be buggy, now that transforms don't update position/scale/rotation variables.
-			SetTransform(mesh->m_globalTransform, m_numOfIndices.size() - 1);
-
-			delete[] vertices;
-			delete[] indices;
-
-			if (j < a_texturePaths->size())
-			{
-				LoadTexture((*a_texturePaths)[j], m_numOfIndices.size() - 1);
-			}
-			if (j < a_normalMapPaths->size())
-			{
-				LoadNormalMap((*a_normalMapPaths)[j], m_numOfIndices.size() - 1);
-			}
-			if (j < a_specularMapPaths->size())
-			{
-				LoadSpecularMap((*a_specularMapPaths)[j], m_numOfIndices.size() - 1);
-			}
-
-			if (file->getSkeletonCount() > 0)
-			{
-				if (m_animatedProgram == -1)
-					m_animatedProgram = CreateProgram("../data/shaders/vertAnim.txt", "../data/shaders/frag.txt");
-
-				if (j < file->getSkeletonCount() && j < file->getAnimationCount())
-				{
-					m_skeletons[m_numOfIndices.size() - 1] = file->getSkeletonByIndex(j);
-					m_animations[m_numOfIndices.size() - 1] = file->getAnimationByIndex(j);
-
-					m_skeletons[m_numOfIndices.size() - 1]->updateBones();
-
-					m_skeletons[m_numOfIndices.size() - 1]->evaluate(m_animations[m_numOfIndices.size() - 1], 0);
-
-					for (unsigned int i = 0; i < m_skeletons[m_numOfIndices.size() - 1]->m_boneCount; ++i)
-					{
-						m_skeletons[m_numOfIndices.size() - 1]->m_nodes[i]->updateGlobalTransform();
-					}
-				}
-			}
-		}
-		return m_numOfIndices.size() - meshCount;
-	}
-	else
-	{
-		//This model has already been loaded in, fill in all of its details with duplicates of the existing ones data.
-
-		//Add the newest number of indices to the vector.
-		m_numOfIndices.push_back(m_numOfIndices[m_modelNames[a_filePath]]);
-		m_numOfVertices.push_back(m_numOfVertices[m_modelNames[a_filePath]]);
-
-		//Add whether the object being loaded is animated.
-		m_skeletons.push_back(m_skeletons[m_modelNames[a_filePath]]);
-		m_animations.push_back(m_animations[m_modelNames[a_filePath]]);
-
-		//Add a new empty entry into each of this objects appropriate vectors.
-		if (m_textures.size() < m_numOfIndices.size())
-			m_textures.push_back(-1);
-		if (m_ambients.size() < m_numOfIndices.size())
-			m_ambients.push_back(-1);
-		if (m_normals.size() < m_numOfIndices.size())
-			m_normals.push_back(-1);
-		if (m_speculars.size() < m_numOfIndices.size())
-			m_speculars.push_back(-1);
-		if (m_mirrors.size() < m_numOfIndices.size())
-			m_mirrors.push_back(-1);
-		if (m_globals.size() < m_numOfIndices.size())
-			m_globals.push_back(glm::mat4());
-		//=======================================================
-		//FleX project additions
-		//=======================================================
-		if (m_positions.size() < m_numOfIndices.size())
-			m_positions.push_back(glm::vec3());
-		if (m_rotations.size() < m_numOfIndices.size())
-			m_rotations.push_back(glm::quat());
-		if (m_scales.size() < m_numOfIndices.size())
-			m_scales.push_back(glm::vec3(1.0f, 1.0f, 1.0f));
-		//=======================================================
-		//End FleX project additions
-		//=======================================================
-
-		if (a_texturePaths->size() > 0)
-		{
-			LoadTexture((*a_texturePaths)[0], m_numOfIndices.size() - 1);
-		}
-		if (a_normalMapPaths->size() > 0)
-		{
-			LoadNormalMap((*a_normalMapPaths)[0], m_numOfIndices.size() - 1);
-		}
-		if (a_specularMapPaths->size() > 0)
-		{
-			LoadSpecularMap((*a_specularMapPaths)[0], m_numOfIndices.size() - 1);
-		}
-
-		//Add new buffer variables to the vectors.
-		m_VAO.push_back(m_VAO[m_modelNames[a_filePath]]);
-		m_VBO.push_back(m_VBO[m_modelNames[a_filePath]]);
-		m_IBO.push_back(m_IBO[m_modelNames[a_filePath]]);
-
-		return m_numOfIndices.size() - 1;
-	}
-
-}
-
 unsigned int Renderer::LoadOBJ(const string& a_filePath)
 {
 	if (m_standardProgram == -1)
@@ -1454,10 +1306,6 @@ unsigned int Renderer::LoadOBJ(const string& a_filePath)
 		//Add the newest number of indices to the vector.
 		m_numOfIndices.push_back(m_numOfIndices[m_modelNames[a_filePath]]);
 		m_numOfVertices.push_back(m_numOfVertices[m_modelNames[a_filePath]]);
-
-		//Add whether the object being loaded is animated.
-		m_skeletons.push_back(nullptr);
-		m_animations.push_back(nullptr);
 
 		//Add a new empty entry into each of this objects appropriate vectors.
 		if (m_textures.size() < m_numOfIndices.size())
@@ -1603,10 +1451,6 @@ unsigned int Renderer::LoadOBJ(const string& a_filePath, unsigned int& a_numberO
 		//Add the newest number of indices to the vector.
 		m_numOfIndices.push_back(m_numOfIndices[modelIndex]);
 		m_numOfVertices.push_back(m_numOfVertices[modelIndex]);
-
-		//Add whether the object being loaded is animated.
-		m_skeletons.push_back(nullptr);
-		m_animations.push_back(nullptr);
 
 		//Add a new empty entry into each of this objects appropriate vectors.
 		if (m_textures.size() < m_numOfIndices.size())
@@ -1756,32 +1600,12 @@ void Renderer::Draw()
 
 			for (unsigned int i = 1; i < m_numOfIndices.size(); ++i)
 			{
-				if (m_skeletons[i] == nullptr && m_numOfIndices[i] != -1)
+				if (m_numOfIndices[i] != -1)
 				{
 					glUniformMatrix4fv((m_uniformLocations[m_shadowGenProgram])[GLOBAL], 1, GL_FALSE, &((m_globals[i])[0][0]));
 
 					glBindVertexArray(m_VAO[i]);
 					glDrawElements(GL_TRIANGLES, m_numOfIndices[i], GL_UNSIGNED_INT, nullptr);
-				}
-			}
-
-			//Render to the shadow map for animated objects.
-			if (m_animatedProgram != -1)
-			{
-				glUseProgram(m_animShadowGenProgram);
-				glUniformMatrix4fv((m_uniformLocations[m_animShadowGenProgram])[LIGHT_MATRIX], 1, GL_FALSE, &(m_lightProjView[0][0]));
-
-				for (unsigned int i = 1; i < m_numOfIndices.size(); ++i)
-				{
-					//Don't need to check if this object is valid, as deleted objects have their skeleton set to nullptr, so this is already doing the check.
-					if (m_skeletons[i] != nullptr)
-					{
-						glUniformMatrix4fv((m_uniformLocations[m_animShadowGenProgram])[BONES], m_skeletons[i]->m_boneCount, GL_FALSE, (float*)m_skeletons[i]->m_bones);
-						glUniformMatrix4fv((m_uniformLocations[m_animShadowGenProgram])[GLOBAL], 1, GL_FALSE, &((m_globals[i])[0][0]));
-
-						glBindVertexArray(m_VAO[i]);
-						glDrawElements(GL_TRIANGLES, m_numOfIndices[i], GL_UNSIGNED_INT, nullptr);
-					}
 				}
 			}
 		}
@@ -1826,7 +1650,6 @@ void Renderer::Draw()
 
 		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-
 		//Non-animated G-Pass
 		glUseProgram(m_gpassProgram);
 
@@ -1834,7 +1657,7 @@ void Renderer::Draw()
 
 		for (unsigned int i = 1; i < m_numOfIndices.size(); ++i)
 		{
-			if (m_skeletons[i] != nullptr || m_numOfIndices[i] == -1)
+			if (m_numOfIndices[i] == -1)
 				continue;
 
 			glUniformMatrix4fv((m_uniformLocations[m_gpassProgram])[GLOBAL], 1, GL_FALSE, &((m_globals[i])[0][0]));
@@ -1859,43 +1682,6 @@ void Renderer::Draw()
 			glBindTexture(GL_TEXTURE_2D, ((m_normals[i] == -1) ? m_defaultNormal : m_normals[i]));
 			glUniform1i((m_uniformLocations[m_gpassProgram])[NORMAL], 3);
 			
-			glBindVertexArray(m_VAO[i]);
-			glDrawElements(GL_TRIANGLES, m_numOfIndices[i], GL_UNSIGNED_INT, nullptr);
-		}
-
-		//Animated G-Pass
-		glUseProgram(m_gpassAnimProgram);
-		
-		glUniformMatrix4fv((m_uniformLocations[m_gpassAnimProgram])[PROJECTION_VIEW], 1, GL_FALSE, &(m_cameras[0]->GetProjectionView()[0][0]));
-		
-		for (unsigned int i = 1; i < m_numOfIndices.size(); ++i)
-		{
-			if (m_skeletons[i] == nullptr)
-				continue;
-		
-			glUniformMatrix4fv((m_uniformLocations[m_gpassAnimProgram])[GLOBAL], 1, GL_FALSE, &((m_globals[i])[0][0]));
-			glUniformMatrix4fv((m_uniformLocations[m_gpassAnimProgram])[BONES], m_skeletons[i]->m_boneCount, GL_FALSE, (float*)m_skeletons[i]->m_bones);
-		
-			// Set Texture/Diffuse Slot
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, ((m_textures[i] == -1) ? m_defaultDiffuse : m_textures[i]));
-			glUniform1i((m_uniformLocations[m_gpassAnimProgram])[DIFFUSE], 0);
-		
-			// Set Ambient Slot
-			glActiveTexture(GL_TEXTURE1);
-			glBindTexture(GL_TEXTURE_2D, ((m_ambients[i] == -1) ? m_defaultDiffuse : m_ambients[i]));
-			glUniform1i((m_uniformLocations[m_gpassAnimProgram])[AMBIENT], 1);
-
-			// Set Specular Slot
-			glActiveTexture(GL_TEXTURE2);
-			glBindTexture(GL_TEXTURE_2D, ((m_speculars[i] == -1) ? m_defaultSpec : m_speculars[i]));
-			glUniform1i((m_uniformLocations[m_gpassAnimProgram])[SPECULAR], 2);
-
-			// Set Normal Map Slot
-			glActiveTexture(GL_TEXTURE3);
-			glBindTexture(GL_TEXTURE_2D, ((m_normals[i] == -1) ? m_defaultNormal : m_normals[i]));
-			glUniform1i((m_uniformLocations[m_gpassAnimProgram])[NORMAL], 3);
-		
 			glBindVertexArray(m_VAO[i]);
 			glDrawElements(GL_TRIANGLES, m_numOfIndices[i], GL_UNSIGNED_INT, nullptr);
 		}
@@ -2073,7 +1859,7 @@ void Renderer::DrawModels(const unsigned int j)
 		unsigned int notAnimatedCheck = -1;
 		for (unsigned int i = 1; i < m_numOfIndices.size(); ++i)
 		{
-			if (m_skeletons[i] == nullptr && m_numOfIndices[i] != -1)
+			if (m_numOfIndices[i] != -1)
 			{
 				notAnimatedCheck = i;
 				break;
@@ -2099,7 +1885,7 @@ void Renderer::DrawModels(const unsigned int j)
 
 			for (unsigned int i = notAnimatedCheck; i < m_numOfIndices.size(); ++i)
 			{
-				if (m_skeletons[i] != nullptr || m_numOfIndices[i] == -1)
+				if (m_numOfIndices[i] == -1)
 					continue;
 
 				//Check to see if this model is on this frame buffer's ignore list.
@@ -2145,89 +1931,6 @@ void Renderer::DrawModels(const unsigned int j)
 				glDrawElements(GL_TRIANGLES, m_numOfIndices[i], GL_UNSIGNED_INT, nullptr);
 			}
 		}
-
-		if (m_animatedProgram != -1)
-		{
-			//Here I check for animated models to draw.
-			unsigned int animatedCheck = -1;
-			for (unsigned int i = 1; i < m_numOfIndices.size(); ++i)
-			{
-				//Much like the Draw() function, I don't do checks to see if animated objects are invalid because I automatically set deleted objects m_skeleton entry to nullptr, hence this is already checked.
-				if (m_skeletons[i] != nullptr)
-				{
-					animatedCheck = i;
-					break;
-				}
-			}
-
-			if (animatedCheck != -1)
-			{
-				glUseProgram(m_animatedProgram);
-
-				mat4 lightMatrix = M_TEXTURE_SPACE_OFFSET * m_lightProjView;
-				glUniformMatrix4fv((m_uniformLocations[m_standardProgram])[LIGHT_MATRIX], 1, GL_FALSE, &(lightMatrix[0][0]));
-				glUniformMatrix4fv((m_uniformLocations[m_animatedProgram])[PROJECTION_VIEW], 1, GL_FALSE, &(m_cameras[j]->GetProjectionView()[0][0]));
-
-				glUniform3f((m_uniformLocations[m_animatedProgram])[LIGHT_DIR], m_lightDir.x, m_lightDir.y, m_lightDir.z);
-				glUniform3f((m_uniformLocations[m_animatedProgram])[LIGHT_COLOUR], m_lightColour.x, m_lightColour.y, m_lightColour.z);
-				glUniform3f((m_uniformLocations[m_animatedProgram])[CAMERA_POS], m_cameras[j]->GetWorldTransform()[3].x, m_cameras[j]->GetWorldTransform()[3].y, m_cameras[j]->GetWorldTransform()[3].z);
-				glUniform1f((m_uniformLocations[m_animatedProgram])[SPEC_POW], m_specPow);
-				if (m_shadowGenProgram != -1)
-					glUniform1f((m_uniformLocations[m_animatedProgram])[SHADOW_BIAS], 0.01f);
-				else
-					glUniform1f((m_uniformLocations[m_animatedProgram])[SHADOW_BIAS], 1000.0f);
-
-				for (unsigned int i = animatedCheck; i < m_numOfIndices.size(); ++i)
-				{
-					if (m_skeletons[i] == nullptr)
-						continue;
-
-					//Check to see if this model is on this frame buffer's ignore list.
-					bool onIgnoreList = false;
-					for (unsigned int k = 0; k < m_frameBufferIgnores.size(); ++k)
-					{
-						if (m_frameBufferIgnores[k].first == j && m_frameBufferIgnores[k].second == i)
-						{
-							onIgnoreList = true;
-							break;
-						}
-					}
-					if (onIgnoreList)
-						continue;
-
-					// Set Texture/Diffuse Slot
-					glActiveTexture(GL_TEXTURE0);
-					glBindTexture(GL_TEXTURE_2D, ((m_textures[i] == -1) ? m_defaultDiffuse : m_textures[i]));
-					glUniform1i((m_uniformLocations[m_standardProgram])[DIFFUSE], 0);
-
-					// Set Normal Slot
-					glActiveTexture(GL_TEXTURE1);
-					glBindTexture(GL_TEXTURE_2D, ((m_normals[i] == -1) ? m_defaultNormal : m_normals[i]));
-					glUniform1i((m_uniformLocations[m_standardProgram])[NORMAL], 1);
-
-					// Set Specular Slot
-					glActiveTexture(GL_TEXTURE2);
-					glBindTexture(GL_TEXTURE_2D, ((m_speculars[i] == -1) ? m_defaultSpec : m_speculars[i]));
-					glUniform1i((m_uniformLocations[m_standardProgram])[SPECULAR], 2);
-
-					// Set Shadow Map Slot
-					glActiveTexture(GL_TEXTURE3);
-					glBindTexture(GL_TEXTURE_2D, ((m_shadowDepth == -1) ? m_defaultShadow : m_shadowDepth));
-					glUniform1i((m_uniformLocations[m_standardProgram])[SHADOW_MAP], 3);
-
-					// Set Transform
-					glUniformMatrix4fv((m_uniformLocations[m_animatedProgram])[GLOBAL], 1, GL_FALSE, &((m_globals[i])[0][0]));
-					mat4 transposeInverseGlobal = glm::transpose(glm::inverse(m_globals[i]));
-					glUniformMatrix4fv((m_uniformLocations[m_animatedProgram])[TRANS_INV_GLOBAL], 1, GL_FALSE, &(transposeInverseGlobal[0][0]));
-					glUniformMatrix4fv((m_uniformLocations[m_animatedProgram])[BONES], m_skeletons[i]->m_boneCount, GL_FALSE, (float*)m_skeletons[i]->m_bones);
-
-
-					//Draw stuff
-					glBindVertexArray(m_VAO[i]);
-					glDrawElements(GL_TRIANGLES, m_numOfIndices[i], GL_UNSIGNED_INT, nullptr);
-				}
-			}
-		}
 	}
 		
 	//CPU Particles
@@ -2250,21 +1953,6 @@ void Renderer::DrawModels(const unsigned int j)
 		if (m_gpuEmitters[i] != nullptr)
 		{
 			m_gpuEmitters[i]->Draw((float)glfwGetTime(), m_cameras[j]->GetWorldTransform(), m_cameras[j]->GetProjectionView(), m_defaultSpec);
-		}
-	}
-}
-
-void Renderer::UpdateAnimation(const float a_time, const unsigned int a_index)
-{
-	if (m_skeletons.size() > a_index && m_skeletons[a_index] != nullptr)
-	{
-		m_skeletons[a_index]->updateBones();
-
-		m_skeletons[a_index]->evaluate(m_animations[a_index], a_time);
-
-		for (unsigned int i = 0; i < m_skeletons[a_index]->m_boneCount; ++i)
-		{
-			m_skeletons[a_index]->m_nodes[i]->updateGlobalTransform();
 		}
 	}
 }
@@ -2465,10 +2153,6 @@ void Renderer::LoadIntoOpenGL(const Vertex* const a_verticesArray, const unsigne
 	m_numOfIndices.push_back(a_numOfIndices);
 	m_numOfVertices.push_back(a_numOfVertices);
 
-	//Add empty values to the animation-related variables. These will be filled in after this function has finished if this model is animated.
-	m_skeletons.push_back(nullptr);
-	m_animations.push_back(nullptr);
-
 	//Add a new empty entry into each of this objects appropriate vectors.
 	if (m_textures.size() < m_numOfIndices.size())
 		m_textures.push_back(-1);
@@ -2586,8 +2270,6 @@ void Renderer::DestroyObject(const unsigned int a_index)
 	glDeleteTextures(1, &m_speculars[a_index]);
 	m_speculars[a_index] = -1;
 
-	m_skeletons[a_index] = nullptr;
-	m_animations[a_index] = nullptr;
 	m_globals[a_index] = mat4();
 	//=======================================================
 	//FleX project additions
@@ -2858,15 +2540,4 @@ void Renderer::CleanupBuffers()
 			m_mirrors[i] = -1;
 		}
 	}
-
-	for (unsigned int i = 0; i < m_fbxFiles.size(); ++i)
-	{
-		if (m_fbxFiles[i] != nullptr)
-		{
-			m_fbxFiles[i]->unload();
-			delete m_fbxFiles[i];
-			m_fbxFiles[i] = nullptr;
-		}
-	}
-	m_fbxFiles.clear();
 }

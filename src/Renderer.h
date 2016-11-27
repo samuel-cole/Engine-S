@@ -84,13 +84,6 @@ private:
 	//End FleX project additions
 	//=======================================================
 
-	//Vector containing the skeletons of animated objects. Set to nullptr for non-animated models.
-	std::vector<FBXSkeleton*> m_skeletons;
-	//Vector containing the animations of animated objects. Set to nullptr for non-animated models.
-	std::vector<FBXAnimation*> m_animations;
-	//Vector containing the files of animated objects. Used for cleaning up files after closing the program.
-	std::vector<FBXFile*> m_fbxFiles;
-
 	//Vector containing the world transforms of every object.
 	std::vector<glm::mat4> m_globals;
 
@@ -399,8 +392,6 @@ public:
 	//Draw method- does all drawing for all models and particles to all framebuffers.
 	void Draw();
 
-	//Updates the animated FBX file specified by a_index to the time specified with a_time.
-	void UpdateAnimation(const float a_time, const unsigned int a_index);
 	//Updates all CPU-based particle emitters (and, by extension, all CPU-based particles).
 	void UpdateEmitters(const float a_deltaTime);
 	//Updates all mirrors to properly reflect.
